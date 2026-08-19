@@ -9,6 +9,19 @@
   name_de: "Kurzer, sprechender Titel des Musters"
 
   # ----------------------------------------------------------
+  # KATEGORIE  (neu, 19.08. - Vorgabe der Verbraucherzentrale)
+  # ----------------------------------------------------------
+  # Genau EINER dieser vier Werte. Es ist das Raster, in dem die
+  # Verbraucherzentrale selbst denkt - danach wird in der
+  # Marktuebersicht gefiltert und statistisch ausgewertet.
+  #
+  #   Zeitdruck     - Countdown, Knappheit, "X Personen sehen sich das an"
+  #   Zwang         - Kopplung, erzwungene Einwilligung
+  #   Hindernisse   - erschwerte Ablehnung, fehlender Kuendigungsbutton
+  #   Irrefuehrung    - falsche oder verdeckte Angaben
+  kategorie: ""
+
+  # ----------------------------------------------------------
   # ORGANISATION
   # ----------------------------------------------------------
   status: ENTWURF          # ENTWURF | IN_ARBEIT | REVIEW | FERTIG

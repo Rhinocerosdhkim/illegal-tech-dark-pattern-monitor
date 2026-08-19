@@ -17,7 +17,8 @@ Wir bauen **keinen KI-Richter**, sondern ein **Beweiserhebungs- und Strukturieru
 | **im Entwicklungsteam** | [Briefing §2–4](docs/briefing/Projekt-Briefing_DE.md) — Architektur & Signalliste | [`rules/_SIGNALE.md`](rules/_SIGNALE.md) — was wir zusagen zu messen |
 | **neu dabei** | [Briefing DE](docs/briefing/Projekt-Briefing_DE.md) / [EN](docs/briefing/Project-Briefing_EN.md), Abschnitte 2, 3, 5, 6 | [`docs/DECISIONS.md`](docs/DECISIONS.md) — warum wir was entschieden haben |
 
-> 📌 **[`docs/STRATEGIE.md`](docs/STRATEGIE.md) — Marktlücke, Produktentscheidungen, Aufgabenteilung und Tagesplan bis zur Präsentation.** Alle lesen.
+> 📌 **[`docs/STRATEGIE.md`](docs/STRATEGIE.md) — Fassung 2.0, überarbeitet nach dem VZ-Seminar vom 19.08.** Marktlücke, Produktentscheidungen, Aufgabenteilung, Tagesplan. Alle lesen.
+> 🔧 **[`docs/AGENDA_Technik.md`](docs/AGENDA_Technik.md)** — Agenda des Technik-Kickoffs (englisch).
 
 ---
 

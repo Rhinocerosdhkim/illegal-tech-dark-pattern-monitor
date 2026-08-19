@@ -74,6 +74,9 @@ Stand: 19.08.2026 · Änderungen bitte über das Entwicklungsteam
 | `shipping_cost_disclosed_on_product_page` | bool | 🟡 | Werden Versandkosten schon auf der Produktseite genannt? |
 | `preselected_paid_addon_count` | Zahl | 🟡 | Anzahl vorausgewählter kostenpflichtiger Zusatzoptionen |
 | `gratis_claim_present` | bool | ✅ | Werbung mit „gratis / kostenlos / umsonst" auf der Seite |
+| `vat_disclosure_present` | bool | ⚪ | Steht im Preisumfeld ein Hinweis auf die Umsatzsteuer („inkl. MwSt.", „inkl. Mehrwertsteuer")? |
+| `vat_disclosure_scroll_pct` | Zahl | ⚪ | Position dieses Hinweises in Prozent der Seitenhöhe — misst „versteckt in der Kopf-/Fußzeile" |
+| `price_step` | Text | ⚪ | Auf welchem Schritt des Pfades der Preis gemessen wurde (`produktdetail`, `warenkorb` …) |
 
 > ⚠️ Die Signale mit 🟡 setzen voraus, dass wir bis zum Bestellabschluss navigieren können. Das gelingt nicht auf allen Seiten. Rechnet damit, dass DP-005 in der Vorführung teilweise mit manuell erfassten Werten arbeitet.
 
@@ -92,6 +95,25 @@ Stand: 19.08.2026 · Änderungen bitte über das Entwicklungsteam
 | `aria_hidden_on_required_info` | bool | 🟡 | Ist der Hinweis für Screenreader ausgeblendet? |
 
 > **Wichtige Einschränkung:** Das System erkennt Pflichtinformationen nur über Stichworte (`Widerruf`, `Impressum`, `Gesamtpreis`, `Lieferkosten` …). Ob ein Text im Rechtssinne eine wesentliche Information darstellt, kann es nicht beurteilen. Regeln auf dieser Grundlage sollten daher nicht die Stufe `eindeutig` verwenden.
+
+---
+
+## Wo gemessen wird — Pfaderfassung
+
+**Neu seit 19.08.** Die Verbraucherzentrale hat im Seminar darauf hingewiesen, dass die interessanten Muster **nicht auf der Startseite** stehen: „so viele Nutzer haben sich das Produkt zuletzt angeschaut" erscheint erst, wenn man das Produkt anklickt; dasselbe gilt für die Mehrwertsteuer-Angabe und für Gebühren.
+
+Das System ruft deshalb nicht eine URL auf, sondern arbeitet je Ziel einen **Pfad** ab:
+
+```
+startseite → suchergebnis → produktdetail → warenkorb → bestelluebersicht
+```
+
+Jedes gemessene Signal führt mit, **auf welchem Schritt** es erhoben wurde und **welcher Screenshot** es belegt. Für euch ändert sich dadurch nichts an der Schreibweise der Regeln — ihr benutzt die Signalnamen wie bisher. Es bedeutet aber:
+
+- Ein Signal kann auf einem Schritt vorhanden und auf einem anderen nicht erhoben worden sein.
+- Bricht der Pfad ab (Seite nicht erreichbar, Schaltfläche nicht gefunden), landen die restlichen Signale in `signal_errors` und die davon abhängigen Regeln werden automatisch `unklar`.
+
+Wenn für eure Regel wichtig ist, **auf welchem Schritt** gemessen wurde, schreibt das bitte in `offene_fragen` — dann bauen wir es als eigenes Signal.
 
 ---
 
@@ -120,6 +142,8 @@ Diese Felder erscheinen automatisch in jedem Bericht. Ihr müsst sie nicht angeb
 | `viewport` | verwendete Fenstergröße (wichtig für die Reproduzierbarkeit von Flächenangaben) |
 | `user_agent` | Browserkennung |
 | `capture_mode` | `headless` oder `browser_extension` |
+| `schritt` | auf welchem Schritt des Pfades der Wert erhoben wurde |
+| `branche` | Branche des Ziels (Ticketing, Reise, Mode …) — Grundlage der Statistik in der Marktübersicht |
 
 ---
 

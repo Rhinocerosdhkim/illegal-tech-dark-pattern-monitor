@@ -14,6 +14,11 @@
 - id: DP-003
   name_de: "Vorgetäuschte zeitliche Begrenzung und Knappheit"
 
+  # Kategorie nach dem Raster der Verbraucherzentrale (19.08.):
+  # Zeitdruck | Zwang | Hindernisse | Irrefuehrung
+  # -- Vorbelegung durch das Entwicklungsteam, bitte pruefen --
+  kategorie: "Zeitdruck"
+
   status: ENTWURF
   bearbeiter: ""
 

@@ -7,6 +7,38 @@ Format: `## JJJJ-MM-TT — Entscheidung` + zwei bis vier Sätze Begründung. Kur
 
 ---
 
+## 2026-08-19 (abends) — Die Ausgabe heißt „Beweisakte"
+
+Die Verbraucherzentrale hat im Seminar genau dieses Wort benutzt: „Erstellen einer Beweisakte mit Screenshots und gegen was dieses Dark Pattern verstoßen könnte". Wir übernehmen den Begriff im Produkt und in der Präsentation. Bemerkenswert ist auch der Konjunktiv „verstoßen **könnte**" — die Adressatin will ausdrücklich keine maschinelle Feststellung eines Verstoßes, sondern die Grundlage für eine eigene Entscheidung. Das bestätigt unser Dreistufenmodell.
+
+## 2026-08-19 (abends) — Vier Kategorien der Verbraucherzentrale als Filterachse
+
+Zeitdruck · Zwang · Hindernisse · Irreführung. Das ist das Raster, in dem die Adressatin denkt; unsere IDs DP-001 ff. sind für sie bedeutungslos. Jede Regel bekommt deshalb ein Pflichtfeld `kategorie` mit genau einem dieser vier Werte. Der Gold Standard bekommt zusätzlich eine Spalte `branche`. Grund: ohne beides gibt es keine Statistik nach Branche und Art — und die wurde ausdrücklich verlangt.
+
+## 2026-08-19 (abends) — Zweite Ausgabe: Marktübersicht
+
+Verlangt wurde „Tabelle (z. B. PDF) mit Filtermöglichkeit und Statistiken (Branche, Art), Norm klassifizieren". Das ist mehr als eine Akte je Seite. Wir bauen daher zwei Ausgaben aus denselben Erfassungsdaten: die **Beweisakte** (eine Seite, für die Abmahnung, Freitag) und die **Marktübersicht** (viele Seiten, für die Marktbeobachtung, Samstag). Der Gold Standard aus Paket 2 liefert die Daten für die zweite — aus einer Messaufgabe wird zugleich der Demo-Inhalt.
+
+## 2026-08-19 (abends) — Erfassung entlang eines Pfades statt einer URL
+
+Aus dem Seminar: „so viele Nutzer haben sich das Produkt zuletzt angeschaut" wird erst sichtbar, wenn man das Produkt anklickt; ebenso versteckte Informationen und die fehlende Mehrwertsteuer-Angabe. Ein Werkzeug, das nur eine URL aufruft, findet diese Muster nicht. Ein Ziel ist deshalb eine Schrittfolge (`data/targets/*.yaml`), jeder Schritt erzeugt eigenen Screenshot und eigene Messwerte, und **jedes Signal führt mit, auf welchem Schritt und durch welchen Screenshot es belegt ist**. Letzteres ist der technische Kern der Beweisakte.
+
+## 2026-08-19 (abends) — viagogo ist der Referenzfall
+
+Von der Verbraucherzentrale selbst als Testobjekt genannt. Damit entfällt unser größtes Risiko, kein geeignetes Anschauungsobjekt zu finden. Die gesamte Pipeline wird zuerst an dieser Seite zum Laufen gebracht. Offen und vor der Präsentation zu klären: ob viagogo bereits belegbar öffentlich beanstandet wurde — nur dann nennen wir den Namen auf den Folien, sonst „Ticketplattform A".
+
+## 2026-08-19 (abends) — „Pur-Abo" wird nicht beanstandet
+
+Im Seminar ausdrücklich festgehalten: Modelle nach dem Muster *Einwilligung oder Bezahlabo* sind gegenwärtig zulässig. Wir bauen dafür keine anschlagende Regel. Wer ein noch zulässiges Geschäftsmodell als Verstoß ausweist, verliert Glaubwürdigkeit und wird selbst angreifbar (§ 4 Nr. 1, Nr. 2 UWG). Höchstens Beobachtungsnotiz ohne Befundstufe.
+
+## 2026-08-19 (abends) — DP-005 wird geteilt
+
+**DP-005a** (Preisangabe auf der Produktseite: Umsatzsteuer-Hinweis vorhanden, an welcher Position, Versandkosten genannt) ist eine reine Textsuche im Preisumfeld und kommt in den Umfang — die Verbraucherzentrale hat die fehlende Mehrwertsteuer-Angabe ausdrücklich genannt. **DP-005b** (Preisdifferenz bis zum Bestellabschluss) setzt vollständige Navigation bis zur Kasse voraus, ist fragil und bleibt bei Restzeit.
+
+## 2026-08-19 (abends) — Walking Skeleton vor Breite
+
+Bis Donnerstagabend läuft die Kette viagogo → Erfassung → **eine** Regel → **eine** Tabellenzeile → PDF vollständig durch, auch wenn jedes Glied unfertig ist. Kein zweites Signal, bevor das erste die ganze Kette durchlaufen hat. Grund: Bauen wir Erfassung und Engine getrennt und fügen sie am Samstag zusammen, erfahren wir am Samstag, ob sie zusammenpassen — ohne Restzeit. Und die Montagsübergabe an eine nicht entwickelnde Person gelingt nur, wenn das Ganze seit Tagen existiert.
+
 ## 2026-08-19 — Positionierung: Bezahlbarkeit ist die Lücke, nicht Erkennung
 
 Aus dem Seminar der Verbraucherzentrale Bayern: Die bestehenden Werkzeuge (FairPatterns, R Systems) scheitern nicht an Funktionen, sondern am Budget. Daraus folgt unsere geschärfte These: **„Dark Patterns zu erkennen können andere längst. Sie bezahlbar und abmahnfähig zu dokumentieren kann niemand."** Open Source und Selbstbetrieb sind damit kein Nebenaspekt, sondern das Kernargument.

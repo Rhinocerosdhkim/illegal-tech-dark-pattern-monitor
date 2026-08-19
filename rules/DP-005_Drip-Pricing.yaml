@@ -13,6 +13,11 @@
 - id: DP-005
   name_de: "Versteckte Kosten und nachtraegliche Preiserhoehung im Bestellvorgang"
 
+  # Kategorie nach dem Raster der Verbraucherzentrale (19.08.):
+  # Zeitdruck | Zwang | Hindernisse | Irrefuehrung
+  # -- Vorbelegung durch das Entwicklungsteam, bitte pruefen --
+  kategorie: "Irrefuehrung"
+
   status: ENTWURF
   bearbeiter: ""
 

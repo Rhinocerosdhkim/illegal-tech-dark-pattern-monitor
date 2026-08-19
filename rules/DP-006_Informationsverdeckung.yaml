@@ -18,6 +18,11 @@
 - id: DP-006
   name_de: "Verdeckung wesentlicher Pflichtinformationen"
 
+  # Kategorie nach dem Raster der Verbraucherzentrale (19.08.):
+  # Zeitdruck | Zwang | Hindernisse | Irrefuehrung
+  # -- Vorbelegung durch das Entwicklungsteam, bitte pruefen --
+  kategorie: "Irrefuehrung"
+
   status: ENTWURF
   bearbeiter: ""
 

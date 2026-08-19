@@ -6,6 +6,11 @@
 - id: DP-001
   name_de: "Ungleiche Gestaltung der Consent-Buttons"
 
+  # Kategorie nach dem Raster der Verbraucherzentrale (19.08.):
+  # Zeitdruck | Zwang | Hindernisse | Irrefuehrung
+  # -- Vorbelegung durch das Entwicklungsteam, bitte pruefen --
+  kategorie: "Zwang"
+
   status: FERTIG
   bearbeiter: "Kickoff-Workshop"
 

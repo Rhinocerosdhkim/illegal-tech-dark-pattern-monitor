@@ -11,6 +11,11 @@
 - id: DP-002
   name_de: "Fehlende oder unzureichende Button-Beschriftung bei kostenpflichtiger Bestellung"
 
+  # Kategorie nach dem Raster der Verbraucherzentrale (19.08.):
+  # Zeitdruck | Zwang | Hindernisse | Irrefuehrung
+  # -- Vorbelegung durch das Entwicklungsteam, bitte pruefen --
+  kategorie: "Irrefuehrung"
+
   status: FERTIG
   bearbeiter: "Kickoff-Workshop"
 

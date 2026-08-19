@@ -14,6 +14,11 @@
 - id: DP-004
   name_de: "Fehlender oder nicht unmittelbar erreichbarer Kuendigungsbutton"
 
+  # Kategorie nach dem Raster der Verbraucherzentrale (19.08.):
+  # Zeitdruck | Zwang | Hindernisse | Irrefuehrung
+  # -- Vorbelegung durch das Entwicklungsteam, bitte pruefen --
+  kategorie: "Hindernisse"
+
   status: ENTWURF
   bearbeiter: ""
 
