@@ -1,0 +1,105 @@
+# ============================================================
+# ENTWURF - bitte vervollstaendigen
+#
+# SCHWIERIGSTE REGEL. Bitte an die Person mit der groessten
+# Sicherheit im Lauterkeitsrecht.
+#
+# Wichtige Vorgabe: Diese Regel soll KEINE Stufe "eindeutig"
+# enthalten. Ob ein Text im Rechtssinne eine wesentliche
+# Information ist, kann eine Maschine nicht beurteilen - sie
+# erkennt nur Stichworte. Die Regel dient dazu, einer Juristin
+# oder einem Juristen Pruefkandidaten vorzulegen, nicht dazu,
+# selbst zu entscheiden.
+#
+# Genau diese Selbstbeschraenkung wollen wir in der Praesentation
+# als bewusste Entwurfsentscheidung darstellen.
+# ============================================================
+
+- id: DP-006
+  name_de: "Verdeckung wesentlicher Pflichtinformationen"
+
+  status: ENTWURF
+  bearbeiter: ""
+
+  applies_when:
+    - "is_b2c_offer == true"
+    - "required_info_found == true"
+
+  legal_basis:
+    # VORSCHLAG - Nummerierung nach der UWG-Reform 2022 bitte pruefen
+    - "§ 5a Abs. 1 UWG (Vorenthalten wesentlicher Informationen)"
+    - "§ 5a Abs. 2 UWG (Verheimlichen; unklare, unverstaendliche oder zweideutige Bereitstellung)"
+    - "§ 5b Abs. 1 UWG (Katalog wesentlicher Informationen bei Aufforderung zum Kauf)"
+    - "Art. 246a EGBGB i. V. m. § 312d BGB (Informationspflichten im Fernabsatz)"
+
+  tatbestand_de: >
+    AUSFUELLEN.
+    Besonders wichtig ist der Absatz, der das Vorenthalten dem Verheimlichen
+    und der unklaren oder zweideutigen Bereitstellung gleichstellt. Das ist
+    die Bruecke zu unseren Signalen: Schriftgroesse, Kontrast und Position
+    sind genau die Gestaltungsmittel, mit denen eine Information formal
+    vorhanden, praktisch aber nicht wahrnehmbar ist.
+    Bitte diesen Gedanken ausformulieren - er traegt die ganze Regel.
+
+  anspruchskette: >
+    AUSFUELLEN.
+
+  signals:
+    - required_info_found
+    - font_size_min_px
+    - text_contrast_min
+    - hidden_by_opacity_count
+    - scroll_depth_of_required_info_pct
+    - required_info_in_collapsed_element      # Status GELB
+    - aria_hidden_on_required_info            # Status GELB
+
+  verdict_rules:
+    # KEINE Stufe "eindeutig" - siehe Kopf der Datei.
+    verdaechtig:
+      - "hidden_by_opacity_count > ?"
+      - "font_size_min_px < ?"
+      - "text_contrast_min < ?"
+      - "scroll_depth_of_required_info_pct > ?"
+
+  threshold_source: >
+    AUSFUELLEN.
+    Anregung: Fuer Kontrast und Schriftgroesse liesse sich auf die
+    Barrierefreiheitsrichtlinien (WCAG) verweisen, die einen Mindestkontrast
+    von 4,5:1 fuer normalen Text vorsehen. Das ist zwar keine lauterkeits-
+    rechtliche Norm, aber ein anerkannter technischer Massstab fuer
+    Wahrnehmbarkeit. Bitte einschaetzen, ob wir uns darauf berufen koennen,
+    ohne angreifbar zu werden.
+
+  false_positive_risks:
+    - >
+      Groesstes Risiko: Das System erkennt Pflichtinformationen nur ueber
+      Stichworte. Ein Text, der "Widerruf" enthaelt, muss keine
+      Widerrufsbelehrung sein.
+    - >
+      Eingeklappte Bereiche sind nicht per se unzulaessig - sie sind
+      teilweise sogar gute Gestaltungspraxis. Unzulaessig ist erst die
+      faktische Unauffindbarkeit.
+    - >
+      Fusszeilen sind ueblich und werden von Verbrauchern dort erwartet.
+      Eine hohe Scrolltiefe allein duerfte kaum genuegen.
+    - AUSFUELLEN
+
+  explanation_template_de: >
+    AUSFUELLEN.
+    Wichtig: Der Text muss deutlich machen, dass es sich um einen
+    Pruefkandidaten handelt und die Einordnung eine menschliche
+    Bewertung erfordert.
+
+  offene_fragen:
+    - >
+      Welche Pflichtinformationen sollen wir ueberhaupt suchen? Bitte eine
+      Stichwortliste aus Art. 246a EGBGB ableiten - diese Liste ist das
+      eigentliche Arbeitsergebnis dieser Regel und wird vom Entwicklungsteam
+      unmittelbar umgesetzt.
+    - >
+      Ist der Verzicht auf die Stufe "eindeutig" juristisch begruendbar,
+      oder gibt es Konstellationen (etwa vollstaendig fehlende
+      Widerrufsbelehrung), in denen sie doch gerechtfertigt waere?
+    - AUSFUELLEN
+
+  disclaimer_required: true

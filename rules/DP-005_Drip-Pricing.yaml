@@ -1,0 +1,101 @@
+# ============================================================
+# ENTWURF - bitte vervollstaendigen
+#
+# Hinweis zur Machbarkeit: Diese Regel setzt voraus, dass wir bis
+# zum Bestellabschluss navigieren koennen. Das gelingt nicht auf
+# allen Seiten. Rechnet damit, dass wir in der Vorfuehrung teilweise
+# mit manuell erfassten Werten arbeiten.
+#
+# Juristisch interessant, weil hier drei Normebenen zusammentreffen.
+# Bitte die Anspruchskette besonders sorgfaeltig ausarbeiten.
+# ============================================================
+
+- id: DP-005
+  name_de: "Versteckte Kosten und nachtraegliche Preiserhoehung im Bestellvorgang"
+
+  status: ENTWURF
+  bearbeiter: ""
+
+  applies_when:
+    - "is_b2c_offer == true"
+    - "has_checkout_flow == true"
+
+  legal_basis:
+    # VORSCHLAG - ACHTUNG, Paragraphennummern bitte am aktuellen
+    # Gesetzestext pruefen. Die PAngV wurde 2022 neu gefasst, das UWG
+    # 2022 umnummeriert. Nummern aus aelteren Quellen sind haeufig falsch.
+    - "PAngV - Pflicht zur Angabe des Gesamtpreises (§ ? - bitte pruefen)"
+    - "§ 312j Abs. 2 BGB (Information unmittelbar vor Abgabe der Bestellung)"
+    - "§ 5a UWG (Irrefuehrung durch Unterlassen)"
+    - "§ 5b UWG (wesentliche Informationen bei Aufforderung zum Kauf)"
+    - "Anhang zu § 3 Abs. 3 UWG Nr. 20 (Werbung mit 'gratis' trotz Kosten)"
+
+  tatbestand_de: >
+    AUSFUELLEN.
+    Bitte klar herausarbeiten: Nicht das Entstehen zusaetzlicher Kosten ist
+    unzulaessig, sondern deren nicht rechtzeitige oder unklare Offenlegung.
+    Diese Unterscheidung ist fuer die Vermeidung von Fehlalarmen zentral.
+
+  anspruchskette: >
+    AUSFUELLEN - hier besonders wichtig.
+    Ein PAngV-Verstoss allein begruendet keinen Anspruch der
+    Verbraucherzentrale. Bitte den Weg ueber § 3a UWG (Rechtsbruch,
+    Marktverhaltensregel) zu § 8 Abs. 1, Abs. 3 Nr. 3 UWG darstellen,
+    einschliesslich des Merkmals der spuerbaren Interessenbeeintraechtigung.
+    Dieser Punkt zeigt in der Praesentation, dass wir die Durchsetzungs-
+    perspektive der Verbraucherzentrale verstanden haben.
+
+  signals:
+    - price_listed
+    - price_at_checkout                        # Status GELB
+    - price_delta                              # Status GELB
+    - price_delta_ratio                        # Status GELB
+    - shipping_cost_disclosed_on_product_page  # Status GELB
+    - preselected_paid_addon_count             # Status GELB
+    - gratis_claim_present
+
+  verdict_rules:
+    eindeutig:
+      # VORSCHLAG:
+      - "gratis_claim_present == true and price_at_checkout > 0"
+      - "preselected_paid_addon_count > 0"
+    verdaechtig:
+      # Ab welcher Abweichung wird es auffaellig? Absolut oder relativ?
+      - "price_delta_ratio > ?"
+      - "shipping_cost_disclosed_on_product_page == false and price_delta > ?"
+
+  threshold_source: >
+    AUSFUELLEN.
+    Die PAngV nennt keine Toleranzgrenze - jede nicht ausgewiesene
+    Preiskomponente ist zu beanstanden. Reicht das, um ganz auf einen
+    Schwellenwert zu verzichten? Oder braucht es einen Mindestbetrag,
+    um dem Merkmal der Spuerbarkeit gerecht zu werden?
+
+  false_positive_risks:
+    - >
+      Versandkosten sind zulaessig, wenn sie rechtzeitig und klar
+      ausgewiesen werden. Das Signal misst nur die Differenz, nicht die
+      Rechtzeitigkeit der Information. Bitte einordnen, welches zusaetzliche
+      Merkmal wir bruechten.
+    - >
+      Regional unterschiedliche Steuersaetze und Versandkosten.
+    - AUSFUELLEN
+
+  explanation_template_de: >
+    AUSFUELLEN.
+
+  offene_fragen:
+    - >
+      Aktuelle Paragraphennummern der PAngV - bitte am geltenden Text pruefen,
+      nicht aus Sekundaerquellen uebernehmen.
+    - >
+      Aktuelle Nummerierung § 5a / § 5b UWG nach der Reform 2022.
+    - >
+      Die PAngV enthaelt eine Regelung zu Preisermaessigungen (Angabe des
+      niedrigsten Preises der letzten 30 Tage). Diese passt technisch
+      hervorragend zu unserem Ansatz, weil wir Preise ueber die Zeit
+      verfolgen. Bitte pruefen, ob wir das als eigenes Muster DP-007
+      aufnehmen sollten - falls die Zeit reicht.
+    - AUSFUELLEN
+
+  disclaimer_required: true

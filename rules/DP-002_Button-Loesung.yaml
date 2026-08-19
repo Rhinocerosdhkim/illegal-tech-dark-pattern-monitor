@@ -1,0 +1,136 @@
+# ============================================================
+# MUSTERBEISPIEL – im Kickoff gemeinsam erarbeitet
+#
+# Diese Regel ist unser verlässlichstes Muster: Der EuGH hat
+# entschieden, dass allein die Beschriftung des Buttons maßgeblich
+# ist und die Begleitumstände außer Betracht bleiben. Damit ist
+# die Prüfung ein reiner Textabgleich - maschinell nahezu
+# fehlerfrei feststellbar.
+# ============================================================
+
+- id: DP-002
+  name_de: "Fehlende oder unzureichende Button-Beschriftung bei kostenpflichtiger Bestellung"
+
+  status: FERTIG
+  bearbeiter: "Kickoff-Workshop"
+
+  applies_when:
+    - "is_b2c_offer == true"
+    - "has_checkout_flow == true"
+    - "order_button_found == true"
+
+  legal_basis:
+    - "§ 312j Abs. 3 BGB (Beschriftung der Schaltfläche)"
+    - "§ 312j Abs. 4 BGB (Vertrag kommt nur bei Einhaltung zustande)"
+    - "§ 312i Abs. 1 BGB (Pflichten im elektronischen Geschäftsverkehr)"
+
+  tatbestand_de: >
+    Bei einem entgeltlichen Verbrauchervertrag im elektronischen Geschäftsverkehr
+    muss der Unternehmer die Bestellsituation so gestalten, dass der Verbraucher
+    mit der Bestellung ausdrücklich bestätigt, sich zu einer Zahlung zu verpflichten.
+    Erfolgt die Bestellung über eine Schaltfläche, muss diese gut lesbar mit nichts
+    anderem als "zahlungspflichtig bestellen" oder einer entsprechenden eindeutigen
+    Formulierung beschriftet sein. Wird diese Vorgabe nicht eingehalten, kommt der
+    Vertrag nach § 312j Abs. 4 BGB nicht zustande.
+
+  anspruchskette: >
+    § 312j Abs. 3 BGB ist Marktverhaltensregel i. S. d. § 3a UWG ->
+    Unterlassungsanspruch § 8 Abs. 1 UWG; Aktivlegitimation der
+    Verbraucherzentrale nach § 8 Abs. 3 Nr. 3 UWG.
+    Daneben individualvertraglich: § 312j Abs. 4 BGB - der Vertrag kommt
+    nicht zustande, gezahlte Beträge sind kondizierbar (§ 812 BGB).
+    Für die Verbraucherberatung ist die zweite Ebene praktisch besonders
+    relevant, weil sie dem einzelnen Verbraucher unmittelbar hilft.
+
+  signals:
+    - order_button_found
+    - order_button_label
+
+  verdict_rules:
+    eindeutig:
+      # Zulässige Formulierungen (Weißliste). Trifft keine davon zu,
+      # liegt ein Verstoß vor. Grundlage: EuGH, Urteil vom 07.04.2022,
+      # Rs. C-249/21 (Fuhrmann-2) - maßgeblich ist allein die Beschriftung
+      # der Schaltfläche, nicht die Begleitumstände des Bestellvorgangs.
+      - >
+        order_button_label not_in_whitelist [
+          "zahlungspflichtig bestellen",
+          "kostenpflichtig bestellen",
+          "zahlungspflichtigen Vertrag schließen",
+          "kaufen",
+          "jetzt kaufen"
+        ]
+
+    verdaechtig:
+      # Formulierungen, die in Rechtsprechung und Literatur umstritten sind.
+      # Nicht als eindeutiger Verstoß behandeln, aber zur Prüfung vorlegen.
+      - >
+        order_button_label in_greylist [
+          "jetzt bestellen",
+          "Bestellung abschließen",
+          "verbindlich bestellen",
+          "Buchung abschließen"
+        ]
+
+  threshold_source: >
+    EuGH, Urteil vom 07.04.2022, Rs. C-249/21 (Fuhrmann-2 GmbH):
+    Für die Beurteilung, ob die Beschriftung den Anforderungen genügt, ist
+    ausschließlich der auf der Schaltfläche verwendete Begriff maßgeblich;
+    die Begleitumstände des Bestellvorgangs bleiben außer Betracht.
+    Diese Entscheidung ist der Grund, warum die Prüfung hier rein
+    textbasiert erfolgen darf.
+
+    Die Weißliste enthält die gesetzliche Formulierung und in der Literatur
+    unstreitig anerkannte Entsprechungen. Die Grauliste enthält Formulierungen,
+    zu denen keine einheitliche Bewertung feststellbar ist.
+
+    OFFEN: "Buchung abschließen" war Gegenstand des Fuhrmann-2-Verfahrens.
+    Bitte prüfen, ob die Formulierung dort als unzureichend eingestuft wurde -
+    dann gehört sie in die Bewertung "eindeutig" statt in die Grauliste.
+
+  false_positive_risks:
+    - >
+      Unentgeltliche Angebote: § 312j Abs. 3 BGB gilt nur für entgeltliche
+      Verträge. Kostenlose Registrierungen dürfen nicht erfasst werden.
+      Abgesichert über "is_b2c_offer" und "has_checkout_flow"; die Erkennung
+      ist eine Heuristik und kann fehlgehen.
+    - >
+      Identifikation der richtigen Schaltfläche: Auf der Bestellseite gibt es
+      mehrere Buttons ("Zurück", "Gutschein einlösen"). Erfasst wird nur die
+      als Bestellabschluss erkannte Schaltfläche. Wird die falsche erkannt,
+      ist der Befund unbrauchbar - deshalb wird die Beschriftung im Wortlaut
+      und der Screenshot immer mitgeliefert.
+    - >
+      B2B-Angebote fallen nicht unter die Vorschrift.
+    - >
+      Beschriftung als Grafik statt als Text: Dann kann das Signal nicht
+      erhoben werden. In diesem Fall soll die Bewertung "unklar" lauten,
+      nicht "unauffällig".
+
+  explanation_template_de: >
+    Die Schaltfläche zum Abschluss der Bestellung trägt die Beschriftung
+    "{order_button_label}".
+
+    Nach § 312j Abs. 3 BGB muss diese Schaltfläche bei entgeltlichen
+    Verbraucherverträgen im elektronischen Geschäftsverkehr gut lesbar mit
+    nichts anderem als "zahlungspflichtig bestellen" oder einer entsprechenden
+    eindeutigen Formulierung beschriftet sein. Nach der Rechtsprechung des
+    Europäischen Gerichtshofs ist dabei allein die Beschriftung selbst
+    maßgeblich; die Begleitumstände des Bestellvorgangs bleiben außer Betracht.
+
+    Die festgestellte Beschriftung entspricht dieser Vorgabe nicht.
+    Rechtsfolge wäre nach § 312j Abs. 4 BGB, dass ein Vertrag nicht zustande kommt.
+
+  offene_fragen:
+    - >
+      Wie wurde "Buchung abschließen" in Rs. C-249/21 konkret bewertet?
+      Danach richtet sich die Einordnung in Weiß-, Grau- oder Schwarzliste.
+    - >
+      Sollten wir eine ausdrückliche Schwarzliste ergänzen ("Anmelden",
+      "Weiter", "Absenden", "Jetzt starten")? Vorteil: klarere Begründung
+      im Bericht. Nachteil: Weißlistenprüfung erfasst diese Fälle bereits.
+    - >
+      Wie behandeln wir mehrsprachige Seiten mit englischer Beschriftung
+      ("Buy now") bei deutschsprachigem Angebot?
+
+  disclaimer_required: true

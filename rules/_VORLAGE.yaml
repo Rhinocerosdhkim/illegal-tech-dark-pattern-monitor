@@ -1,0 +1,126 @@
+# ============================================================
+# VORLAGE – bitte kopieren, nicht überschreiben
+# ============================================================
+# Alles nach einem # ist Kommentar und wird vom System ignoriert.
+# Die Erklärungen dürfen stehen bleiben.
+# ============================================================
+
+- id: DP-00X
+  name_de: "Kurzer, sprechender Titel des Musters"
+
+  # ----------------------------------------------------------
+  # ORGANISATION
+  # ----------------------------------------------------------
+  status: ENTWURF          # ENTWURF | IN_ARBEIT | REVIEW | FERTIG
+  bearbeiter: ""           # Name
+
+  # ----------------------------------------------------------
+  # ANWENDBARKEIT
+  # ----------------------------------------------------------
+  # Wann greift diese Regel überhaupt? Sind diese Bedingungen
+  # nicht erfüllt, wird die Regel gar nicht erst geprüft.
+  #
+  # Das ist unser wichtigster Schutz gegen Fehlalarme: § 312k BGB
+  # etwa gilt nur bei Dauerschuldverhältnissen – ein einfacher
+  # Onlineshop darf hier nicht auffällig werden.
+  #
+  # Nur Signale aus _SIGNALE.md, Abschnitt "Kontext".
+  applies_when:
+    - "is_b2c_offer == true"
+    # - "has_recurring_contract_keywords == true"
+
+  # ----------------------------------------------------------
+  # RECHTLICHE GRUNDLAGE
+  # ----------------------------------------------------------
+  # So präzise wie möglich: Norm, Absatz, Satz, Nummer.
+  legal_basis:
+    - ""
+    - ""
+
+  # Ein bis zwei Sätze in verständlicher Sprache: Was verlangt
+  # die Norm? Dieser Text erscheint im Bericht und wird von
+  # Nichtjuristen gelesen.
+  tatbestand_de: >
+    
+
+  # Über welchen Weg wird daraus ein durchsetzbarer Anspruch?
+  # Das ist entscheidend für die Nutzbarkeit: Eine Verbraucher-
+  # zentrale kann z. B. aus einem PAngV-Verstoß allein nichts
+  # herleiten – erst über § 3a UWG entsteht der Anspruch aus § 8 UWG.
+  #
+  # Beispiel:
+  #   "PAngV (Marktverhaltensregel) -> § 3a UWG ->
+  #    Unterlassungsanspruch § 8 Abs. 1 UWG,
+  #    Aktivlegitimation § 8 Abs. 3 Nr. 3 UWG"
+  anspruchskette: >
+    
+
+  # ----------------------------------------------------------
+  # SIGNALE
+  # ----------------------------------------------------------
+  # AUSSCHLIESSLICH Einträge aus _SIGNALE.md.
+  # Nur die, die ihr unten in verdict_rules auch verwendet.
+  signals:
+    - 
+
+  # ----------------------------------------------------------
+  # BEWERTUNGSREGELN
+  # ----------------------------------------------------------
+  # Bedingungen als Ausdrücke: > < >= <= == !=
+  # Innerhalb einer Stufe gilt ODER: eine erfüllte Bedingung genügt.
+  # Sollen mehrere Bedingungen zusammen gelten (UND), schreibt
+  # sie in eine Zeile mit "and".
+  #
+  # eindeutig    -> kaum bestreitbar, kein Wertungsspielraum
+  # verdaechtig  -> belastbarer Anhaltspunkt, Auslegung möglich
+  #
+  # "unklar" müsst ihr nicht angeben – das vergibt das System
+  # automatisch, wenn ein benötigtes Signal nicht erhoben werden
+  # konnte. Trifft nichts zu: "unauffällig".
+  verdict_rules:
+    eindeutig:
+      - ""
+    verdaechtig:
+      - ""
+
+  # Woher kommen die Zahlen oben?
+  # Rechtsprechung, Leitlinien, Literatur – oder ehrlich:
+  # "Eigene Festlegung des Teams." Das ist zulässig und wird
+  # in der Präsentation offengelegt. Erfundene Fundstellen
+  # sind das Einzige, was uns wirklich schadet.
+  threshold_source: >
+    
+
+  # ----------------------------------------------------------
+  # FEHLALARME
+  # ----------------------------------------------------------
+  # In welchen Fällen könnte diese Regel anschlagen, obwohl
+  # alles rechtmäßig ist? Je vollständiger diese Liste, desto
+  # besser können wir gegensteuern – und desto überzeugender
+  # ist unsere Präsentation.
+  false_positive_risks:
+    - ""
+
+  # ----------------------------------------------------------
+  # BERICHTSTEXT
+  # ----------------------------------------------------------
+  # Erscheint wörtlich im Beweisbericht. Platzhalter in
+  # geschweiften Klammern werden durch die gemessenen Werte ersetzt.
+  #
+  # Sachlich formulieren, keine Feststellung eines Verstoßes,
+  # sondern Beschreibung des Befundes und seiner rechtlichen
+  # Einordnung.
+  explanation_template_de: >
+    
+
+  # ----------------------------------------------------------
+  # OFFENE FRAGEN
+  # ----------------------------------------------------------
+  # Alles, was ihr nicht abschließend klären konntet.
+  # Diese Liste ist wertvoll – sie wird zur Grundlage unserer
+  # Antworten in der Fragerunde. Bitte nichts weglassen,
+  # nur weil es unfertig wirkt.
+  offene_fragen:
+    - ""
+
+  disclaimer_required: true

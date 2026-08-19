@@ -1,0 +1,97 @@
+# ============================================================
+# ENTWURF - bitte vervollständigen
+#
+# Kernidee dieser Regel: Ein Countdown ist nicht per se unzulässig.
+# Unlauter ist die UNWAHRE Behauptung zeitlicher Begrenzung.
+# Den Nachweis der Unwahrheit führen wir technisch, indem wir die
+# Seite nach Löschen aller Browserdaten erneut aufrufen und prüfen,
+# ob der Countdown auf denselben Startwert zurückspringt.
+#
+# Das ist unser stärkstes Argument für Automatisierung: Ein Mensch
+# müsste diese Prüfung für jede Seite einzeln wiederholen.
+# ============================================================
+
+- id: DP-003
+  name_de: "Vorgetäuschte zeitliche Begrenzung und Knappheit"
+
+  status: ENTWURF
+  bearbeiter: ""
+
+  applies_when:
+    - "is_b2c_offer == true"
+
+  legal_basis:
+    # VORSCHLAG - bitte prüfen und ergänzen
+    - "Anhang zu § 3 Abs. 3 UWG Nr. 7 (unwahre Angabe zeitlicher Begrenzung)"
+    - "Anhang zu § 3 Abs. 3 UWG Nr. 5 (Lockangebote) - passt das hier?"
+    - "§ 5 Abs. 1, Abs. 2 UWG (irreführende geschäftliche Handlung)"
+    # - "§ 5a UWG - relevant?"
+
+  tatbestand_de: >
+    AUSFUELLEN.
+    Hinweis: Bitte den Wortlaut der Nr. 7 des Anhangs genau wiedergeben,
+    insbesondere das Merkmal der Unwahrheit und den Zweck, den Verbraucher
+    um eine ausreichende Entscheidungsgrundlage zu bringen.
+
+  anspruchskette: >
+    AUSFUELLEN.
+    Hinweis: Anhang zu § 3 Abs. 3 UWG wirkt unmittelbar - anders als bei
+    DP-005 ist kein Umweg ueber § 3a UWG noetig. Bitte kurz begruenden,
+    warum bei Tatbestaenden der Schwarzen Liste keine Spuerbarkeitspruefung
+    stattfindet. Dieser Punkt ist fuer unsere Praesentation wichtig, weil er
+    erklaert, warum gerade hier die Stufe "eindeutig" gerechtfertigt ist.
+
+  signals:
+    - countdown_element_present
+    - countdown_resets_on_revisit
+    - countdown_text
+    - scarcity_text_present
+    - scarcity_value
+    - scarcity_value_unchanged_scans   # Status GELB - erst ab Freitag
+
+  verdict_rules:
+    eindeutig:
+      # VORSCHLAG des Entwicklungsteams - bitte pruefen:
+      - "countdown_element_present == true and countdown_resets_on_revisit == true"
+    verdaechtig:
+      # VORSCHLAG - ab wie vielen unveraenderten Scans wird es auffaellig?
+      - "scarcity_text_present == true and scarcity_value_unchanged_scans >= ?"
+
+  threshold_source: >
+    AUSFUELLEN.
+    Beim Countdown duerfte keine Zahl noetig sein - das Zuruecksetzen ist
+    ein Ja/Nein-Befund. Bitte bestaetigen.
+    Bei der Knappheit: Wie viele Scans ohne Aenderung rechtfertigen einen
+    Verdacht? Gibt es dazu etwas in Rechtsprechung oder Literatur, oder
+    ist das eine eigene Festlegung?
+
+  false_positive_risks:
+    # Vom Entwicklungsteam vorbereitet - bitte ergaenzen und rechtlich einordnen
+    - >
+      Nutzerbezogene Aktionen ("24 Stunden ab Registrierung") setzen bei
+      geloeschten Browserdaten zulaessigerweise neu an. Gegenmassnahme:
+      Erfassung nur im nicht angemeldeten Zustand.
+    - >
+      Taegliche Versandschlusszeiten ("Heute bis 15:00 bestellt, morgen
+      geliefert") setzen sich taeglich zurueck und sind zutreffend.
+      Bitte pruefen: Reicht eine Stichwortunterscheidung aus, oder braucht
+      es ein zusaetzliches Merkmal?
+    - AUSFUELLEN - weitere Faelle?
+
+  explanation_template_de: >
+    AUSFUELLEN.
+    Bitte die Platzhalter {countdown_text}, {countdown_resets_on_revisit},
+    {scarcity_value} verwenden. Der Text sollte deutlich machen, dass der
+    Befund auf einer wiederholten Messung beruht - das ist der Kern
+    unserer Beweisfuehrung.
+
+  offene_fragen:
+    - >
+      Genuegt das einmalige Zuruecksetzen als Nachweis der Unwahrheit,
+      oder sollten wir mehrere Wiederholungen verlangen?
+    - >
+      Faellt "17 Personen sehen sich das gerade an" unter Nr. 7 oder eher
+      unter § 5 UWG? Sollten wir es ueberhaupt aufnehmen?
+    - AUSFUELLEN
+
+  disclaimer_required: true

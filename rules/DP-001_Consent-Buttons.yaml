@@ -1,0 +1,122 @@
+# ============================================================
+# MUSTERBEISPIEL – im Kickoff gemeinsam erarbeitet
+# Bitte als Vorlage für den eigenen Stil lesen.
+# ============================================================
+
+- id: DP-001
+  name_de: "Ungleiche Gestaltung der Consent-Buttons"
+
+  status: FERTIG
+  bearbeiter: "Kickoff-Workshop"
+
+  applies_when:
+    - "banner_detected == true"
+
+  legal_basis:
+    - "§ 25 Abs. 1 TDDDG (Einwilligung für Zugriff auf Endeinrichtungen)"
+    - "Art. 4 Nr. 11 DSGVO (Begriff der Einwilligung)"
+    - "Art. 7 Abs. 4 DSGVO (Freiwilligkeit)"
+    - "ErwG 32 DSGVO (keine Einwilligung durch vorangekreuzte Kästchen)"
+    - "ErwG 42 DSGVO (echte Wahlmöglichkeit, Ablehnung ohne Nachteil)"
+
+  tatbestand_de: >
+    Der Zugriff auf Informationen in der Endeinrichtung des Nutzers setzt eine
+    Einwilligung voraus, die den Anforderungen der DSGVO genügt. Eine Einwilligung
+    ist nur wirksam, wenn sie freiwillig erteilt wird. Freiwilligkeit setzt eine
+    echte Wahlmöglichkeit voraus; die Ablehnung darf nicht spürbar erschwert sein.
+    Vorangekreuzte Kästchen und bloße Untätigkeit stellen keine Einwilligung dar.
+
+  anspruchskette: >
+    Verstoß gegen § 25 TDDDG / Art. 7 DSGVO -> zugleich Marktverhaltensregel
+    i. S. d. § 3a UWG (str., aber überwiegend bejaht) -> Unterlassungsanspruch
+    § 8 Abs. 1 UWG; Aktivlegitimation der Verbraucherzentrale nach
+    § 8 Abs. 3 Nr. 3 UWG bzw. § 2 UKlaG. Ergänzend: Verbandsklagebefugnis bei
+    DSGVO-Verstößen bestätigt durch EuGH, Rs. C-319/20 (Meta Platforms Ireland).
+
+  signals:
+    - banner_detected
+    - accept_button_area_px2
+    - reject_button_area_px2
+    - reject_button_present
+    - reject_click_depth
+    - accept_contrast_ratio
+    - reject_contrast_ratio
+    - preselected_checkbox_count
+    - third_party_cookies_before_consent
+
+  verdict_rules:
+    eindeutig:
+      # Vorangekreuzte Einwilligungen - unmittelbar von ErwG 32 erfasst,
+      # bestätigt durch EuGH Planet49 (C-673/17) und BGH I ZR 7/16.
+      - "preselected_checkbox_count > 0"
+      # Tracking vor jeder Interaktion. Unabhängig von der Gestaltung:
+      # es liegt schon keine Einwilligung vor.
+      - "third_party_cookies_before_consent > 0"
+      # Keine Ablehnmöglichkeit auf erster Ebene = keine echte Wahl.
+      - "reject_button_present == false"
+
+    verdaechtig:
+      # Ablehnung erfordert zusätzliche Schritte, Zustimmung nicht.
+      - "reject_click_depth > 1"
+      # Deutlicher Größenunterschied.
+      - "accept_button_area_px2 / reject_button_area_px2 > 2.0"
+      # Visuelle Zurücksetzung der Ablehnung.
+      - "accept_contrast_ratio - reject_contrast_ratio > 3.0"
+
+  threshold_source: >
+    Zu "preselected_checkbox_count" und "third_party_cookies_before_consent":
+    ErwG 32 DSGVO ausdrücklich; EuGH Planet49 (C-673/17); BGH Cookie-Einwilligung II
+    (I ZR 7/16). Insoweit keine eigene Festlegung erforderlich.
+
+    Zu den Werten 2.0 (Flächenverhältnis) und 3.0 (Kontrastdifferenz):
+    Keine bezifferte Rechtsprechungsgrundlage ersichtlich. Eigene Festlegung des
+    Teams, orientiert an EDPB Guidelines 03/2022 on Deceptive Design Patterns,
+    die ungleiche Hervorhebung von Auswahlmöglichkeiten als problematisch
+    einordnen, ohne Zahlenwerte zu nennen. Faktor 2,0 bewusst konservativ
+    gewählt: geringere Unterschiede sollen keinen Befund auslösen.
+    Der Kontrastwert folgt der WCAG-Skala (1 bis 21).
+
+  false_positive_risks:
+    - >
+      Responsive Gestaltung: Bei schmalem Fenster stehen Buttons untereinander
+      und haben andere Flächenverhältnisse. Gegenmaßnahme: feste Fenstergröße
+      bei der Erfassung, Dokumentation im Bericht.
+    - >
+      "Einstellungen" ist nicht immer ein Ablehnen-Button. Führt der Weg dort
+      zu einer echten Ablehnung mit einem weiteren Klick, ist die Bewertung
+      milder anzusetzen als bei drei Ebenen.
+    - >
+      Technisch notwendige Cookies dürfen ohne Einwilligung gesetzt werden
+      (§ 25 Abs. 2 TDDDG). Das Signal zählt nur Drittanbieter-Cookies, dennoch
+      sind Einzelfälle denkbar (z. B. externes CDN). Bei genau einem Cookie
+      sollte manuell geprüft werden.
+    - >
+      Consent Management Plattformen liefern je nach Region unterschiedliche
+      Banner aus. Der Erfassungsort wird im Bericht mitgeführt.
+
+  explanation_template_de: >
+    Auf der untersuchten Seite wurde ein Einwilligungsbanner festgestellt.
+    Der Zustimmen-Button umfasst {accept_button_area_px2} px², der
+    Ablehnen-Button {reject_button_area_px2} px². Die vollständige Ablehnung
+    erfordert {reject_click_depth} Interaktionsschritte, die Zustimmung einen.
+    Vorausgewählte Auswahlfelder: {preselected_checkbox_count}.
+    Vor jeder Interaktion wurden {third_party_cookies_before_consent}
+    Drittanbieter-Cookies gesetzt.
+
+    Diese Gestaltung wirft die Frage auf, ob die Einwilligung im Sinne des
+    Art. 4 Nr. 11 i. V. m. Art. 7 Abs. 4 DSGVO freiwillig erteilt wurde.
+
+  offene_fragen:
+    - >
+      Ist § 25 TDDDG als Marktverhaltensregel i. S. d. § 3a UWG anerkannt?
+      Zum Meinungsstand bitte kurz recherchieren - das ist für die
+      Aktivlegitimation der Verbraucherzentrale entscheidend.
+    - >
+      Sollte "banner_reappears_on_reject" (nagging) als weitere Bedingung
+      aufgenommen werden, sobald das Signal verfügbar ist?
+    - >
+      Behandlung von Bannern, die ausschließlich "Akzeptieren" und
+      "Mehr Informationen" anbieten - eigener Fall oder von
+      reject_button_present erfasst?
+
+  disclaimer_required: true
