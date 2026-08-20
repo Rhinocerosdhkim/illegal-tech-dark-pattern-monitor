@@ -21,6 +21,7 @@ Wir bauen **keinen KI-Richter**, sondern ein **Beweiserhebungs- und Strukturieru
 > 🔧 **[`docs/AGENDA_Technik.md`](docs/AGENDA_Technik.md)** — Agenda des Technik-Kickoffs (englisch).
 > 🏗️ **[`docs/PRODUKT_Architektur.md`](docs/PRODUKT_Architektur.md)** — wie das Produkt abläuft: Verarbeitungskette, Oberfläche, **wo KI eingesetzt wird und wo nicht**, Baureihenfolge.
 > 👥 **[`docs/ARBEITSTEILUNG_Technik.md`](docs/ARBEITSTEILUNG_Technik.md)** — Aufgabenteilung Donghyun/Karthik: wer welches Verzeichnis besitzt, Grenzen, Übergabevertrag (englisch).
+> ⚖️ **[`docs/BEFUNDSTUFEN.md`](docs/BEFUNDSTUFEN.md)** — **der Maßstab.** Wann trägt eine Bedingung `eindeutig`, wann nur `verdächtig`? Vier Tests, der Fünf-Seiten-Test, die fünf Fehlermuster. Verbindlich für jede Regel.
 
 ---
 
@@ -80,6 +81,7 @@ docs/
   briefing/               Projektbriefing DE + EN
   STRATEGIE.md            Marktlücke, Produktentscheidungen, Tagesplan
   PRODUKT_Architektur.md  Ablauf des Produkts, Oberfläche, KI-Einsatz, Baureihenfolge
+  BEFUNDSTUFEN.md         Maßstab für die Befundstufen — verbindlich fürs Regelwerk
   ARBEITSTEILUNG_Technik.md  Aufgabenteilung im Entwicklungsteam
   DECISIONS.md            Entscheidungslog — jede Entscheidung mit Datum und Begründung
   IDEAS.md                Ideenliste / future work
