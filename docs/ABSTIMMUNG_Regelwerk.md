@@ -42,36 +42,67 @@ Vorschlag: drei Körbe.
 
 Der letzte Punkt ist die gute Nachricht: Drei der aufwendigsten Wünsche sind durch die gestrige Architekturänderung **bereits erfüllt**.
 
-### Korb C — rechtliche Bewertung, maschinell **nicht** feststellbar
+### Korb C — rechtliche Schlussfolgerungen, die als Signal auftreten
 
-| Signal | Warum es kein Signal sein kann |
+**Wichtige Korrektur gegenüber der ersten Fassung dieses Dokuments:** Diese Merkmale sind ganz überwiegend **nicht unmessbar** — sie sind **falsch benannt**.
+
+`is_dauerschuldverhaeltnis` verlangt vom System eine rechtliche Qualifikation. Die kann es nicht leisten. Die **Tatsachen**, auf die sich diese Qualifikation stützt, sind dagegen sämtlich beobachtbar:
+
+| beobachtbare Tatsache | Signal |
 |---|---|
-| `is_dauerschuldverhaeltnis` | Vertragstypbestimmung |
-| `is_consumer_contract` | Vertragstypbestimmung |
-| `contract_concludable_on_website` | Auslegung des Angebots |
-| `is_electronic_business_transaction` | rechtliche Einordnung |
-| `entrepreneur_owes_paid_performance` | rechtliche Einordnung |
-| `stricter_form_required`, `is_financial_services` | Normanwendung |
-| `costs_are_unavoidable_delivery_or_offer_costs` | Ausnahme des Anhangs Nr. 20 — Wertung |
-| `required_total_price_can_be_calculated`, `shipping_cost_can_be_calculated_in_advance` | „vernünftigerweise im Voraus berechenbar" ist ein Rechtsbegriff |
-| `kuendigungsbutton_label_is_not_clearly_equivalent` | „entsprechend eindeutige Formulierung" ist Auslegung |
-| `button_is_clearly_legible` | „gut lesbar" ist Wertung — messbar wären nur Schriftgröße und Kontrast als Indizien |
+| Preis mit Periodenangabe („9,99 €/Monat") | `recurring_price_notation_present` |
+| „Mindestlaufzeit", „Vertragslaufzeit 12 Monate" | `min_contract_term_stated` |
+| „jederzeit kündbar", Kündigungsfrist genannt | `cancellation_terms_present` |
 
-**Zur Entscheidung — zwei Wege:**
+Aus diesen Tatsachen die Qualifikation abzuleiten, ist dann Aufgabe der **Regel** — also des juristischen Teams. Genau dafür ist das Regelwerk da: Das System misst, die Regel subsumiert.
 
-**Weg 1 (einfach):** Diese Merkmale entfallen aus `applies_when` und `verdict_rules`. Fehlt ein solches Merkmal, kann die Regel höchstens `verdaechtig` werden.
+**Bitte deshalb alle Signalnamen so umbenennen, dass sie eine Tatsache bezeichnen, keine Rechtsfolge.**
 
-**Weg 2 (besser, Vorschlag des Entwicklungsteams):** Wir führen ein neues Feld ein:
+| Merkmal | automatisierbar? | wie |
+|---|---|---|
+| `is_financial_services` | ✅ leicht | BaFin-Hinweis im Impressum, Stichworte `Versicherung`, `Kredit`, `Depot` |
+| `contract_concludable_on_website` | ✅ **vorhanden** | `has_checkout_flow` + `order_button_found` |
+| `is_electronic_business_transaction` | ✅ **vorhanden** | dieselbe Tatsache wie oben |
+| `is_consumer_contract` | ✅ **vorhanden** | `is_b2c_offer` |
+| `entrepreneur_owes_paid_performance` | ✅ leicht | Preis vorhanden + zahlungspflichtige Schaltfläche |
+| `is_dauerschuldverhaeltnis` | ⚠️ **umbenennen** | in die drei Tatsachensignale oben zerlegen |
+| `button_is_clearly_legible` | ⚠️ nur als Indiz | Schriftgröße und Kontrast sind **vorhanden**; „gut lesbar" bleibt Wertung |
+| `costs_are_unavoidable_delivery_or_offer_costs` | ⚠️ teilweise | Existiert eine kostenlose Abholoption, sind die Lieferkosten vermeidbar — das ist beobachtbar |
+| `shipping_cost_can_be_calculated_in_advance` | ⚠️ teuer | erfordert Navigation bis zur Adresseingabe → gemeinsam mit DP-005b zurückstellen |
+| `kuendigungsbutton_label_is_not_clearly_equivalent` | ⚠️ dreiteilig | Positivliste → unauffällig · Negativliste → auffällig · Rest → menschliche Prüfung |
+| `stricter_form_required` | ❌ | erfordert Kenntnis des konkreten Vertragstyps |
+| „spürbare Beeinträchtigung" (§ 3a UWG) | ❌ | reine Wertung |
+
+**Zwei von zwölf** bleiben also tatsächlich beim Menschen, nicht zwölf von zwölf.
+
+### Die Einschränkung, die dabei zwingend gilt
+
+Alle diese Merkmale stehen in `applies_when` — sie entscheiden, **ob eine Regel überhaupt greift**. Ein Fehler hier trifft einen Shop, der gar nicht in den Anwendungsbereich fällt. Das ist die schädlichste Art von Fehlalarm und genau der Weg, auf dem wir selbst angreifbar werden (§ 4 Nr. 1, Nr. 2 UWG).
+
+> **Vorgeschlagene Regel: Stützt sich `applies_when` auf eine Ableitung aus Tatsachensignalen, darf die Regel höchstens `verdaechtig` erreichen.**
+
+Für `eindeutig` muss die Anwendbarkeit **festgestellt**, nicht **abgeleitet** sein — und das heißt bis auf Weiteres: von einem Menschen bestätigt. Das ist keine Schwäche des Systems, sondern der Grund, warum unsere Befunde tragen.
+
+### Und für die verbleibenden zwei: das Feld `menschliche_pruefung`
 
 ```yaml
   menschliche_pruefung:
-    - "Liegt ein Dauerschuldverhältnis vor?"
-    - "Ist der Vertrag auf der Website abschließbar?"
+    - "Ist für diesen Vertragstyp eine strengere Form vorgeschrieben?"
+    - "Ist die Beeinträchtigung im Sinne des § 3a UWG spürbar?"
 ```
 
-Die Beweisakte druckt diese Punkte als **Prüfliste für die Juristin** unter den Befund. Das Werkzeug sagt dann: „Technisch festgestellt: A, B, C. Rechtlich noch zu prüfen: X, Y." Das ist ehrlicher als jede Schätzung — und es ist genau das, was eine Beweisakte leisten soll. Aufwand: rund zwei Stunden.
+Die Beweisakte druckt diese Punkte als **Prüfliste für die Juristin** unter den Befund: „Technisch festgestellt: A, B, C. Rechtlich noch zu prüfen: X, Y." Aufwand rund zwei Stunden.
 
-> **Empfehlung: Weg 2.** In der Präsentation ist das ein starker Punkt: Wir behaupten nicht, Recht anzuwenden, sondern bereiten die Anwendung vor.
+In der Präsentation ist das ein starker Punkt: Wir behaupten nicht, Recht anzuwenden, sondern bereiten die Anwendung vor.
+
+### Was davon bis Montag gebaut wird
+
+| | Aufwand |
+|---|---|
+| die fünf ✅-Merkmale | halber Tag, drei davon existieren schon |
+| Zerlegung `is_dauerschuldverhaeltnis` in drei Tatsachensignale | wenige Stunden |
+| Positiv-/Negativliste für die Kündigungsbutton-Beschriftung | 30 Minuten, sobald das juristische Team die Listen liefert |
+| `shipping_cost_can_be_calculated_in_advance` | **zurückgestellt** mit DP-005b |
 
 ---
 
