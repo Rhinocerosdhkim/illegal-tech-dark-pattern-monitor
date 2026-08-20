@@ -3,6 +3,7 @@
     python -m dpm assess data/fixtures/viagogo     findings table
     python -m dpm report data/fixtures/viagogo     Beweisakte as HTML and PDF
     python -m dpm overview data/fixtures/*         Marktuebersicht over many sites
+    python -m dpm timeline <earlier> <later>       Zeitachse: two captures compared
 
 Design constraint from AGENDA_Technik.md §6: on Monday a person without a
 development background has to operate this alone.
@@ -22,6 +23,7 @@ from dpm.engine.run import load_run
 from dpm.engine.verdict import (CLEAR, NOT_APPLICABLE, NO_FINDING, SUSPECTED,
                                 UNRESOLVED, assess)
 from dpm.report.case_file import build as build_case_file
+from dpm.report.diff import build as build_timeline, compare
 from dpm.report.overview import build as build_overview, collect
 
 LABEL = {CLEAR: "eindeutig", SUSPECTED: "verdaechtig", UNRESOLVED: "unklar",
@@ -106,6 +108,31 @@ def cmd_overview(arguments) -> int:
     return 0
 
 
+def cmd_timeline(arguments) -> int:
+    timeline = compare(arguments.earlier, arguments.later,
+                       load_rules(arguments.rules))
+    result = build_timeline(timeline, output=arguments.output)
+
+    print(f"\nZeitachse {timeline.later.target} — {timeline.days_between}")
+    for warning in timeline.warnings:
+        print(f"  ! {warning}")
+
+    if not timeline.noteworthy:
+        print("\n  Keine Veraenderung an den Befunden.")
+    for change in timeline.noteworthy:
+        print(f"\n  {change.rule_id}  {LABEL[change.before_level]} -> "
+              f"{LABEL[change.after_level]}   [{change.kind}]")
+        print(f"    {change.rule_name[:66]}")
+        if change.note:
+            print(f"    {change.note[:120]}")
+
+    changed = [s for s in timeline.signal_changes if s.kind == "geaendert"]
+    print(f"\n  {len(changed)} Messwerte geaendert, "
+          f"{sum(1 for s in timeline.step_changes if s.changed)} Seitenzustaende")
+    print(f"  {result['html']}\n")
+    return 0
+
+
 def _warnings(run) -> None:
     for warning in run.warnings:
         print(f"  ! {warning}")
@@ -134,6 +161,14 @@ def main(argv=None) -> int:
     over.add_argument("--rules", type=Path, default=None)
     over.add_argument("--output", type=Path, default=Path("out"))
     over.set_defaults(function=cmd_overview)
+
+    tl = commands.add_parser("timeline",
+                             help="compare two captures of the same site")
+    tl.add_argument("earlier", type=Path, help="the earlier capture run")
+    tl.add_argument("later", type=Path, help="the later capture run")
+    tl.add_argument("--rules", type=Path, default=None)
+    tl.add_argument("--output", type=Path, default=Path("out"))
+    tl.set_defaults(function=cmd_timeline)
 
     arguments = parser.parse_args(argv)
 

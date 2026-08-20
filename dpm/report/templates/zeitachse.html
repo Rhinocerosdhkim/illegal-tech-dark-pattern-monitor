@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>{{ produkt }} — Zeitachse {{ zeitachse.later.target }}</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font: 11pt/1.55 "Helvetica Neue", Arial, sans-serif; color: #16181d;
+         margin: 0; padding: 8mm 6mm 20mm; }
+  .wrap { max-width: 1060px; margin: 0 auto; }
+  h1 { font-size: 21pt; margin: 0 0 1mm; letter-spacing: -.3pt; }
+  h2 { font-size: 12pt; margin: 9mm 0 3mm; padding-bottom: 1.5mm;
+       border-bottom: 1.4pt solid #16181d; }
+  p { margin: 0 0 2.5mm; }
+  .marke { font-size: 8pt; letter-spacing: 1.6pt; text-transform: uppercase; color: #6b7280; }
+  .kopf { border-bottom: 2.4pt solid #16181d; padding-bottom: 4mm; margin-bottom: 4mm; }
+  .unterzeile { color: #4b5563; font-size: 9.5pt; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 4mm; }
+  th, td { text-align: left; vertical-align: top; padding: 2mm 2.5mm;
+           border-bottom: .5pt solid #d5d8de; font-size: 9pt; }
+  th { background: #f2f3f5; font-size: 7.6pt; text-transform: uppercase;
+       letter-spacing: .5pt; color: #4b5563; border-bottom: 1pt solid #b9bec7; }
+  .mono { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 8.4pt;
+          word-break: break-word; }
+  .marke2 { display: inline-block; padding: .5mm 2mm; border-radius: 1mm;
+            font-size: 7.6pt; font-weight: 700; text-transform: uppercase;
+            letter-spacing: .4pt; border: .8pt solid; white-space: nowrap; }
+  .neu               { color: #7f1d1d; border-color: #7f1d1d; background: #fdf0f0; }
+  .behoben           { color: #14532d; border-color: #14532d; background: #eff6ef; }
+  .verschaerft       { color: #7f1d1d; border-color: #7f1d1d; background: #fdf0f0; }
+  .entschaerft       { color: #14532d; border-color: #14532d; background: #eff6ef; }
+  .grund_geaendert   { color: #7c4a03; border-color: #7c4a03; background: #fdf6e8; }
+  .messlage          { color: #374151; border-color: #9ca3af; background: #f3f4f6; }
+  .unveraendert      { color: #6b7280; border-color: #d5d8de; background: #fafbfc; }
+  .pfeil { color: #6b7280; padding: 0 1.5mm; }
+  .aenderung { border: .8pt solid #b9bec7; padding: 3mm; margin-bottom: 3mm; }
+  .aenderung.wichtig { border-left: 3pt solid #7f1d1d; }
+  .aenderung.gut     { border-left: 3pt solid #14532d; }
+  .aenderung.achtung { border-left: 3pt solid #7c4a03; }
+  .aenderung h3 { font-size: 10.5pt; margin: 0 0 2mm;
+                  display: flex; justify-content: space-between; gap: 4mm; }
+  .label { font-size: 7.4pt; text-transform: uppercase; letter-spacing: .6pt;
+           color: #6b7280; margin: 2.5mm 0 .8mm; }
+  .kasten { border: .8pt solid #b45309; background: #fdf6e8; padding: 3mm; margin: 3mm 0; }
+  .ruhig { color: #4b5563; font-size: 9.5pt; }
+  .fuss { margin-top: 10mm; padding-top: 3mm; border-top: 1pt solid #b9bec7;
+          font-size: 8.5pt; color: #4b5563; }
+  del { color: #7f1d1d; text-decoration-thickness: 1pt; }
+  ins { color: #14532d; text-decoration: none; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="kopf">
+  <div class="marke">{{ produkt }} · Zeitachse</div>
+  <h1>{{ zeitachse.later.target }}</h1>
+  <div class="unterzeile">
+    {{ zeitachse.later.industry }} · zwei Erfassungen im Vergleich<br>
+    <span class="mono">{{ zeitachse.days_between }}</span> ·
+    Vorgänge <span class="mono">{{ zeitachse.earlier.run_id }}</span> und
+    <span class="mono">{{ zeitachse.later.run_id }}</span>
+  </div>
+</div>
+
+{% if warnungen %}
+<div class="kasten">
+  <strong>Anmerkungen zum Vergleich</strong>
+  <ul>{% for w in warnungen %}<li>{{ w }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+<h2>Veränderungen</h2>
+
+{% if bemerkenswert %}
+{% for a in bemerkenswert %}
+<div class="aenderung {{ {'neu':'wichtig','verschaerft':'wichtig','behoben':'gut','entschaerft':'gut','grund_geaendert':'achtung'}.get(a.kind,'') }}">
+  <h3>
+    <span>{{ a.rule_id }} · {{ a.rule_name }}</span>
+    <span class="marke2 {{ a.kind }}">{{ art_label[a.kind] }}</span>
+  </h3>
+  <div class="unterzeile">{{ a.category }} · {{ a.norm }}</div>
+
+  <div class="label">Befundstufe</div>
+  <div>
+    <span class="marke2 unveraendert">{{ stufe_label[a.before_level] }}</span>
+    <span class="pfeil">→</span>
+    <span class="marke2 {{ a.kind }}">{{ stufe_label[a.after_level] }}</span>
+  </div>
+
+  {% if a.before_condition or a.after_condition %}
+  <div class="label">Zutreffende Bedingung</div>
+  <div class="mono">
+    {% if a.before_condition %}<del>{{ a.before_condition }}</del><br>{% endif %}
+    {% if a.after_condition %}<ins>{{ a.after_condition }}</ins>{% endif %}
+  </div>
+  {% endif %}
+
+  {% if a.note %}<p style="margin-top:2.5mm">{{ a.note }}</p>{% endif %}
+</div>
+{% endfor %}
+{% else %}
+<p class="ruhig">Zwischen den beiden Erfassungen hat sich an den Befunden nichts
+geändert. Das ist ein Ergebnis, kein Fehler — bei der Überwachung einer
+abgegebenen Unterlassungserklärung ist es das erwartete.</p>
+{% endif %}
+
+<h2>Alle Regeln im Überblick</h2>
+<table>
+  <tr><th>Regel</th><th>Kategorie</th><th>vorher</th><th></th><th>nachher</th><th>Art</th></tr>
+  {% for a in aenderungen %}
+  <tr>
+    <td>{{ a.rule_id }}<br><span class="unterzeile">{{ a.rule_name[:44] }}</span></td>
+    <td>{{ a.category }}</td>
+    <td><span class="marke2 unveraendert">{{ stufe_label[a.before_level] }}</span></td>
+    <td class="pfeil">→</td>
+    <td><span class="marke2 {{ a.kind }}">{{ stufe_label[a.after_level] }}</span></td>
+    <td>{{ art_label[a.kind] }}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<h2>Geänderte Messwerte</h2>
+<p class="ruhig">Hier steht, was sich an der Seite tatsächlich geändert hat —
+unabhängig davon, ob eine Regel darauf anschlägt. Eine gleich gebliebene
+Befundstufe kann auf völlig anderen Tatsachen beruhen.</p>
+{% if signale %}
+<table>
+  <tr><th>Signal</th><th>Schritt</th><th>vorher</th><th></th><th>nachher</th></tr>
+  {% for s in signale %}
+  <tr>
+    <td class="mono">{{ s.signal }}</td>
+    <td>{{ s.step or "—" }}</td>
+    <td class="mono">{% if s.kind == 'neu_erhoben' %}<span class="unterzeile">nicht erhoben</span>{% else %}<del>{{ s.before }}</del>{% endif %}</td>
+    <td class="pfeil">→</td>
+    <td class="mono">{% if s.kind == 'nicht_mehr_erhoben' %}<span class="unterzeile">nicht mehr erhoben</span>{% else %}<ins>{{ s.after }}</ins>{% endif %}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p class="ruhig">Kein Messwert hat sich geändert.</p>
+{% endif %}
+
+<h2>Seitenzustand</h2>
+<table>
+  <tr><th>Schritt</th><th>Hash der ersten Erfassung</th><th>Hash der zweiten</th><th></th></tr>
+  {% for s in schritte %}
+  <tr>
+    <td>{{ s.step }}</td>
+    <td class="mono">{{ s.before_hash }}</td>
+    <td class="mono">{{ s.after_hash }}</td>
+    <td>{% if s.changed %}geändert{% else %}identisch{% endif %}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<div class="fuss">
+  <strong>Hinweis.</strong> {{ produkt }} vergleicht zwei Erfassungen derselben
+  Seite und stellt fest, was sich an messbaren Tatsachen geändert hat. Es trifft
+  keine rechtliche Feststellung eines Verstoßes und keine Aussage darüber, ob eine
+  Veränderung gegen eine abgegebene Unterlassungserklärung verstößt. Beides ist
+  von der prüfenden Person zu beurteilen. Maßgeblich für ein einzelnes Verfahren
+  bleibt die Beweisakte der jeweiligen Erfassung.
+</div>
+
+</div>
+</body>
+</html>

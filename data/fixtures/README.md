@@ -9,6 +9,7 @@ layer** — and afterwards serve as a regression test.
 | `viagogo/` | reference case, named by the consumer agency | 3 × eindeutig, 3 × unklar |
 | `sauberer-shop/` | unremarkable shop, correctly designed | no finding |
 | `ratgeber-portal/` | editorial portal, no shop, no banner | rules do not apply at all |
+| `viagogo-2026-09/` | the same site three weeks later | for the timeline — see below |
 
 **`sauberer-shop` and `ratgeber-portal` deliberately have no target profile
 in `data/targets/`.** That verifies an arbitrary target runs through the
@@ -18,6 +19,20 @@ only the ones we prepared.
 The consequence is visible and intended: without human confirmation in the
 target profile (`confirmed_by_human`), a rule whose applicability rests on
 a derivation is capped at `verdaechtig` (C4).
+
+## The second viagogo capture
+
+`viagogo-2026-09/` exists so the Zeitachse has something to compare. Three
+different kinds of change are represented on purpose:
+
+| Rule | Change | Why it is in there |
+|---|---|---|
+| DP-003 | `eindeutig` → `unauffaellig` | the countdown is gone — a finding was corrected |
+| DP-002 | `verdaechtig` → `unauffaellig` | the button label was fixed |
+| DP-001 | `eindeutig` → `eindeutig` | **the level is unchanged but the facts are not**: tracking before consent stopped, pre-ticked checkboxes appeared instead |
+
+The third is the one a comparison of verdict levels alone would miss, and
+the reason the timeline compares signals rather than verdicts.
 
 ## Schema
 

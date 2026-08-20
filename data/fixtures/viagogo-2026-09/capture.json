@@ -1,0 +1,168 @@
+{
+  "_note": "HAND-WRITTEN FIXTURE - second capture of the same target three weeks later. Purpose: the timeline. Three different kinds of change are represented on purpose: a finding removed, a finding removed by a corrected label, and a finding whose LEVEL stays the same while its substance changes completely.",
+  "meta": {
+    "target": "viagogo",
+    "industry": "Ticketing",
+    "start_url": "https://www.viagogo.de",
+    "timestamp": "2026-09-10T09:14:52+02:00",
+    "capture_mode": "fixture",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "locale": "de-DE",
+    "timezone": "Europe/Berlin",
+    "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) DarkPatternMonitor/0.1",
+    "run_id": "2026-09-10T09-14-52_viagogo"
+  },
+  "steps": [
+    {
+      "step": "startseite",
+      "url": "https://www.viagogo.de",
+      "screenshot": "S-01.png",
+      "dom_hash": "sha256:8fd34a092c417ef53ba89dc410e254b7f3a9c1e5"
+    },
+    {
+      "step": "suchergebnis",
+      "url": "https://www.viagogo.de/Suche?q=...",
+      "screenshot": "S-02.png",
+      "dom_hash": "sha256:d34a092c417ef53ba89dc410e254b7f3a9c1e5b7"
+    },
+    {
+      "step": "produktdetail",
+      "url": "https://www.viagogo.de/Event/12345",
+      "screenshot": "S-03.png",
+      "dom_hash": "sha256:4a092c417ef53ba89dc410e254b7f3a9c1e5b7f3"
+    }
+  ],
+  "signals": {
+    "is_b2c_offer": {
+      "value": true,
+      "step": "startseite",
+      "evidence": "S-01.png"
+    },
+    "banner_detected": {
+      "value": true,
+      "step": "startseite",
+      "evidence": "S-01.png"
+    },
+    "accept_button_area_px2": {
+      "value": 4200,
+      "step": "startseite",
+      "evidence": "S-01.png"
+    },
+    "reject_button_area_px2": {
+      "value": 900,
+      "step": "startseite",
+      "evidence": "S-01.png"
+    },
+    "reject_button_present": {
+      "value": true,
+      "step": "startseite",
+      "evidence": "S-01.png"
+    },
+    "reject_click_depth": {
+      "value": 3,
+      "step": "startseite",
+      "evidence": "S-01.png"
+    },
+    "accept_contrast_ratio": {
+      "value": 8.4,
+      "step": "startseite",
+      "evidence": "S-01.png"
+    },
+    "reject_contrast_ratio": {
+      "value": 2.1,
+      "step": "startseite",
+      "evidence": "S-01.png"
+    },
+    "preselected_checkbox_count": {
+      "value": 2,
+      "step": "startseite",
+      "evidence": "S-01.png"
+    },
+    "third_party_cookies_before_consent": {
+      "value": 0,
+      "step": "startseite",
+      "evidence": "S-01.png"
+    },
+    "more_info_present": {
+      "value": true,
+      "step": "startseite",
+      "evidence": "S-01.png"
+    },
+    "more_info_leads_to_reject": {
+      "value": true,
+      "step": "startseite",
+      "evidence": "S-01.png"
+    },
+    "more_info_click_depth": {
+      "value": 2,
+      "step": "startseite",
+      "evidence": "S-01.png"
+    },
+    "has_checkout_flow": {
+      "value": true,
+      "step": "produktdetail",
+      "evidence": "S-03.png"
+    },
+    "order_button_found": {
+      "value": true,
+      "step": "produktdetail",
+      "evidence": "S-03.png"
+    },
+    "order_button_label": {
+      "value": "zahlungspflichtig bestellen",
+      "step": "produktdetail",
+      "evidence": "S-03.png"
+    },
+    "countdown_element_present": {
+      "value": false,
+      "step": "produktdetail",
+      "evidence": "S-03.png"
+    },
+    "countdown_resets_on_revisit": {
+      "value": false,
+      "step": "produktdetail",
+      "evidence": "S-03.png"
+    },
+    "countdown_text": {
+      "value": "",
+      "step": "produktdetail",
+      "evidence": "S-03.png"
+    },
+    "scarcity_text_present": {
+      "value": false,
+      "step": "produktdetail",
+      "evidence": "S-03.png"
+    },
+    "scarcity_value": {
+      "value": 0,
+      "step": "produktdetail",
+      "evidence": "S-03.png"
+    },
+    "has_price_display": {
+      "value": true,
+      "step": "produktdetail",
+      "evidence": "S-03.png"
+    },
+    "font_size_min_px": {
+      "value": 11,
+      "step": "produktdetail",
+      "evidence": "S-03.png"
+    },
+    "hidden_by_opacity_count": {
+      "value": 0,
+      "step": "produktdetail",
+      "evidence": "S-03.png"
+    }
+  },
+  "signal_errors": {
+    "banner_reappears_on_reject": "Zweiter Aufruf mit sauberem Browserzustand noch nicht implementiert",
+    "banner_reappears_count_24h": "Erfordert Erfassung ueber 24h",
+    "scarcity_value_unchanged_scans": "Erste Erfassung dieses Ziels, kein Vergleichswert vorhanden",
+    "price_at_checkout": "Warenkorb ohne Anmeldung nicht erreichbar (Schritt warenkorb abgebrochen)",
+    "is_dauerschuldverhaeltnis": "Rechtliche Qualifikation, wird nicht gemessen (siehe ABSTIMMUNG_Regelwerk.md Korb C)",
+    "required_info_found": "Schritt warenkorb nicht erreicht"
+  }
+}
