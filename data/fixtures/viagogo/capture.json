@@ -155,6 +155,11 @@
       "value": 0,
       "step": "produktdetail",
       "evidence": "S-03.png"
+    },
+    "is_financial_services": {
+      "value": false,
+      "step": "startseite",
+      "evidence": "S-01.png"
     }
   },
   "signal_errors": {

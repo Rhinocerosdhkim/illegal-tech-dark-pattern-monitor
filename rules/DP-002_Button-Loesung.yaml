@@ -19,10 +19,22 @@
   status: REVIEW
   bearbeiter: "Kickoff-Workshop"
 
+  # Ergaenzt 20.08.: has_price_display. Weder is_b2c_offer (eine Heuristik
+  # ueber Preisangaben) noch has_checkout_flow ("existiert ein
+  # Bestellvorgang") stellen fest, dass ueberhaupt ein Entgelt geschuldet
+  # ist - § 312j Abs. 2 setzt einen ENTGELTLICHEN Vertrag voraus. Eine
+  # kostenlose Registrierung mit "Jetzt anmelden" haette sonst die staerkste
+  # Stufe erreicht.
+  #
+  # Finanzdienstleistungen sind ausgenommen: § 312j Abs. 5 S. 2 BGB.
   applies_when:
-    - "is_b2c_offer == true"
-    - "has_checkout_flow == true"
-    - "order_button_found == true"
+    all:
+      - "is_b2c_offer == true"
+      - "has_checkout_flow == true"
+      - "order_button_found == true"
+      - "has_price_display == true"
+    none:
+      - "is_financial_services == true"
 
   legal_basis:
     - "§ 312j Abs. 3 BGB (Beschriftung der Schaltfläche)"
@@ -58,10 +70,20 @@
     # Zulaessige Formulierungen. Grundlage: EuGH, Urteil vom 07.04.2022,
     # Rs. C-249/21 (Fuhrmann-2) - massgeblich ist allein die Beschriftung
     # der Schaltflaeche, nicht die Begleitumstaende des Bestellvorgangs.
+    # Erweitert 20.08.: Die Liste enthielt nur fuenf Eintraege, verglichen
+    # wird aber auf vollstaendige Zeichengleichheit. Damit galten der
+    # gesetzliche Wortlaut mit einem vorangestellten Adverb und die im
+    # Buchungs- und Abonnementbereich uebliche Wortwahl als Verstoss.
     zulaessige_bestell_labels:
       - "zahlungspflichtig bestellen"
+      - "jetzt zahlungspflichtig bestellen"
       - "kostenpflichtig bestellen"
+      - "jetzt kostenpflichtig bestellen"
       - "zahlungspflichtigen Vertrag schließen"
+      - "zahlungspflichtig buchen"
+      - "kostenpflichtig buchen"
+      - "zahlungspflichtig abonnieren"
+      - "kostenpflichtig abonnieren"
       - "kaufen"
       - "jetzt kaufen"
 
@@ -73,30 +95,65 @@
       - "verbindlich bestellen"
       - "Buchung abschließen"
 
+    # NEU 20.08. (BEFUNDSTUFEN T4). Eine geschlossene Positivliste kann den
+    # Negativbeweis nicht fuehren: § 312j Abs. 3 S. 2 BGB laesst ausdruecklich
+    # "eine entsprechend eindeutige Formulierung" zu, und keine endliche
+    # Liste erfasst alle. "eindeutig" darf deshalb nur aus dieser Liste
+    # kommen.
+    #
+    # Aufnahmekriterium, unmittelbar aus dem Wortlaut: Die Beschriftung
+    # enthaelt UEBERHAUPT KEINEN Hinweis auf eine Zahlungs- oder
+    # Kaufverpflichtung. Eine solche Beschriftung kann unter keiner Lesart
+    # eine "entsprechend eindeutige Formulierung" sein. Dafuer braucht es
+    # keine Entscheidung zum Einzelfall - sie folgt aus der Norm selbst.
+    #
+    # Wer hier etwas ergaenzt: nur Formulierungen ohne jeden Zahlungsbezug.
+    # Alles Uebrige gehoert in die Grauliste.
+    unzulaessige_bestell_labels:
+      - "Weiter"
+      - "Weiter zur Bestellung"
+      - "Absenden"
+      - "Abschicken"
+      - "Bestellung abschicken"
+      - "Bestätigen"
+      - "Jetzt anmelden"
+      - "Anmelden"
+      - "Fertig"
+      - "OK"
+
   verdict_rules:
     eindeutig:
-      # BEHOBEN 20.08. Vorher lautete die Bedingung nur "nicht auf der
-      # Weissliste". Da keine der umstrittenen Formulierungen auf der
-      # Weissliste steht und "eindeutig" zuerst geprueft wird, war die Stufe
-      # "verdaechtig" unerreichbar: ein Shop mit "Jetzt bestellen" - einer
-      # in der Rechtsprechung gerade umstrittenen Formulierung - wurde als
-      # eindeutiger Verstoss ausgewiesen. Genau die Art von Fehlalarm, die
-      # uns nach § 4 Nr. 1, Nr. 2 UWG selbst angreifbar macht.
-      - condition: >
-          order_button_label not in zulaessige_bestell_labels and
-          order_button_label not in umstrittene_bestell_labels
+      # UMGESTELLT 20.08. (BEFUNDSTUFEN T4). Vorher lautete die Bedingung
+      # "steht auf keiner der beiden Listen". Da beide Listen zusammen nur
+      # neun Zeichenketten enthielten und auf vollstaendige Gleichheit
+      # verglichen wird, war jede andere rechtmaessige Formulierung ein
+      # eindeutiger Verstoss - "Zahlungspflichtig buchen", "Kostenpflichtig
+      # abonnieren", der gesetzliche Wortlaut mit einem Adverb davor.
+      # "eindeutig" kommt jetzt nur noch aus der belegten Negativliste.
+      - condition: "order_button_label in unzulaessige_bestell_labels"
         reason: >
-          Die Beschriftung der Bestellschaltflaeche entspricht weder dem
-          gesetzlichen Wortlaut noch einer der in Rechtsprechung und
-          Literatur diskutierten Formulierungen.
+          Die Beschriftung der Bestellschaltflaeche enthaelt keinerlei Hinweis
+          auf eine Zahlungs- oder Kaufverpflichtung. Sie kann damit auch keine
+          "entsprechend eindeutige Formulierung" im Sinne des § 312j Abs. 3
+          S. 2 BGB sein.
 
     verdaechtig:
       - condition: "order_button_label in umstrittene_bestell_labels"
         reason: >
           Die Beschriftung gehoert zu den Formulierungen, deren Eindeutigkeit
-          im Sinne des § 312j Abs. 3 BGB umstritten ist. Ob sie eine
-          "entsprechend eindeutige Formulierung" darstellt, bedarf der
-          rechtlichen Pruefung.
+          im Sinne des § 312j Abs. 3 BGB umstritten ist.
+
+      # Auffangfall: alles, was auf keiner der drei Listen steht. Bewusst
+      # hier und nicht unter "eindeutig" - eine unbekannte Formulierung ist
+      # nicht dasselbe wie eine unzulaessige.
+      - condition: >
+          order_button_label not in zulaessige_bestell_labels and
+          order_button_label not in umstrittene_bestell_labels and
+          order_button_label not in unzulaessige_bestell_labels
+        reason: >
+          Die Beschriftung entspricht nicht dem gesetzlichen Wortlaut und ist
+          in unseren Listen nicht erfasst. Ob sie eine "entsprechend
+          eindeutige Formulierung" darstellt, bedarf der Pruefung.
 
   threshold_source: >
     EuGH, Urteil vom 07.04.2022, Rs. C-249/21 (Fuhrmann-2 GmbH):
@@ -133,19 +190,52 @@
       erhoben werden. In diesem Fall soll die Bewertung "unklar" lauten,
       nicht "unauffällig".
 
-  explanation_template_de: >
-    Die Schaltfläche zum Abschluss der Bestellung trägt die Beschriftung
-    "{order_button_label}".
+  explanation_template_de:
+    eindeutig: >
+      Die Schaltfläche zum Abschluss der Bestellung trägt die Beschriftung
+      „{order_button_label}". Diese Formulierung steht auf der Negativliste
+      dieser Regel — sie benennt die Zahlungspflicht nicht und ist auch nicht
+      als entsprechend eindeutige Formulierung anerkannt.
 
-    Nach § 312j Abs. 3 BGB muss diese Schaltfläche bei entgeltlichen
-    Verbraucherverträgen im elektronischen Geschäftsverkehr gut lesbar mit
-    nichts anderem als "zahlungspflichtig bestellen" oder einer entsprechenden
-    eindeutigen Formulierung beschriftet sein. Nach der Rechtsprechung des
-    Europäischen Gerichtshofs ist dabei allein die Beschriftung selbst
-    maßgeblich; die Begleitumstände des Bestellvorgangs bleiben außer Betracht.
+      Nach § 312j Abs. 3 BGB muss die Schaltfläche gut lesbar mit nichts
+      anderem als „zahlungspflichtig bestellen" oder einer entsprechend
+      eindeutigen Formulierung beschriftet sein. Nach EuGH, Urteil vom
+      07.04.2022, C-249/21 (Fuhrmann-2), ist dabei allein die Beschriftung
+      selbst maßgeblich; die Begleitumstände des Bestellvorgangs bleiben
+      außer Betracht.
 
-    Die festgestellte Beschriftung entspricht dieser Vorgabe nicht.
-    Rechtsfolge wäre nach § 312j Abs. 4 BGB, dass ein Vertrag nicht zustande kommt.
+    verdaechtig: >
+      Die Schaltfläche zum Abschluss der Bestellung trägt die Beschriftung
+      „{order_button_label}".
+
+      {befund}
+
+      Ob diese Beschriftung eine „entsprechend eindeutige Formulierung" im
+      Sinne des § 312j Abs. 3 BGB darstellt, ist nicht abschließend geklärt.
+      Der Europäische Gerichtshof hat in der Sache C-249/21 (Fuhrmann-2)
+      entschieden, dass allein die Beschriftung maßgeblich ist, die
+      Beurteilung der konkreten Formulierung aber dem vorlegenden Gericht
+      überlassen. **Mit diesem Befund wird kein Verstoß festgestellt.**
+
+    unklar: >
+      Die Beschriftung der Bestellschaltfläche konnte nicht erhoben werden.
+      Eine Aussage zur Sache wird nicht getroffen.
+
+  menschliche_pruefung:
+    - >
+      Handelt es sich um einen Vertrag ueber die Befoerderung von Personen?
+      Nach § 312 Abs. 2 Nr. 14 BGB findet auf solche Vertraege von diesem
+      Untertitel nur § 312a Abs. 5 Anwendung - § 312j gilt dort NICHT. Bahn,
+      Fernbus und Fluglinien fallen damit aus der Regel heraus. Ein Signal
+      dafuer gibt es nicht; bei Zielen der Branchen Reise und Ticketing bitte
+      vor jedem Befund von Hand ausschliessen.
+    - >
+      Ist die erfasste Schaltflaeche wirklich die Schaltflaeche zum Abschluss
+      der Bestellung? Screenshot gegen die erfasste Beschriftung abgleichen.
+    - >
+      Pauschalreisevertraege sind NICHT ausgenommen: § 312 Abs. 6 BGB
+      erklaert ausdruecklich § 312j Abs. 2 bis 5 fuer anwendbar. Kein
+      Handlungsbedarf, hier nur zur Klarstellung vermerkt.
 
   offene_fragen:
     - >

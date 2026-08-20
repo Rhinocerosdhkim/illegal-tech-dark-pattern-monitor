@@ -27,15 +27,23 @@ def level(rule_id, **values):
     return assess(RULES[rule_id], table(**values)).level
 
 
-print("DP-002 — the greylist was unreachable")
+print("DP-002 — the greylist was unreachable, and the whitelist was closed")
+# T4 (BEFUNDSTUFEN): § 312j Abs. 3 S. 2 BGB allows "eine entsprechend
+# eindeutige Formulierung", so no finite whitelist can prove the negative.
+# "eindeutig" now comes only from the negative list — labels with no
+# reference to payment at all.
 # Every greylist entry is also absent from the whitelist, and "eindeutig" is
 # evaluated first. A shop using the disputed "Jetzt bestellen" was reported
 # as a clear violation.
 base = dict(confirmed=["is_b2c_offer"], is_b2c_offer=True,
-            has_checkout_flow=True, order_button_found=True)
+            has_checkout_flow=True, order_button_found=True,
+            has_price_display=True, is_financial_services=False)
 for label, expected in [("Jetzt bestellen", "verdaechtig"),
                         ("Bestellung abschließen", "verdaechtig"),
-                        ("Kaffee kaufen jetzt sofort", "eindeutig"),
+                        ("Weiter", "eindeutig"),
+                        ("Jetzt anmelden", "eindeutig"),
+                        ("Zahlungspflichtig buchen", "unauffaellig"),
+                        ("Kostenpflichtig abonnieren", "unauffaellig"),
                         ("zahlungspflichtig bestellen", "unauffaellig")]:
     got = assess(RULES["DP-002"], table(order_button_label=label, **base)).level
     assert got == expected, f"{label!r} -> {got}, expected {expected}"
@@ -47,7 +55,10 @@ for label in ("Jetzt kaufen!", "  KAUFEN  ", "kaufen."):
     assert got == "unauffaellig", f"{label!r} -> {got}"
     print(f"  ok  {label!r} is the same wording")
 
-print("DP-001 — one third-party cookie is not a clear violation")
+print("DP-001 — a cookie count cannot carry eindeutig at all (T2)")
+# § 25 Abs. 2 TDDDG exempts technically necessary storage, and a counter
+# cannot tell it from tracking — an embedded map, a font, a reCAPTCHA. While
+# the exception is open, the strongest level is locked.
 banner = dict(banner_detected=True, preselected_checkbox_count=0,
               reject_button_present=True, reject_click_depth=1,
               accept_button_area_px2=1000, reject_button_area_px2=980,
@@ -55,12 +66,23 @@ banner = dict(banner_detected=True, preselected_checkbox_count=0,
               banner_reappears_count_24h=0, banner_reappears_on_reject=False,
               more_info_present=False, more_info_leads_to_reject=True,
               more_info_click_depth=1)
-assert level("DP-001", third_party_cookies_before_consent=1, **banner) == "verdaechtig"
-print("  ok  exactly one cookie -> verdaechtig (its own false_positive_risks ask for review)")
-assert level("DP-001", third_party_cookies_before_consent=2, **banner) == "eindeutig"
-print("  ok  two or more -> eindeutig")
+for count in (1, 2, 7):
+    got = level("DP-001", third_party_cookies_before_consent=count, **banner)
+    assert got == "verdaechtig", f"{count} cookies -> {got}"
+    print(f"  ok  {count} cookie(s) -> verdaechtig, never eindeutig")
 assert level("DP-001", third_party_cookies_before_consent=0, **banner) == "unauffaellig"
 print("  ok  none -> no finding")
+
+print("DP-001 — the one condition that does carry eindeutig")
+no_refusal = {**banner, "third_party_cookies_before_consent": 0,
+              "reject_button_present": False, "more_info_leads_to_reject": False}
+assert level("DP-001", **no_refusal) == "eindeutig"
+print("  ok  banner with no way to refuse -> eindeutig (OLG Köln 6 U 80/23)")
+
+print("DP-001 — a preselected control is not a clear violation either")
+assert level("DP-001", **{**banner, "third_party_cookies_before_consent": 0,
+                          "preselected_checkbox_count": 2}) == "verdaechtig"
+print("  ok  the locked 'Notwendig' toggle of every CMP stays verdaechtig")
 
 print("DP-003 — a countdown alone is no finding at any level")
 # Two deletions on 20.08. plus PV's removal of the eindeutig branch the same
@@ -127,21 +149,22 @@ print("\nDP-001 — a site with no banner at all no longer disappears")
 # — no consent mechanism at all, yet third-party cookies — dropped out.
 no_banner = assess(RULES["DP-001"],
                    table(banner_detected=False, third_party_cookies_before_consent=7))
-assert no_banner.level == "eindeutig", no_banner.level
-print("  ok  no banner + tracking -> eindeutig (§ 25 Abs. 1 TDDDG)")
+assert no_banner.level == "verdaechtig", no_banner.level
+print("  ok  no banner + tracking -> verdaechtig, and the rule still applies")
 
 quiet = assess(RULES["DP-001"],
                table(banner_detected=False, third_party_cookies_before_consent=0))
 assert quiet.level == "nicht_anwendbar", quiet.level
 print("  ok  no banner and no tracking -> rule does not apply")
 
-# And the button conditions must not fire on a page that has no banner.
-assert assess(RULES["DP-001"], table(
+# And no banner-design condition may fire on a page that has no banner:
+# without one, "no reject button" is not a design decision.
+finding = assess(RULES["DP-001"], table(
     banner_detected=False, third_party_cookies_before_consent=1,
-    reject_button_present=False, more_info_leads_to_reject=False)
-).condition.startswith("banner_detected == false"), \
-    "a button condition fired on a page without a banner"
-print("  ok  button conditions stay bound to an existing banner")
+    reject_button_present=False, more_info_leads_to_reject=False,
+    reject_click_depth=4, preselected_checkbox_count=1))
+assert finding.condition == "third_party_cookies_before_consent > 0", finding.condition
+print("  ok  only the cookie branch fires when there is no banner")
 
 print("\nDP-005 — shipping costs fall under the statutory exception")
 # Anhang Nr. 20 to § 3 (3) UWG, second half-sentence: costs that are

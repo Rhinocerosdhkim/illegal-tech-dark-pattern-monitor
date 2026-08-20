@@ -144,24 +144,32 @@ def _hit(rule, level, condition, result, table, derived, locked,
 
 
 def _applicability(rule: Rule, table: SignalTable):
-    """(yes | no | uncertain, skipped conditions, signals used)"""
+    """(yes | no | uncertain, skipped conditions, signals that ESTABLISH it)
+
+    Only `all:` and `any:` establish that the rule applies. `none:` excludes
+    cases — a signal used there makes the rule narrower, never wider, so it
+    must not trigger the C4 cap. Before this distinction, every rule that
+    excluded financial services was capped at "verdaechtig" for doing the
+    conservative thing.
+    """
     used: list = []
     open_points: list = []
 
-    def truths(conditions):
+    def truths(conditions, establishes=True):
         results = []
         for text in conditions:
             evaluation, gaps = _condition(Condition(text=text), rule, table)
             if gaps:
                 open_points.extend(gaps)
                 continue
-            used.extend(evaluation.signals_used)
+            if establishes:
+                used.extend(evaluation.signals_used)
             results.append(evaluation.is_true)
         return results
 
     all_of = truths(rule.applies_when.get("all", []))
     any_of = truths(rule.applies_when.get("any", []))
-    none_of = truths(rule.applies_when.get("none", []))
+    none_of = truths(rule.applies_when.get("none", []), establishes=False)
     has_any = bool(rule.applies_when.get("any"))
 
     # If it is already established that a prerequisite fails, that is a

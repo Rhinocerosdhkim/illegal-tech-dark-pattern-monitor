@@ -67,9 +67,12 @@
 
   verdict_rules:
     eindeutig:
-      # Vorangekreuzte Einwilligungen - unmittelbar von ErwG 32 erfasst,
-      # bestätigt durch EuGH Planet49 (C-673/17) und BGH I ZR 7/16.
-      - "preselected_checkbox_count > 0"
+      # HERUNTERGESTUFT 20.08. nach BEFUNDSTUFEN T2. ErwG 32 DSGVO und EuGH
+      # Planet49 betreffen vorangekreuzte Kaestchen fuer NICHT notwendige
+      # Verarbeitung. Unser Zaehler erfasst jedes vorausgewaehlte
+      # Bedienelement im Banner - auch den fest eingeschalteten, gesperrten
+      # Schalter "Notwendig", den jede gaengige Consent-Plattform ausliefert
+      # und der nach § 25 Abs. 2 TDDDG keiner Einwilligung bedarf.
       # Tracking vor jeder Interaktion. Unabhängig von der Gestaltung:
       # es liegt schon keine Einwilligung vor.
       #
@@ -80,41 +83,80 @@
       # Cookie ausdruecklich eine manuelle Pruefung - dann darf die Regel
       # dort nicht die staerkste Stufe behaupten. Der Einzelfall steht jetzt
       # eine Stufe tiefer.
-      - "third_party_cookies_before_consent > 1"
-      # Kein Banner, aber Zugriff auf die Endeinrichtung: Es gibt schon
-      # keinen Mechanismus, ueber den eine Einwilligung haette erteilt
-      # werden koennen. § 25 Abs. 1 TDDDG; die Ausnahme fuer technisch
-      # notwendige Speicherung (Abs. 2) bleibt im Einzelfall zu pruefen.
-      - "banner_detected == false and third_party_cookies_before_consent > 0"
+      # HERUNTERGESTUFT 20.08. nach BEFUNDSTUFEN T2. Beide Cookie-Bedingungen
+      # stehen jetzt unter "verdaechtig". § 25 Abs. 2 TDDDG nimmt technisch
+      # notwendige Speicherung aus, und ein Zaehler kann sie nicht von
+      # Tracking unterscheiden - eine eingebettete Karte, eine Schrift, ein
+      # reCAPTCHA. Solange die Ausnahme offen ist, ist "eindeutig" gesperrt.
+      # Sie wird wieder erreichbar, sobald die Erfassung nur noch Cookies
+      # zaehlt, die nicht unter Abs. 2 fallen.
       # Keine Ablehnmoeglichkeit ueberhaupt = keine echte Wahl.
       # Nach legal_note_on_more_info ist ein Banner mit nur "Zustimmen" und
       # "Mehr Informationen" unzulaessig, WENN der zweite Weg nicht zu einer
       # unmittelbaren Ablehnung fuehrt. Genau das steht jetzt hier; der
       # Fall, dass er dorthin fuehrt, steht als Verdachtsmoment unten.
       - "banner_detected == true and reject_button_present == false and more_info_leads_to_reject == false"
-      # Wiederholtes sofortiges Wiedererscheinen innerhalb 24h in Kombination mit
-      # fehlender klarer Ablehnungsoption ist ein starker Indikator.
-      - "banner_reappears_count_24h >= 2"
+      # HERUNTERGESTUFT 20.08. nach BEFUNDSTUFEN T1. Der Kommentar beschreibt
+      # eine KOMBINATION ("in Kombination mit fehlender klarer
+      # Ablehnungsoption"), die Bedingung stand ohne sie da. Die Regel
+      # beantwortet die Frage unter offene_fragen_resolved zudem selbst:
+      # nagging soll "mindestens eine manuelle Pruefung ausloesen", ein
+      # eindeutiger Befund nur "bei Kombination mit anderen Indikatoren".
 
     verdaechtig:
-      # Genau ein Drittanbieter-Cookie vor der Einwilligung: auffaellig,
-      # aber im Einzelfall technisch erklaerbar (siehe Fehlalarmrisiken).
-      - "third_party_cookies_before_consent == 1"
+      # Zugriff auf die Endeinrichtung vor jeder Interaktion. Ob die Cookies
+      # unter die Ausnahme des § 25 Abs. 2 TDDDG fallen, ist maschinell nicht
+      # feststellbar und steht unter "menschliche_pruefung".
+      - condition: "third_party_cookies_before_consent > 0"
+        reason: >
+          Vor jeder Interaktion mit dem Einwilligungsbanner wurden
+          Drittanbieter-Cookies gesetzt. Eine Einwilligung nach § 25 Abs. 1
+          TDDDG lag zu diesem Zeitpunkt nicht vor. Ob die Speicherung
+          ausnahmsweise technisch notwendig war (§ 25 Abs. 2 TDDDG), ist zu
+          pruefen.
+
+      - condition: "banner_detected == true and preselected_checkbox_count > 0"
+        reason: >
+          Im Einwilligungsbanner waren Auswahlfelder vorausgewaehlt. Fuer
+          nicht notwendige Verarbeitung waere darin keine wirksame
+          Einwilligung zu sehen (ErwG 32 DSGVO; EuGH Planet49, C-673/17).
+          Ob es sich um einen fest eingeschalteten Schalter fuer technisch
+          notwendige Speicherung handelt, ist zu pruefen.
+
+      - "banner_reappears_count_24h >= 2"
       # Ablehnung nur ueber die zweite Ebene ("Mehr Informationen").
       # Moeglich, aber spuerbar erschwert - Art. 7 Abs. 4 DSGVO.
       - "banner_detected == true and reject_button_present == false and more_info_leads_to_reject == true"
+      # --- Gestaltung des Banners --------------------------------------
+      # Ausdruecklich an ein vorhandenes Banner gebunden (20.08.). Ohne
+      # Banner ist die Regel nur ueber den Cookie-Zweig anwendbar; ein
+      # fehlender Ablehnen-Button waere dort keine Gestaltungsentscheidung.
       # Ablehnung erfordert zusätzliche Schritte, Zustimmung nicht.
-      - "reject_click_depth > 1"
+      - "banner_detected == true and reject_click_depth > 1"
       # Deutlicher Größenunterschied.
-      - "accept_button_area_px2 / reject_button_area_px2 > 2.0"
+      - "banner_detected == true and accept_button_area_px2 / reject_button_area_px2 > 2.0"
       # Visuelle Zurücksetzung der Ablehnung.
-      - "accept_contrast_ratio - reject_contrast_ratio > 3.0"
+      - "banner_detected == true and accept_contrast_ratio - reject_contrast_ratio > 3.0"
       # Banner erscheint nach Ablehnung wieder (nagging) -> verdächtig
       - "banner_reappears_on_reject == true"
-      # 'Mehr Informationen' führt zu Ablehnung, aber erst nach mehreren Schritten
-      - "more_info_present == true and more_info_leads_to_reject == true and more_info_click_depth > 1"
+      # 'Mehr Informationen' führt zu Ablehnung, aber erst nach mehreren
+      # Schritten. Umgestellt 20.08.: "more_info_present == true" impliziert
+      # laut _SIGNALE.md "reject_button_present == false"; die Bedingung war
+      # damit von der Zwei-Ebenen-Bedingung oben verschluckt und nie
+      # erreichbar (BEFUNDSTUFEN, Fehlermuster 5).
+      - "banner_detected == true and more_info_leads_to_reject == true and more_info_click_depth > 1"
 
   threshold_source: >
+    Zur Bedingung „kein Ablehnweg überhaupt": OLG Köln, Urteil vom
+    19.01.2024, 6 U 80/23 (Verfahren einer Verbraucherzentrale gegen
+    wetteronline.de). Danach führt ein Banner, das die Ablehnung nicht auf
+    der ersten Ebene anbietet, nicht zu einer freiwilligen und hinreichend
+    informierten Einwilligung; Zustimmung und Ablehnung müssen auf derselben
+    Ebene, gleich sichtbar und gleich groß angeboten werden, und die
+    Ablehnung muss ohne Umweg über Untermenüs wählbar sein. Der Verstoß ist
+    über § 3a UWG lauterkeitsrechtlich durchsetzbar. Die Entscheidung nennt
+    keine Zahlenwerte — die Faktoren unten bleiben eigene Festlegung.
+
     Zu "preselected_checkbox_count" und "third_party_cookies_before_consent":
     ErwG 32 DSGVO ausdrücklich; EuGH Planet49 (C-673/17); BGH Cookie-Einwilligung II
     (I ZR 7/16). Insoweit keine eigene Festlegung erforderlich.
@@ -128,6 +170,22 @@
     Der Kontrastwert folgt der WCAG-Skala (1 bis 21).
 
   false_positive_risks:
+    - >
+      Unterschiedliche Beschriftungslänge erzeugt bei inhaltsbreiten
+      Schaltflächen ein Flächenverhältnis über 2,0 ohne jede gestalterische
+      Ungleichbehandlung („Alle Cookies akzeptieren" gegen „Ablehnen").
+      Bei Verhältnissen bis etwa 3,0 ist die Beschriftung mitzuprüfen.
+    - >
+      Ein Kontrastwert misst die Lesbarkeit, nicht die Auffälligkeit. Eine
+      dunkle Zustimmen-Fläche gegen eine lesbare, nur umrandete Ablehnung
+      ergibt eine hohe Differenz bei symmetrischer Gestaltung; umgekehrt
+      bleibt eine blasse Zustimmen-Fläche neben einer kräftigen Ablehnung
+      unauffällig, obwohl die Zurücksetzung dort gerade fehlt.
+    - >
+      „Banner erscheint nach Ablehnung erneut" kann die Folge einer
+      RESPEKTIERTEN Ablehnung sein: Wer nichts speichert, kann sich die
+      Ablehnung nicht merken. Ebenso ein Artefakt unserer eigenen Erfassung,
+      die den Browserzustand zwischen den Schritten leert.
     - >
       Responsive Gestaltung: Bei schmalem Fenster stehen Buttons untereinander
       und haben andere Flächenverhältnisse. Gegenmaßnahme: feste Fenstergröße
@@ -145,17 +203,46 @@
       Consent Management Plattformen liefern je nach Region unterschiedliche
       Banner aus. Der Erfassungsort wird im Bericht mitgeführt.
 
-  explanation_template_de: >
-    Auf der untersuchten Seite wurde ein Einwilligungsbanner festgestellt.
-    Der Zustimmen-Button umfasst {accept_button_area_px2} px², der
-    Ablehnen-Button {reject_button_area_px2} px². Die vollständige Ablehnung
-    erfordert {reject_click_depth} Interaktionsschritte, die Zustimmung einen.
-    Vorausgewählte Auswahlfelder: {preselected_checkbox_count}.
-    Vor jeder Interaktion wurden {third_party_cookies_before_consent}
-    Drittanbieter-Cookies gesetzt.
+  # Ein Text JE STUFE. Ein Befund der Stufe "verdaechtig" darf nicht mit
+  # einem Satz erlaeutert werden, der einen Verstoss feststellt
+  # (BEFUNDSTUFEN 6). {befund} setzt die Begruendung der Bedingung ein,
+  # die tatsaechlich ausgeloest hat.
+  explanation_template_de:
+    eindeutig: >
+      Auf der untersuchten Seite wurde ein Einwilligungsbanner festgestellt,
+      das auf der ersten Ebene keine Möglichkeit zur Ablehnung bietet; auch
+      der Weg über „Mehr Informationen" führt zu keiner unmittelbaren
+      Ablehnung.
 
-    Diese Gestaltung wirft die Frage auf, ob die Einwilligung im Sinne des
-    Art. 4 Nr. 11 i. V. m. Art. 7 Abs. 4 DSGVO freiwillig erteilt wurde.
+      Eine Einwilligung ist nur wirksam, wenn sie freiwillig erteilt wird
+      (Art. 4 Nr. 11 i. V. m. Art. 7 Abs. 4 DSGVO). Das OLG Köln hat mit
+      Urteil vom 19.01.2024 (6 U 80/23) entschieden, dass ein Banner ohne
+      Ablehnoption auf der ersten Ebene keine freiwillige und hinreichend
+      informierte Einwilligung herbeiführt.
+
+    verdaechtig: >
+      {befund}
+
+      Gemessen wurde: Zustimmen-Button {accept_button_area_px2} px²,
+      Ablehnen-Button {reject_button_area_px2} px²; vollständige Ablehnung in
+      {reject_click_depth} Interaktionsschritten; vorausgewählte
+      Auswahlfelder: {preselected_checkbox_count}; vor jeder Interaktion
+      gesetzte Drittanbieter-Cookies: {third_party_cookies_before_consent}.
+
+      Diese Werte begründen einen Anhaltspunkt dafür, dass die Einwilligung
+      nicht freiwillig im Sinne des Art. 7 Abs. 4 DSGVO erteilt wurde. Ein
+      Verstoß wird damit nicht festgestellt; die Einordnung bedarf der
+      rechtlichen Prüfung.
+
+    unklar: >
+      Zu dieser Regel konnten nicht alle benötigten Messwerte erhoben werden.
+      Die nicht erhobenen Signale sind oben mit Begründung aufgeführt. Eine
+      Aussage zur Sache wird nicht getroffen.
+
+  menschliche_pruefung:
+    - "Fallen die vor der Einwilligung gesetzten Drittanbieter-Cookies unter die Ausnahme des § 25 Abs. 2 TDDDG (technisch notwendige Speicherung)?"
+    - "Handelt es sich bei den vorausgewählten Auswahlfeldern um fest eingeschaltete Schalter für technisch notwendige Speicherung?"
+    - "Ist der erfasste Kontrastunterschied Ausdruck einer optischen Zurücksetzung — oder nur der unterschiedlichen Beschriftungslänge und Rahmengestaltung?"
 
   offene_fragen_resolved:
     - question: "Ist § 25 TDDDG als Marktverhaltensregel i. S. d. § 3a UWG anerkannt?"

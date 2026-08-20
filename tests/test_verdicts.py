@@ -16,7 +16,12 @@ run = load_run("data/fixtures/viagogo")
 findings = {f.rule.id: f for f in (assess(r, run.table) for r in load_rules())}
 
 EXPECTED = {
-    "DP-001": "eindeutig",     # third-party cookies before any consent
+    # Beide Cookie-Bedingungen stehen seit dem 20.08. auf "verdaechtig":
+    # § 25 Abs. 2 TDDDG nimmt technisch notwendige Speicherung aus, und ein
+    # Zaehler kann sie nicht von Tracking unterscheiden (BEFUNDSTUFEN T2).
+    # viagogo hat einen Ablehnen-Button, also greift der eine verbliebene
+    # eindeutig-Zweig nicht.
+    "DP-001": "verdaechtig",
     "DP-002": "verdaechtig",   # "Jetzt bestellen" is disputed, not clear-cut
     # PV hat den eindeutig-Zweig am 20.08. abgeraeumt: ein zuruecksetzender
     # Countdown belegt nur, dass der Zaehler sitzungsbezogen erzeugt wird -

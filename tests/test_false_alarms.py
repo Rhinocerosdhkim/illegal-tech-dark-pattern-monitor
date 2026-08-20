@@ -52,9 +52,20 @@ assert not any(x.reportable and x.level != "unklar" for x in f.values()), \
     "a non-applicable rule must not appear in the Beweisakte"
 print("  ok  non-applicable rules stay out of the file")
 
+print("\nA banner with no way to refuse at all — the one surviving eindeutig")
+# OLG Köln, 19.01.2024, 6 U 80/23: a banner that offers no refusal on the
+# first level does not produce freely given consent. This is the only
+# condition in the whole rulebook that passes all four tests of
+# docs/BEFUNDSTUFEN.md, so one fixture has to exercise it.
+run, f = findings_for("data/fixtures/nachrichtenportal")
+assert f["DP-001"].level == "eindeutig", f["DP-001"].level
+assert not f["DP-001"].downgraded, "banner_detected is an observation, not a derivation"
+assert not run.table.confirmed, "must hold without a target profile too"
+print("  ok  no refusal anywhere -> eindeutig, uncapped, without hand setup")
+
 print("\nAll four levels have now been produced at least once")
 seen = set()
-for folder in ("viagogo", "sauberer-shop", "ratgeber-portal"):
+for folder in ("viagogo", "sauberer-shop", "ratgeber-portal", "nachrichtenportal"):
     _, x = findings_for(f"data/fixtures/{folder}")
     seen.update(v.level for v in x.values())
 for level in ("eindeutig", "unklar", "unauffaellig", "nicht_anwendbar"):

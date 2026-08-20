@@ -78,6 +78,11 @@
       "value": 0,
       "step": "startseite",
       "evidence": "S-01.png"
+    },
+    "is_financial_services": {
+      "value": false,
+      "step": "startseite",
+      "evidence": "S-01.png"
     }
   },
   "signal_errors": {

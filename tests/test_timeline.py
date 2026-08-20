@@ -39,7 +39,7 @@ print("  ok  DP-003 unklar -> unauffaellig (Messlage, kein Befund)")
 print("\nSame level, different facts — what a naive diff would miss")
 c = changes["DP-001"]
 assert c.kind == SAME_LEVEL_NEW_REASON, c.kind
-assert c.before_level == c.after_level == "eindeutig"
+assert c.before_level == c.after_level == "verdaechtig"
 assert "third_party_cookies" in c.before_condition
 assert "preselected_checkbox_count" in c.after_condition
 assert "anderen Bedingung" in c.note
@@ -83,7 +83,7 @@ print("\nHTML")
 with tempfile.TemporaryDirectory() as tmp:
     result = build(timeline, output=tmp)
     html = result["html"].read_text(encoding="utf-8")
-    assert result["changes"] == 3
+    assert result["changes"] == 2
     for needle, name in [("Zeitachse", "title"),
                          ("Stufe gleich, Grund anders", "the important case"),
                          ("Geänderte Messwerte", "signal table"),
