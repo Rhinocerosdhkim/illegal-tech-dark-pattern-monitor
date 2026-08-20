@@ -3,7 +3,7 @@
 
   kategorie: "Irrefuehrung"
 
-  status: version 1.0
+  status: REVIEW
   bearbeiter: "Jura-Team"
 
   applies_when:
@@ -83,6 +83,9 @@
     Verbraucherverbänden geltend gemacht werden.
 
   signals:
+    # ACHTUNG: Einige der folgenden Namen stehen noch nicht in _SIGNALE.md.
+    # Welche davon zugesagt, ersetzt oder gestrichen werden, klaert
+    # docs/ABSTIMMUNG_Regelwerk.md. Bis dahin nicht lauffaehig.
 
     # Angebot / Preis
     - "is_consumer_offer"
@@ -128,33 +131,38 @@
     - "additional_cost_first_display_timestamp"
     - "price_history_within_current_journey"
 
+    # In verdict_rules verwendet, hier bisher nicht deklariert:
+    - "required_total_price_can_be_calculated"
+    - "shipping_cost_can_be_calculated_in_advance"
+    - "additional_mandatory_cost_first_display_after_product_page"
+
   verdict_rules:
 
     eindeutig:
 
       - condition: >
           "mandatory_total_price_at_checkout == false
-           AND required_total_price_can_be_calculated == true"
+           and required_total_price_can_be_calculated == true"
         result: "LEGAL_RELEVANT"
         severity: "HIGH"
 
       - condition: >
           "additional_mandatory_cost_count > 0
-           AND additional_mandatory_cost_disclosed_before_order == false"
+           and additional_mandatory_cost_disclosed_before_order == false"
         result: "LEGAL_RELEVANT"
         severity: "HIGH"
 
       - condition: >
           "shipping_cost_amount > 0
-           AND shipping_cost_disclosed == false
-           AND shipping_cost_can_be_calculated_in_advance == true"
+           and shipping_cost_disclosed == false
+           and shipping_cost_can_be_calculated_in_advance == true"
         result: "LEGAL_RELEVANT"
         severity: "HIGH"
 
       - condition: >
           "gratis_claim_present == true
-           AND costs_present_despite_gratis_claim == true
-           AND costs_are_unavoidable_delivery_or_offer_costs == false"
+           and costs_present_despite_gratis_claim == true
+           and costs_are_unavoidable_delivery_or_offer_costs == false"
         result: "LEGAL_RELEVANT"
         severity: "HIGH"
 
@@ -162,9 +170,9 @@
 
       - condition: >
           "price_delta > 0
-           AND mandatory_price_delta > 0
-           AND additional_mandatory_cost_disclosed == true
-           AND additional_mandatory_cost_disclosed_before_order == true"
+           and mandatory_price_delta > 0
+           and additional_mandatory_cost_disclosed == true
+           and additional_mandatory_cost_disclosed_before_order == true"
         result: "SUSPICIOUS"
         severity: "LOW"
         reason: >
@@ -174,7 +182,7 @@
 
       - condition: >
           "shipping_cost_disclosed == false
-           AND shipping_cost_can_be_calculated_in_advance == false"
+           and shipping_cost_can_be_calculated_in_advance == false"
         result: "SUSPICIOUS"
         severity: "MEDIUM"
         reason: >
@@ -185,7 +193,7 @@
 
       - condition: >
           "preselected_paid_addon_count > 0
-           AND paid_addon_disclosed_before_selection == false"
+           and paid_addon_disclosed_before_selection == false"
         result: "SUSPICIOUS"
         severity: "MEDIUM"
         reason: >
@@ -197,8 +205,8 @@
 
       - condition: >
           "price_delta_ratio > 0
-           AND mandatory_price_delta > 0
-           AND additional_mandatory_cost_first_display_after_product_page == true"
+           and mandatory_price_delta > 0
+           and additional_mandatory_cost_first_display_after_product_page == true"
         result: "SUSPICIOUS"
         severity: "MEDIUM"
         reason: >

@@ -3,7 +3,7 @@
 
   kategorie: "Irrefuehrung"
 
-  status: version 1.0
+  status: REVIEW
   bearbeiter: "Jura-Team"
 
   applies_when:
@@ -49,6 +49,9 @@
     Verbraucherverbänden geltend gemacht werden können.
 
   signals:
+    # ACHTUNG: Einige der folgenden Namen stehen noch nicht in _SIGNALE.md.
+    # Welche davon zugesagt, ersetzt oder gestrichen werden, klaert
+    # docs/ABSTIMMUNG_Regelwerk.md. Bis dahin nicht lauffaehig.
     - required_info_found
     - required_info_type
     - font_size_min_px

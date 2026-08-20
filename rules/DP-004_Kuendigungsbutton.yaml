@@ -3,7 +3,7 @@
 
   kategorie: "Hindernisse"
 
-  status: version 1.0
+  status: REVIEW
   bearbeiter: "Jura-Team"
 
   applies_when:
@@ -15,7 +15,7 @@
       - "entrepreneur_owes_paid_performance == true"
     none:
       - "stricter_form_required == true"
-      - "financial_services == true"
+      - "is_financial_services == true"
 
   legal_basis:
     - "§ 312k Abs. 1 BGB"
@@ -49,6 +49,9 @@
     unberührt.
 
   signals:
+    # ACHTUNG: Einige der folgenden Namen stehen noch nicht in _SIGNALE.md.
+    # Welche davon zugesagt, ersetzt oder gestrichen werden, klaert
+    # docs/ABSTIMMUNG_Regelwerk.md. Bis dahin nicht lauffaehig.
     - "has_kuendigungsbutton"
     - "kuendigungsbutton_label"
     - "kuendigungsbutton_click_depth"
@@ -59,18 +62,27 @@
     - "has_confirmation_page"
     - "regular_login_required_for_service"
     - "button_is_clearly_legible"
+    - "intermediate_login_required"
+    - "kuendigungsbutton_label_is_not_clearly_equivalent"
 
   verdict_rules:
     eindeutig:
       - "has_kuendigungsbutton == false"
-      - "kuendigungsbutton_requires_login == true AND regular_login_required_for_service == false"
-      - "kuendigungsbutton_hidden_in_menu == true AND additional_search_step_required == true"
-      - "confirmation_page_directly_reached == false AND intermediate_login_required == true"
+      - "kuendigungsbutton_requires_login == true and regular_login_required_for_service == false"
+      - "kuendigungsbutton_hidden_in_menu == true and additional_search_step_required == true"
+      - "confirmation_page_directly_reached == false and intermediate_login_required == true"
 
     verdaechtig:
       - "button_is_clearly_legible == false"
       - "kuendigungsbutton_label_is_not_clearly_equivalent == true"
-      - "kuendigungsbutton_click_depth > 0"
+      # DEAKTIVIERT durch das Entwicklungsteam, 20.08.
+      # "> 0" trifft auf praktisch jede Website zu: eine Kuendigungs-
+      # schaltflaeche liegt nie auf der Startseite selbst. Die Regel
+      # wuerde also immer ausloesen. Ausserdem steht sie im Widerspruch
+      # zum eigenen threshold_source ("Die Klicktiefe darf nicht allein
+      # ueber die Rechtswidrigkeit entscheiden").
+      # Bitte einen belastbaren Wert einsetzen oder die Bedingung streichen.
+      # - "kuendigungsbutton_click_depth > ?"
       - "confirmation_page_directly_reached == false"
 
   threshold_source: >
@@ -114,6 +126,23 @@
     § 312k Abs. 1 und 2 BGB kann der Verbraucher nach § 312k Abs. 6 BGB den
     Vertrag jederzeit ohne Einhaltung einer Kündigungsfrist kündigen.
 
-  offene_fragen: []
+  offene_fragen:
+    - >
+      Ab welcher Klicktiefe ist die "unmittelbare und leichte
+      Zugaenglichkeit" nach § 312k Abs. 2 S. 4 BGB nicht mehr gewahrt?
+      Die urspruengliche Bedingung "> 0" wurde deaktiviert, weil sie auf
+      jeder Website ausloest. Entweder ein belastbarer Wert mit Begruendung
+      oder ersatzlose Streichung der Bedingung.
+    - >
+      Welche Beschriftungen gelten als "entsprechend eindeutige
+      Formulierung" neben "Vertraege hier kuendigen"? Fuer die maschinelle
+      Pruefung brauchen wir eine Positivliste; alles ausserhalb dieser
+      Liste kann hoechstens "verdaechtig" werden.
+    - >
+      Mehrere Voraussetzungen in applies_when sind rechtliche Bewertungen
+      und maschinell nicht feststellbar (Dauerschuldverhaeltnis,
+      Verbrauchervertrag, elektronischer Geschaeftsverkehr). Wie gehen wir
+      damit um - Stufe "unklar" oder ein eigenes Feld fuer die menschliche
+      Pruefung? Siehe docs/ABSTIMMUNG_Regelwerk.md, Punkt 1.
 
   disclaimer_required: true
