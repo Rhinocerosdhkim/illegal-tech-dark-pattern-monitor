@@ -1,106 +1,324 @@
-# ============================================================
-# ENTWURF - bitte vervollstaendigen
-#
-# Hinweis zur Machbarkeit: Diese Regel setzt voraus, dass wir bis
-# zum Bestellabschluss navigieren koennen. Das gelingt nicht auf
-# allen Seiten. Rechnet damit, dass wir in der Vorfuehrung teilweise
-# mit manuell erfassten Werten arbeiten.
-#
-# Juristisch interessant, weil hier drei Normebenen zusammentreffen.
-# Bitte die Anspruchskette besonders sorgfaeltig ausarbeiten.
-# ============================================================
-
 - id: DP-005
-  name_de: "Versteckte Kosten und nachtraegliche Preiserhoehung im Bestellvorgang"
+  name_de: "Versteckte Kosten und nachträgliche Preiserhöhung im Bestellvorgang"
 
-  # Kategorie nach dem Raster der Verbraucherzentrale (19.08.):
-  # Zeitdruck | Zwang | Hindernisse | Irrefuehrung
-  # -- Vorbelegung durch das Entwicklungsteam, bitte pruefen --
   kategorie: "Irrefuehrung"
 
-  status: ENTWURF
-  bearbeiter: ""
+  status: version 1.0
+  bearbeiter: "Jura-Team"
 
   applies_when:
-    - "is_b2c_offer == true"
-    - "has_checkout_flow == true"
+    all:
+      - "is_consumer_offer == true"
+      - "has_price_display == true"
+      - "has_checkout_flow == true"
+    none:
+      - "is_financial_services == true"
 
   legal_basis:
-    # VORSCHLAG - ACHTUNG, Paragraphennummern bitte am aktuellen
-    # Gesetzestext pruefen. Die PAngV wurde 2022 neu gefasst, das UWG
-    # 2022 umnummeriert. Nummern aus aelteren Quellen sind haeufig falsch.
-    - "PAngV - Pflicht zur Angabe des Gesamtpreises (§ ? - bitte pruefen)"
-    - "§ 312j Abs. 2 BGB (Information unmittelbar vor Abgabe der Bestellung)"
-    - "§ 5a UWG (Irrefuehrung durch Unterlassen)"
-    - "§ 5b UWG (wesentliche Informationen bei Aufforderung zum Kauf)"
-    - "Anhang zu § 3 Abs. 3 UWG Nr. 20 (Werbung mit 'gratis' trotz Kosten)"
+    - "§ 3 PAngV – Pflicht zur Angabe des Gesamtpreises"
+    - "§ 6 PAngV – Preisangaben bei Fernabsatzverträgen"
+    - "§ 312j Abs. 2 BGB – Informationen unmittelbar vor Abgabe der Bestellung"
+    - "§ 5 UWG – Irreführende geschäftliche Handlungen"
+    - "§ 5a UWG – Irreführung durch Unterlassen"
+    - "§ 5b Abs. 1 Nr. 3 UWG – Gesamtpreis und zusätzliche Kosten als wesentliche Information"
+    - "Anhang zu § 3 Abs. 3 UWG Nr. 20 – unzutreffende Bewerbung als 'gratis'"
+    - "§ 3a UWG – Rechtsbruch"
+    - "§ 8 Abs. 1, Abs. 3 Nr. 3 UWG – Beseitigung und Unterlassung durch qualifizierte Verbraucherverbände"
 
   tatbestand_de: >
-    AUSFUELLEN.
-    Bitte klar herausarbeiten: Nicht das Entstehen zusaetzlicher Kosten ist
-    unzulaessig, sondern deren nicht rechtzeitige oder unklare Offenlegung.
-    Diese Unterscheidung ist fuer die Vermeidung von Fehlalarmen zentral.
+    Unternehmer, die Verbrauchern Waren oder Leistungen unter Angabe eines
+    Preises anbieten, müssen grundsätzlich den Gesamtpreis angeben. Der
+    Gesamtpreis umfasst die Umsatzsteuer und sonstige Preisbestandteile.
+    Bei Fernabsatzverträgen sind zusätzlich insbesondere anzugeben, ob
+    Fracht-, Liefer-, Versand- oder sonstige Kosten anfallen und, soweit
+    diese vernünftigerweise im Voraus berechnet werden können, deren Höhe.
+
+    Im elektronischen Geschäftsverkehr mit Verbrauchern, der den Verbraucher
+    zur Zahlung verpflichtet, müssen die gesetzlich bestimmten Informationen
+    unmittelbar vor Abgabe der Bestellung klar und verständlich in
+    hervorgehobener Weise zur Verfügung stehen.
+
+    Eine nachträgliche Erhöhung des im bisherigen Bestellverlauf dargestellten
+    Preises stellt nicht allein deshalb einen Rechtsverstoß dar, weil sich der
+    Preis erhöht. Entscheidend ist vielmehr, ob ein verpflichtender
+    Preisbestandteil bereits nach den einschlägigen Vorschriften hätte
+    angegeben werden müssen und ob dieser rechtzeitig, klar und verständlich
+    offengelegt wurde.
+
+    Ein versteckter oder erst spät offengelegter obligatorischer Kostenbestandteil
+    kann insbesondere gegen die Pflicht zur Angabe des Gesamtpreises sowie
+    gegen die Pflicht zur rechtzeitigen Bereitstellung wesentlicher
+    Informationen verstoßen.
+
+    Bei einer Werbung oder Angebotsgestaltung mit "gratis", "kostenlos",
+    "umsonst" oder einer entsprechenden Aussage ist zusätzlich zu prüfen,
+    ob gleichwohl Kosten anfallen. Eine solche Bewerbung ist nach Anhang
+    Nr. 20 zu § 3 Abs. 3 UWG grundsätzlich stets unzulässig, soweit es sich
+    nicht um dort ausgenommene unvermeidbare Kosten im Zusammenhang mit dem
+    Eingehen auf das Angebot oder der Abholung bzw. Lieferung handelt.
 
   anspruchskette: >
-    AUSFUELLEN - hier besonders wichtig.
-    Ein PAngV-Verstoss allein begruendet keinen Anspruch der
-    Verbraucherzentrale. Bitte den Weg ueber § 3a UWG (Rechtsbruch,
-    Marktverhaltensregel) zu § 8 Abs. 1, Abs. 3 Nr. 3 UWG darstellen,
-    einschliesslich des Merkmals der spuerbaren Interessenbeeintraechtigung.
-    Dieser Punkt zeigt in der Praesentation, dass wir die Durchsetzungs-
-    perspektive der Verbraucherzentrale verstanden haben.
+    Ein Verstoß gegen die PAngV kann als Verstoß gegen eine gesetzliche
+    Vorschrift, die das Marktverhalten im Interesse der Marktteilnehmer
+    regelt, einen Rechtsbruch nach § 3a UWG darstellen, sofern die weiteren
+    Voraussetzungen des § 3a UWG, insbesondere die Eignung zur spürbaren
+    Beeinträchtigung der Interessen von Verbrauchern, erfüllt sind.
+
+    Daneben können eine irreführende Preisangabe nach § 5 UWG oder das
+    Vorenthalten bzw. die nicht rechtzeitige Bereitstellung einer wesentlichen
+    Preisinformation nach § 5a UWG vorliegen. Welche Norm im Einzelfall
+    einschlägig ist, hängt davon ab, ob der Unternehmer eine unrichtige oder
+    täuschende Preisangabe macht oder eine zutreffende, aber wesentliche
+    Information nicht, nicht klar oder nicht rechtzeitig mitteilt.
+
+    § 5b Abs. 1 Nr. 3 UWG konkretisiert für eine Aufforderung zum Kauf,
+    welche Preisangaben grundsätzlich als wesentlich gelten. Dazu gehören
+    insbesondere der Gesamtpreis sowie gegebenenfalls zusätzliche Fracht-,
+    Liefer- und Zustellkosten bzw. die Tatsache, dass solche Kosten anfallen
+    können.
+
+    Liegt ein Rechtsbruch nach § 3a UWG vor, können nach § 8 Abs. 1 UWG
+    insbesondere Beseitigungs- und Unterlassungsansprüche bestehen. Diese
+    können nach § 8 Abs. 3 Nr. 3 UWG auch von qualifizierten
+    Verbraucherverbänden geltend gemacht werden.
 
   signals:
-    - price_listed
-    - price_at_checkout                        # Status GELB
-    - price_delta                              # Status GELB
-    - price_delta_ratio                        # Status GELB
-    - shipping_cost_disclosed_on_product_page  # Status GELB
-    - preselected_paid_addon_count             # Status GELB
-    - gratis_claim_present
+
+    # Angebot / Preis
+    - "is_consumer_offer"
+    - "has_price_display"
+    - "listed_total_price"
+    - "listed_price_components"
+
+    # Checkout
+    - "has_checkout_flow"
+    - "price_at_checkout"
+    - "price_immediately_before_order"
+    - "mandatory_total_price_at_checkout"
+    - "optional_costs_at_checkout"
+
+    # Preisentwicklung im konkreten Bestellvorgang
+    - "price_delta"
+    - "mandatory_price_delta"
+    - "optional_price_delta"
+    - "price_delta_ratio"
+
+    # Kostenarten
+    - "shipping_cost_amount"
+    - "shipping_cost_disclosed"
+    - "shipping_cost_disclosed_before_checkout"
+    - "additional_mandatory_cost_count"
+    - "additional_mandatory_cost_amount"
+    - "additional_mandatory_cost_disclosed"
+    - "additional_mandatory_cost_disclosed_before_order"
+
+    # Zusatzleistungen / Vorauswahl
+    - "preselected_paid_addon_count"
+    - "preselected_paid_addon_amount"
+    - "paid_addon_disclosed_before_selection"
+
+    # "Gratis"-Werbung
+    - "gratis_claim_present"
+    - "gratis_claim_scope"
+    - "costs_present_despite_gratis_claim"
+    - "costs_are_unavoidable_delivery_or_offer_costs"
+
+    # Zeitpunkt / Evidenz
+    - "first_price_display_timestamp"
+    - "additional_cost_first_display_timestamp"
+    - "price_history_within_current_journey"
 
   verdict_rules:
+
     eindeutig:
-      # VORSCHLAG:
-      - "gratis_claim_present == true and price_at_checkout > 0"
-      - "preselected_paid_addon_count > 0"
+
+      - condition: >
+          "mandatory_total_price_at_checkout == false
+           AND required_total_price_can_be_calculated == true"
+        result: "LEGAL_RELEVANT"
+        severity: "HIGH"
+
+      - condition: >
+          "additional_mandatory_cost_count > 0
+           AND additional_mandatory_cost_disclosed_before_order == false"
+        result: "LEGAL_RELEVANT"
+        severity: "HIGH"
+
+      - condition: >
+          "shipping_cost_amount > 0
+           AND shipping_cost_disclosed == false
+           AND shipping_cost_can_be_calculated_in_advance == true"
+        result: "LEGAL_RELEVANT"
+        severity: "HIGH"
+
+      - condition: >
+          "gratis_claim_present == true
+           AND costs_present_despite_gratis_claim == true
+           AND costs_are_unavoidable_delivery_or_offer_costs == false"
+        result: "LEGAL_RELEVANT"
+        severity: "HIGH"
+
     verdaechtig:
-      # Ab welcher Abweichung wird es auffaellig? Absolut oder relativ?
-      - "price_delta_ratio > ?"
-      - "shipping_cost_disclosed_on_product_page == false and price_delta > ?"
+
+      - condition: >
+          "price_delta > 0
+           AND mandatory_price_delta > 0
+           AND additional_mandatory_cost_disclosed == true
+           AND additional_mandatory_cost_disclosed_before_order == true"
+        result: "SUSPICIOUS"
+        severity: "LOW"
+        reason: >
+          Der Preis steigt während des Bestellvorgangs, die zusätzliche
+          Kostenkomponente wird jedoch rechtzeitig offengelegt. Eine
+          Preiserhöhung als solche ist nicht ohne Weiteres unzulässig.
+
+      - condition: >
+          "shipping_cost_disclosed == false
+           AND shipping_cost_can_be_calculated_in_advance == false"
+        result: "SUSPICIOUS"
+        severity: "MEDIUM"
+        reason: >
+          Die Höhe der zusätzlichen Kosten kann möglicherweise nicht
+          vernünftigerweise im Voraus berechnet werden. Es ist daher zu
+          prüfen, ob zumindest auf das mögliche Anfallen zusätzlicher
+          Kosten hingewiesen wurde.
+
+      - condition: >
+          "preselected_paid_addon_count > 0
+           AND paid_addon_disclosed_before_selection == false"
+        result: "SUSPICIOUS"
+        severity: "MEDIUM"
+        reason: >
+          Eine vorausgewählte kostenpflichtige Zusatzleistung kann eine
+          zusätzliche Zahlungspflicht begründen. Für eine abschließende
+          rechtliche Einordnung sind insbesondere die konkrete
+          Einwilligungs- und Preisgestaltung sowie die anwendbaren
+          Vorschriften zu zusätzlichen Zahlungen zu prüfen.
+
+      - condition: >
+          "price_delta_ratio > 0
+           AND mandatory_price_delta > 0
+           AND additional_mandatory_cost_first_display_after_product_page == true"
+        result: "SUSPICIOUS"
+        severity: "MEDIUM"
+        reason: >
+          Ein verpflichtender Preisbestandteil erscheint erst im späteren
+          Bestellverlauf. Entscheidend ist, ob die Information nach den
+          einschlägigen Vorschriften bereits früher hätte bereitgestellt
+          werden müssen.
 
   threshold_source: >
-    AUSFUELLEN.
-    Die PAngV nennt keine Toleranzgrenze - jede nicht ausgewiesene
-    Preiskomponente ist zu beanstanden. Reicht das, um ganz auf einen
-    Schwellenwert zu verzichten? Oder braucht es einen Mindestbetrag,
-    um dem Merkmal der Spuerbarkeit gerecht zu werden?
+    Für versteckte Kosten besteht grundsätzlich kein prozentualer oder
+    absoluter Mindestbetrag, ab dem ein Preisbestandteil erst rechtlich
+    relevant wird. Maßgeblich ist vielmehr, ob es sich um einen
+    verpflichtenden Preisbestandteil handelt und ob dieser nach den
+    einschlägigen Vorschriften rechtzeitig und klar angegeben wurde.
+
+    Für die PAngV ist insbesondere entscheidend, dass der Gesamtpreis
+    einschließlich Umsatzsteuer und sonstiger Preisbestandteile angegeben
+    wird und dass bei Fernabsatzverträgen zusätzliche Fracht-, Liefer-,
+    Versand- oder sonstige Kosten sowie gegebenenfalls deren Höhe
+    angegeben werden.
+
+    Das technische Rulebook verwendet daher bewusst keinen Mindestwert
+    wie 1 €, 5 % oder 10 %. Ein Betrag von 0,50 € kann ebenso relevant sein
+    wie ein Betrag von 50 €, wenn es sich um einen nicht ordnungsgemäß
+    angegebenen obligatorischen Preisbestandteil handelt.
+
+    Das Merkmal der "spürbaren Beeinträchtigung" aus § 3a UWG ist davon
+    getrennt zu beurteilen. Es soll nicht durch einen technisch erfundenen
+    Preis-Schwellenwert ersetzt werden.
 
   false_positive_risks:
+
     - >
-      Versandkosten sind zulaessig, wenn sie rechtzeitig und klar
-      ausgewiesen werden. Das Signal misst nur die Differenz, nicht die
-      Rechtzeitigkeit der Information. Bitte einordnen, welches zusaetzliche
-      Merkmal wir bruechten.
+      Nicht jede Preiserhöhung im Verlauf des Bestellvorgangs ist
+      rechtswidrig. Preisbestandteile können beispielsweise von der
+      gewählten Menge, Lieferart, Lieferadresse oder einem vom Verbraucher
+      selbst gewählten Zusatz abhängen.
+
     - >
-      Regional unterschiedliche Steuersaetze und Versandkosten.
-    - AUSFUELLEN
+      Versandkosten sind nicht generell unzulässig. Entscheidend ist,
+      ob auf ihr Anfallen und, soweit vernünftigerweise im Voraus
+      berechenbar, auf ihre Höhe rechtzeitig hingewiesen wurde.
+
+    - >
+      Regional unterschiedliche Steuern, Versandkosten oder sonstige
+      variable Kosten können dazu führen, dass der endgültige Preis erst
+      nach Eingabe weiterer Informationen berechnet werden kann.
+
+    - >
+      Optionale kostenpflichtige Zusatzleistungen dürfen nicht mit
+      obligatorischen Preisbestandteilen gleichgesetzt werden. Für die
+      Prüfung muss deshalb zwischen mandatory_price_delta und
+      optional_price_delta unterschieden werden.
+
+    - >
+      Ein vorab niedriger angezeigter Preis kann zulässig sein, wenn
+      eindeutig erkennbar ist, dass zusätzliche optionale Leistungen
+      oder Kosten erst aufgrund einer späteren Verbraucherentscheidung
+      hinzukommen.
+
+    - >
+      Ein "gratis"-Hinweis ist nicht in jedem Fall unzulässig, wenn neben
+      dem kostenlosen Angebot nur Kosten anfallen, die nach Anhang Nr. 20
+      zu § 3 Abs. 3 UWG ausdrücklich ausgenommen sind.
+
+    - >
+      Die bloße technische Differenz zwischen Produktpreis und
+      Checkoutpreis beweist noch nicht, dass der erste Preis der
+      rechtlich maßgebliche Gesamtpreis war.
+
+    - >
+      Eine fehlende Preisangabe im öffentlich sichtbaren Teil einer
+      Website ist nicht automatisch ein Verstoß gegen § 3 PAngV, wenn
+      wegen der konkreten Art des Angebots oder gesetzlicher Ausnahmen
+      andere Regeln gelten.
 
   explanation_template_de: >
-    AUSFUELLEN.
+    PatternWatch hat im Bestellvorgang eine mögliche versteckte oder
+    verspätet offengelegte Kostenkomponente festgestellt.
+
+    Angezeigter Preis zu Beginn:
+    [INITIAL_PRICE]
+
+    Angezeigter Preis unmittelbar vor der Bestellung:
+    [CHECKOUT_PRICE]
+
+    Preisabweichung:
+    [PRICE_DELTA]
+
+    Zusätzlicher Kostenbestandteil:
+    [COST_COMPONENT]
+
+    Zeitpunkt der erstmaligen Offenlegung:
+    [DISCLOSURE_POINT]
+
+    Mögliche rechtliche Relevanz besteht insbesondere im Hinblick auf
+    § 3 und § 6 PAngV sowie §§ 5, 5a und 5b UWG und, bei einem
+    elektronischen Verbrauchervertrag, § 312j Abs. 2 BGB.
+
+    Die Feststellung bedeutet nicht, dass jede Preisänderung während
+    des Bestellvorgangs unzulässig ist. Entscheidend ist insbesondere,
+    ob der zusätzliche Kostenbestandteil verpflichtend ist und ob er
+    rechtzeitig, klar und verständlich offengelegt wurde.
 
   offene_fragen:
     - >
-      Aktuelle Paragraphennummern der PAngV - bitte am geltenden Text pruefen,
-      nicht aus Sekundaerquellen uebernehmen.
+      Die Prüfung sollte perspektivisch um eine eigenständige Regel
+      für Preisermäßigungen nach § 11 PAngV ergänzt werden. Bei der
+      Bekanntgabe einer Preisermäßigung für Waren ist grundsätzlich der
+      niedrigste Gesamtpreis anzugeben, den der Unternehmer innerhalb
+      der letzten 30 Tage vor der Preisermäßigung angewendet hat.
+      Dafür ist eine historische Preisbeobachtung besonders geeignet.
     - >
-      Aktuelle Nummerierung § 5a / § 5b UWG nach der Reform 2022.
+      Die Prüfung von vorausgewählten kostenpflichtigen Zusatzleistungen
+      sollte perspektivisch als eigene Dark-Pattern-Regel weiter
+      ausdifferenziert werden, weil hierfür neben den Preisangaben auch
+      die rechtlichen Anforderungen an zusätzliche Zahlungen relevant
+      sein können.
     - >
-      Die PAngV enthaelt eine Regelung zu Preisermaessigungen (Angabe des
-      niedrigsten Preises der letzten 30 Tage). Diese passt technisch
-      hervorragend zu unserem Ansatz, weil wir Preise ueber die Zeit
-      verfolgen. Bitte pruefen, ob wir das als eigenes Muster DP-007
-      aufnehmen sollten - falls die Zeit reicht.
-    - AUSFUELLEN
+      Die technische Erkennung muss unterscheiden können zwischen
+      obligatorischen und optionalen Kostenbestandteilen.
 
   disclaimer_required: true
