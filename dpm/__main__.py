@@ -1,9 +1,10 @@
-"""Ein Einstiegspunkt, ein Ausgabeordner, keine Einrichtung.
+"""One entry point, one output folder, no setup.
 
-    python -m dpm befund data/fixtures/viagogo
+    python -m dpm assess data/fixtures/viagogo     findings table
+    python -m dpm report data/fixtures/viagogo     Beweisakte as HTML and PDF
 
-Entwurfsvorgabe aus AGENDA_Technik.md §6: Am Montag muss eine Person ohne
-Entwicklungshintergrund das hier allein bedienen koennen.
+Design constraint from AGENDA_Technik.md §6: on Monday a person without a
+development background has to operate this alone.
 """
 
 from __future__ import annotations
@@ -15,117 +16,116 @@ from pathlib import Path
 
 import yaml
 
-from dpm.report.beweisakte import erzeuge as erzeuge_akte
-from dpm.engine.lauf import lade_lauf
-from dpm.engine.rules import lade_regelwerk
-from dpm.engine.verdict import (EINDEUTIG, NICHT_ANWENDBAR, UNAUFFAELLIG,
-                                UNKLAR, VERDAECHTIG, pruefe)
+from dpm.engine.rules import load_rules
+from dpm.engine.run import load_run
+from dpm.engine.verdict import (CLEAR, NOT_APPLICABLE, NO_FINDING, SUSPECTED,
+                                UNRESOLVED, assess)
+from dpm.report.case_file import build as build_case_file
 
-ANZEIGE = {EINDEUTIG: "eindeutig", VERDAECHTIG: "verdaechtig",
-           UNKLAR: "unklar", UNAUFFAELLIG: "unauffaellig",
-           NICHT_ANWENDBAR: "nicht anwendbar"}
+LABEL = {CLEAR: "eindeutig", SUSPECTED: "verdaechtig", UNRESOLVED: "unklar",
+         NO_FINDING: "unauffaellig", NOT_APPLICABLE: "nicht anwendbar"}
 
 
-def befund(argumente) -> int:
-    lauf = lade_lauf(argumente.lauf)
-    regeln = lade_regelwerk(argumente.regeln)
-    befunde = [pruefe(regel, lauf.tabelle) for regel in regeln]
+def _findings(arguments):
+    run = load_run(arguments.run)
+    rules = load_rules(arguments.rules)
+    return run, [assess(rule, run.table) for rule in rules]
 
-    print(f"\nZiel      {lauf.meta.get('ziel')}  ({lauf.branche})")
-    print(f"Erfassung {lauf.meta.get('timestamp')}   {lauf.run_id}")
-    print(f"Signale   {len(lauf.tabelle.werte)} gemessen, "
-          f"{len(lauf.tabelle.fehler)} nicht erhoben")
-    _warnungen(lauf)
+
+def cmd_assess(arguments) -> int:
+    run, findings = _findings(arguments)
+
+    print(f"\nTarget    {run.target}  ({run.industry})")
+    print(f"Capture   {run.meta.get('timestamp')}   {run.run_id}")
+    print(f"Signals   {len(run.table.values)} measured, "
+          f"{len(run.table.errors)} not captured")
+    _warnings(run)
     print()
 
-    kopf = f"{'Regel':8} {'Kategorie':13} {'Stufe':15} {'Status':8} Muster"
-    print(kopf)
-    print("-" * len(kopf))
-    for b in befunde:
-        print(f"{b.regel.id:8} {b.regel.kategorie:13} "
-              f"{ANZEIGE[b.stufe]:15} {b.regel.status:8} {b.regel.name_de[:44]}")
+    header = f"{'Rule':8} {'Category':13} {'Level':15} {'Status':8} Pattern"
+    print(header)
+    print("-" * len(header))
+    for f in findings:
+        print(f"{f.rule.id:8} {f.rule.category:13} "
+              f"{LABEL[f.level]:15} {f.rule.status:8} {f.rule.name[:44]}")
 
-    for b in befunde:
-        if not b.berichtsrelevant:
+    for f in findings:
+        if not f.reportable:
             continue
-        print(f"\n── {b.regel.id} · {ANZEIGE[b.stufe].upper()} "
-              f"{'(herabgestuft)' if b.herabgestuft else ''}")
-        print(f"   Norm       {b.regel.norm}")
-        if b.bedingung:
-            print(f"   Bedingung  {b.bedingung}")
-        for nachweis in b.nachweise:
-            print(f"   Nachweis   {nachweis['signal']} = {nachweis['wert']!r}"
-                  f"   [{nachweis['schritt']} · {nachweis['nachweis']}]")
-        for luecke in b.unklar_wegen:
-            print(f"   Nicht erhoben  {luecke['signal']} — {luecke['grund']}")
-        for hinweis in b.hinweise:
-            print(f"   Hinweis    {hinweis}")
+        print(f"\n── {f.rule.id} · {LABEL[f.level].upper()} "
+              f"{'(downgraded)' if f.downgraded else ''}")
+        print(f"   Provision  {f.rule.norm}")
+        if f.would_be_level:
+            print(f"   Would be   {LABEL[f.would_be_level]} — applicability "
+                  f"could not be checked")
+        if f.condition:
+            print(f"   Condition  {f.condition}")
+        for e in f.evidence:
+            print(f"   Evidence   {e['signal']} = {e['value']!r}"
+                  f"   [{e['step']} · {e['evidence']}]")
+        for gap in f.unresolved:
+            print(f"   Not captured   {gap['signal']} — {gap['reason']}")
+        for note in f.notes:
+            print(f"   Note       {note}")
 
-    zaehlung = {stufe: sum(1 for b in befunde if b.stufe == stufe) for stufe in ANZEIGE}
-    print("\n" + "  ".join(f"{ANZEIGE[s]}: {n}" for s, n in zaehlung.items() if n))
+    counts = {level: sum(1 for f in findings if f.level == level) for level in LABEL}
+    print("\n" + "  ".join(f"{LABEL[l]}: {n}" for l, n in counts.items() if n))
     print()
     return 0
 
 
-def akte(argumente) -> int:
-    lauf = lade_lauf(argumente.lauf)
-    befunde = [pruefe(regel, lauf.tabelle)
-               for regel in lade_regelwerk(argumente.regeln)]
-
-    ergebnis = erzeuge_akte(lauf, befunde, ausgabe=argumente.ausgabe,
-                            als_pdf=not argumente.nur_html)
+def cmd_report(arguments) -> int:
+    run, findings = _findings(arguments)
+    result = build_case_file(run, findings, output=arguments.output,
+                             as_pdf=not arguments.html_only)
 
     print()
-    _warnungen(lauf)
-    print(f"\nBeweisakte {lauf.meta.get('ziel')} — "
-          f"{ergebnis.anzahl_befunde} Befunde")
-    print(f"  {ergebnis.html}")
-    if ergebnis.pdf:
-        groesse = ergebnis.pdf.stat().st_size // 1024
-        print(f"  {ergebnis.pdf}  ({groesse} kB)")
+    _warnings(run)
+    print(f"\nBeweisakte {run.target} — {result.finding_count} findings")
+    print(f"  {result.html}")
+    if result.pdf:
+        print(f"  {result.pdf}  ({result.pdf.stat().st_size // 1024} kB)")
     else:
-        print("  (kein PDF — Playwright nicht verfuegbar)")
+        print("  (no PDF — Playwright not available)")
     print()
     return 0
 
 
-def _warnungen(lauf) -> None:
-    for warnung in lauf.warnungen:
-        print(f"  ! {warnung}")
+def _warnings(run) -> None:
+    for warning in run.warnings:
+        print(f"  ! {warning}")
 
 
 def main(argv=None) -> int:
-    zerleger = argparse.ArgumentParser(prog="dpm", description=__doc__)
-    unterbefehle = zerleger.add_subparsers(dest="befehl", required=True)
+    parser = argparse.ArgumentParser(prog="dpm", description=__doc__)
+    commands = parser.add_subparsers(dest="command", required=True)
 
-    b = unterbefehle.add_parser("befund", help="Erfassungslauf gegen das Regelwerk pruefen")
-    b.add_argument("lauf", type=Path, help="Ordner mit capture.json")
-    b.add_argument("--regeln", type=Path, default=None)
-    b.set_defaults(funktion=befund)
+    for name, help_text, function in [
+            ("assess", "check a capture run against the rulebook", cmd_assess),
+            ("report", "build the Beweisakte as HTML and PDF", cmd_report)]:
+        sub = commands.add_parser(name, help=help_text)
+        sub.add_argument("run", type=Path, help="folder containing capture.json")
+        sub.add_argument("--rules", type=Path, default=None)
+        if name == "report":
+            sub.add_argument("--output", type=Path, default=Path("out"))
+            sub.add_argument("--html-only", action="store_true",
+                             dest="html_only", help="skip the PDF, for quick runs")
+        sub.set_defaults(function=function)
 
-    a = unterbefehle.add_parser("akte", help="Beweisakte als HTML und PDF erzeugen")
-    a.add_argument("lauf", type=Path, help="Ordner mit capture.json")
-    a.add_argument("--regeln", type=Path, default=None)
-    a.add_argument("--ausgabe", type=Path, default=Path("out"))
-    a.add_argument("--nur-html", action="store_true", dest="nur_html",
-                   help="ohne PDF, fuer schnelles Ausprobieren")
-    a.set_defaults(funktion=akte)
+    arguments = parser.parse_args(argv)
 
-    argumente = zerleger.parse_args(argv)
-
-    # Fehlermeldungen muessen fuer eine Person handhabbar sein, die nicht
-    # entwickelt: ab Dienstag steht niemand aus der Entwicklung bereit.
+    # Error messages have to be actionable for someone who does not develop:
+    # from Tuesday nobody from the dev team is available.
     try:
-        return argumente.funktion(argumente)
-    except FileNotFoundError as fehler:
-        print(f"\nDatei nicht gefunden: {fehler}\n"
-              f"Erwartet wird ein Ordner mit einer capture.json darin.\n",
-              file=sys.stderr)
-    except json.JSONDecodeError as fehler:
-        print(f"\nDie capture.json ist nicht lesbar (Zeile {fehler.lineno}): "
-              f"{fehler.msg}\n", file=sys.stderr)
-    except yaml.YAMLError as fehler:
-        print(f"\nEine YAML-Datei ist nicht lesbar:\n{fehler}\n", file=sys.stderr)
+        return arguments.function(arguments)
+    except FileNotFoundError as error:
+        print(f"\nFile not found: {error}\n"
+              f"Expected a folder with a capture.json inside.\n", file=sys.stderr)
+    except json.JSONDecodeError as error:
+        print(f"\ncapture.json is not readable (line {error.lineno}): "
+              f"{error.msg}\n", file=sys.stderr)
+    except yaml.YAMLError as error:
+        print(f"\nA YAML file is not readable:\n{error}\n", file=sys.stderr)
     return 1
 
 

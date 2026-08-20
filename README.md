@@ -86,7 +86,22 @@ docs/
 data/gold-standard/       Paket 2: Referenzbewertungen von Hand
 ```
 
-`src/` legen wir an, sobald das Entwicklungsteam den Stack festgelegt hat.
+```
+dpm/                    Python-Paket — Code, Kommentare und Tests auf Englisch
+  engine/                 Regelwerk auswerten
+  report/                 Beweisakte (Ausgabe bleibt deutsch)
+  capture/ signals/       Erfassungsschicht (Karthik, noch nicht angelegt)
+  ai/                     die vier Modellstellen — und sonst nirgends
+tests/                  ohne Einrichtung ausfuehrbar, siehe tests/README.md
+data/fixtures/          handgeschriebene Erfassungslaeufe, siehe README dort
+data/targets/           Zielprofile (Pfad, Selektoren, menschliche Bestaetigung)
+```
+
+**Sprachregelung:** Code, Tests, `capture.json` und `data/targets/*.yaml` sind
+**englisch** — die Erfassungsschicht schreibt ein englischsprachiger Partner.
+Das Regelwerk (`rules/*.yaml`) und die ausgegebene Beweisakte bleiben
+**deutsch**: geschrieben von deutschen Jurist:innen, gelesen von einer
+deutschen Verbraucherzentrale.
 
 ---
 

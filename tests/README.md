@@ -1,14 +1,16 @@
 # Tests
 
-Ohne Einrichtung ausfuehrbar, keine externen Dienste:
+Runnable without setup, no external services:
 
 ```
-.venv/bin/python tests/test_conditions.py    # Bedingungsparser
-.venv/bin/python tests/test_befund.py        # Regelwerk gegen die Fixture
-.venv/bin/python tests/test_akte.py          # Beweisakte
+.venv/bin/python tests/test_conditions.py     # condition parser
+.venv/bin/python tests/test_verdicts.py       # rulebook against the fixture
+.venv/bin/python tests/test_case_file.py      # Beweisakte
+.venv/bin/python tests/test_false_alarms.py   # can the system stay silent?
+.venv/bin/python tests/test_robustness.py     # broken capture.json — result, not crash
 ```
 
-`tests/test_befund.py` prueft die handgeschriebene Fixture
-`data/fixtures/viagogo/` gegen das echte Regelwerk. Verschiebt sich ein
-Befund, bricht der Test — dann bitte hinsehen und den erwarteten Wert
-bewusst aendern, nicht stillschweigend anpassen.
+`tests/test_verdicts.py` checks the hand-written fixture
+`data/fixtures/viagogo/` against the real rulebook. If a verdict moves, the
+test breaks — then please look at it rather than quietly adjusting the
+expected value.

@@ -1,12 +1,18 @@
-"""Regelwerk laden und vereinheitlichen.
+"""Load the rulebook and normalise it.
 
-Die Regeldateien sind von Hand geschrieben und liegen derzeit in zwei
-Schreibweisen vor (siehe docs/ABSTIMMUNG_Regelwerk.md). Die Engine nimmt
-beide an und normalisiert sie hier an einer Stelle.
+The rule files are hand-written and currently exist in two spellings (see
+docs/ABSTIMMUNG_Regelwerk.md). The engine accepts both and normalises them
+here, in one place.
 
-Das ist Absicht: Das juristische Team soll seine Dateien inhaltlich
-verbessern koennen, ohne auf eine Formatabstimmung zu warten — und wir
-sollen nicht blockiert sein, waehrend die Abstimmung laeuft.
+That is deliberate: the legal team should be able to improve its files
+without waiting for a format agreement, and we should not be blocked while
+that agreement is being reached.
+
+FIELD NAMES. The German field names are the legal team's interface and are
+kept as they are — renaming them mid-flight would hit the people writing
+them on the deadline day. English aliases are accepted too, so the team can
+migrate whenever it suits them. In code the attributes carry English names;
+the comment on each shows the YAML key it comes from.
 """
 
 from __future__ import annotations
@@ -16,126 +22,146 @@ from pathlib import Path
 
 import yaml
 
-WURZEL = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[2]
 
-STUFEN = ("eindeutig", "verdaechtig")
+LEVELS = ("eindeutig", "verdaechtig")
+
+# YAML key -> attribute. Both spellings are read; the German one is what the
+# rule files use today.
+_ALIASES = {
+    "name": ("name_de", "name"),
+    "category": ("kategorie", "category"),
+    "author": ("bearbeiter", "author"),
+    "legal_test": ("tatbestand_de", "legal_test"),
+    "claim_chain": ("anspruchskette", "claim_chain"),
+    "explanation_template": ("explanation_template_de", "explanation_template"),
+    "human_review": ("menschliche_pruefung", "human_review"),
+    "lists": ("listen", "lists"),
+}
 
 
 @dataclass
-class Bedingung:
+class Condition:
     text: str
-    begruendung: str | None = None
+    reason: str | None = None
 
 
 @dataclass
-class Regel:
+class Rule:
     id: str
-    name_de: str
-    kategorie: str
+    name: str                                          # name_de
+    category: str                                      # kategorie
     status: str
-    datei: str
+    file: str
     legal_basis: list = field(default_factory=list)
-    tatbestand_de: str = ""
-    anspruchskette: str = ""
+    legal_test: str = ""                               # tatbestand_de
+    claim_chain: str = ""                              # anspruchskette
     applies_when: dict = field(default_factory=dict)   # all / any / none
-    verdict_rules: dict = field(default_factory=dict)  # Stufe -> [Bedingung]
-    listen: dict = field(default_factory=dict)         # benannte Wortlisten
-    explanation_template_de: str = ""
+    verdict_rules: dict = field(default_factory=dict)  # level -> [Condition]
+    lists: dict = field(default_factory=dict)          # listen
+    explanation_template: str = ""                     # explanation_template_de
     threshold_source: str = ""
     false_positive_risks: list = field(default_factory=list)
-    menschliche_pruefung: list = field(default_factory=list)
+    human_review: list = field(default_factory=list)   # menschliche_pruefung
     disclaimer_required: bool = True
 
     @property
     def norm(self) -> str:
-        """Erste Fundstelle — das, was in der Befundtabelle steht."""
+        """First provision cited — what goes into the findings table."""
         return self.legal_basis[0] if self.legal_basis else "—"
 
 
-def lade_regelwerk(verzeichnis: str | Path | None = None) -> list:
-    """Laedt rules/*.yaml.
+def load_rules(directory: str | Path | None = None) -> list:
+    """Load rules/*.yaml.
 
-    Der Standardpfad haengt bewusst nicht am Arbeitsverzeichnis: Wird das
-    Werkzeug von woanders aufgerufen, faende glob() nichts, es wuerden null
-    Regeln geladen und die Beweisakte meldete kommentarlos "0 Befunde" -
-    das gefaehrlichste denkbare Ergebnis.
+    The default path deliberately does not depend on the working directory.
+    Called from elsewhere, glob() would find nothing, zero rules would load,
+    and the evidence file would report "0 findings" without comment — the
+    most dangerous possible result.
     """
-    verzeichnis = Path(verzeichnis) if verzeichnis else WURZEL / "rules"
-    regeln = []
-    for datei in sorted(verzeichnis.glob("*.yaml")):
-        if datei.name.startswith("_"):        # _VORLAGE.yaml ist keine Regel
+    directory = Path(directory) if directory else ROOT / "rules"
+    rules = []
+    for path in sorted(directory.glob("*.yaml")):
+        if path.name.startswith("_"):        # _VORLAGE.yaml is not a rule
             continue
-        inhalt = yaml.safe_load(datei.read_text(encoding="utf-8"))
-        for roh in inhalt if isinstance(inhalt, list) else [inhalt]:
-            if isinstance(roh, dict) and roh.get("id"):
-                regeln.append(_baue(roh, datei.name))
-    if not regeln:
+        content = yaml.safe_load(path.read_text(encoding="utf-8"))
+        for raw in content if isinstance(content, list) else [content]:
+            if isinstance(raw, dict) and raw.get("id"):
+                rules.append(_build(raw, path.name))
+    if not rules:
         raise FileNotFoundError(
-            f"In {verzeichnis} steht keine einzige Regel. Ohne Regelwerk kann "
-            f"nichts geprueft werden.")
-    return regeln
+            f"{directory} contains no rule at all. Without a rulebook "
+            f"nothing can be checked.")
+    return rules
 
 
-def _baue(roh: dict, dateiname: str) -> Regel:
-    return Regel(
-        id=roh["id"],
-        name_de=roh.get("name_de", roh["id"]),
-        kategorie=roh.get("kategorie", "—"),
-        status=roh.get("status", "ENTWURF"),
-        datei=dateiname,
-        legal_basis=list(roh.get("legal_basis") or []),
-        tatbestand_de=(roh.get("tatbestand_de") or "").strip(),
-        anspruchskette=(roh.get("anspruchskette") or "").strip(),
-        applies_when=_applies_when(roh.get("applies_when")),
-        verdict_rules=_verdict_rules(roh.get("verdict_rules")),
-        listen=_listen(roh.get("listen")),
-        explanation_template_de=(roh.get("explanation_template_de") or "").strip(),
-        threshold_source=(roh.get("threshold_source") or "").strip(),
-        false_positive_risks=[str(r).strip() for r in (roh.get("false_positive_risks") or [])],
-        menschliche_pruefung=list(roh.get("menschliche_pruefung") or []),
-        disclaimer_required=bool(roh.get("disclaimer_required", True)),
+def _pick(raw: dict, attribute: str, default=None):
+    for key in _ALIASES[attribute]:
+        if raw.get(key) is not None:
+            return raw[key]
+    return default
+
+
+def _build(raw: dict, filename: str) -> Rule:
+    return Rule(
+        id=raw["id"],
+        name=_pick(raw, "name", raw["id"]),
+        category=_pick(raw, "category", "—"),
+        status=raw.get("status", "ENTWURF"),
+        file=filename,
+        legal_basis=list(raw.get("legal_basis") or []),
+        legal_test=str(_pick(raw, "legal_test", "")).strip(),
+        claim_chain=str(_pick(raw, "claim_chain", "")).strip(),
+        applies_when=_applies_when(raw.get("applies_when")),
+        verdict_rules=_verdict_rules(raw.get("verdict_rules")),
+        lists=_lists(_pick(raw, "lists")),
+        explanation_template=str(_pick(raw, "explanation_template", "")).strip(),
+        threshold_source=(raw.get("threshold_source") or "").strip(),
+        false_positive_risks=[str(r).strip()
+                              for r in (raw.get("false_positive_risks") or [])],
+        human_review=list(_pick(raw, "human_review", []) or []),
+        disclaimer_required=bool(raw.get("disclaimer_required", True)),
     )
 
 
-def _applies_when(roh) -> dict:
-    """Flache Liste und all/any/none-Form auf eine Struktur bringen."""
-    leer = {"all": [], "any": [], "none": []}
-    if not roh:
-        return leer
-    if isinstance(roh, list):
-        return {**leer, "all": [str(b) for b in roh]}
-    return {schluessel: [str(b) for b in (roh.get(schluessel) or [])]
-            for schluessel in leer}
+def _applies_when(raw) -> dict:
+    """Bring a flat list and the all/any/none form into one shape."""
+    empty = {"all": [], "any": [], "none": []}
+    if not raw:
+        return empty
+    if isinstance(raw, list):
+        return {**empty, "all": [str(c) for c in raw]}
+    return {key: [str(c) for c in (raw.get(key) or [])] for key in empty}
 
 
-def _listen(roh) -> dict:
-    """Benannte Wortlisten fuer die Operatoren 'in' und 'not in'.
+def _lists(raw) -> dict:
+    """Named word lists for the operators 'in' and 'not in'.
 
-    Damit pflegt das juristische Team zulaessige und unzulaessige
-    Beschriftungen, ohne dass jemand programmiert (_VORLAGE.yaml, LISTEN).
+    This is how the legal team maintains permitted and impermissible
+    button labels without anyone programming (_VORLAGE.yaml, LISTEN).
     """
-    if not isinstance(roh, dict):
+    if not isinstance(raw, dict):
         return {}
-    return {name: [str(e) for e in (eintraege or [])]
-            for name, eintraege in roh.items()}
+    return {name: [str(e) for e in (entries or [])]
+            for name, entries in raw.items()}
 
 
-def _verdict_rules(roh) -> dict:
-    """Zeichenketten- und Objektform annehmen.
+def _verdict_rules(raw) -> dict:
+    """Accept both the string form and the object form.
 
-    'severity' wird bewusst ignoriert: eine zweite Schwereskala neben
-    eindeutig/verdaechtig/unklar waere eine Fehlerquelle und muesste in der
-    Praesentation zusaetzlich verteidigt werden (ABSTIMMUNG_Regelwerk.md §2).
-    'reason' wird uebernommen — eine Begruendung je Bedingung ist fuer die
-    Beweisakte wertvoll.
+    'severity' is deliberately ignored: a second severity scale next to
+    eindeutig/verdaechtig/unklar would be a source of error and would have
+    to be explained and defended in the presentation
+    (ABSTIMMUNG_Regelwerk.md §2). 'reason' is kept — a justification per
+    condition is valuable for the evidence file.
     """
-    ergebnis = {stufe: [] for stufe in STUFEN}
-    for stufe in STUFEN:
-        for eintrag in (roh or {}).get(stufe) or []:
-            if isinstance(eintrag, dict):
-                ergebnis[stufe].append(Bedingung(
-                    text=str(eintrag.get("condition", "")),
-                    begruendung=(eintrag.get("reason") or "").strip() or None))
+    result = {level: [] for level in LEVELS}
+    for level in LEVELS:
+        for entry in (raw or {}).get(level) or []:
+            if isinstance(entry, dict):
+                result[level].append(Condition(
+                    text=str(entry.get("condition", "")),
+                    reason=(entry.get("reason") or "").strip() or None))
             else:
-                ergebnis[stufe].append(Bedingung(text=str(eintrag)))
-    return ergebnis
+                result[level].append(Condition(text=str(entry)))
+    return result

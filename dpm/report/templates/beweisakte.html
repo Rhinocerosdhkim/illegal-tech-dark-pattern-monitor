@@ -54,7 +54,7 @@
   <div class="marke">{{ produkt }} · Beweisakte</div>
   <h1>{{ meta.ziel }}</h1>
   <div class="unterzeile">
-    {{ lauf.branche }} · {{ meta.start_url or "—" }}<br>
+    {{ lauf.industry }} · {{ meta.start_url or "—" }}<br>
     Erfassung {{ meta.timestamp or "—" }} · Vorgang <span class="mono">{{ lauf.run_id }}</span>
   </div>
 </div>
@@ -84,9 +84,9 @@
   {% for e in eintraege %}
   <tr>
     <td class="nr">{{ e.nr }}</td>
-    <td>{{ e.regel.name_de }}<br><span class="mono">{{ e.regel.id }}</span></td>
+    <td>{{ e.regel.name }}<br><span class="mono">{{ e.regel.id }}</span></td>
     <td class="mono">{{ e.messwerte }}</td>
-    <td>{{ kategorie.get(e.regel.kategorie, e.regel.kategorie) }}</td>
+    <td>{{ kategorie.get(e.regel.category, e.regel.category) }}</td>
     <td>{{ e.regel.norm }}</td>
     <td><span class="stufe {{ e.stufe_code }}">{{ e.stufe }}</span></td>
     <td class="mono">
@@ -101,7 +101,7 @@
 {% for e in eintraege %}
 <div class="befund">
   <div class="befund-kopf">
-    <h3>{{ e.nr }} · {{ e.regel.name_de }}</h3>
+    <h3>{{ e.nr }} · {{ e.regel.name }}</h3>
     <span class="stufe {{ e.stufe_code }}">{{ e.stufe }}</span>
   </div>
 
@@ -110,10 +110,10 @@
     <ul>{% for norm in e.regel.legal_basis %}<li>{{ norm }}</li>{% endfor %}</ul>
   </div>
 
-  {% if e.regel.tatbestand_de %}
+  {% if e.regel.legal_test %}
   <div class="feld">
     <div class="label">Tatbestand</div>
-    {% for absatz in e.regel.tatbestand_de | absatz %}<p>{{ absatz }}</p>{% endfor %}
+    {% for absatz in e.regel.legal_test | absatz %}<p>{{ absatz }}</p>{% endfor %}
   </div>
   {% endif %}
 
@@ -169,10 +169,10 @@
   </div>
   {% endif %}
 
-  {% if e.regel.anspruchskette %}
+  {% if e.regel.claim_chain %}
   <div class="feld">
     <div class="label">Anspruchskette</div>
-    {% for absatz in e.regel.anspruchskette | absatz %}<p>{{ absatz }}</p>{% endfor %}
+    {% for absatz in e.regel.claim_chain | absatz %}<p>{{ absatz }}</p>{% endfor %}
   </div>
   {% endif %}
 
@@ -190,10 +190,10 @@
   </div>
   {% endif %}
 
-  {% if e.regel.menschliche_pruefung %}
+  {% if e.regel.human_review %}
   <div class="kasten">
     <div class="label">Rechtlich noch zu prüfen</div>
-    <ul>{% for f in e.regel.menschliche_pruefung %}<li>☐ {{ f }}</li>{% endfor %}</ul>
+    <ul>{% for f in e.regel.human_review %}<li>☐ {{ f }}</li>{% endfor %}</ul>
   </div>
   {% endif %}
 

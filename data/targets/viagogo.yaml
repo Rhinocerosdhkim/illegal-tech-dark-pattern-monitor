@@ -1,22 +1,22 @@
-# Zielprofil. Selektoren gehoeren hierher, niemals in den Code.
+# Target profile. Selectors belong here, never in the code.
 name: viagogo
-branche: Ticketing
+industry: Ticketing
 start: "https://www.viagogo.de"
 
-# --- C4 (ABSTIMMUNG_Regelwerk.md) ---------------------------------------
-# Site-weite Voraussetzungen, die ein Mensch bestaetigt hat. Damit ist die
-# Anwendbarkeit FESTGESTELLT statt ABGELEITET und "eindeutig" bleibt moeglich.
-# Produktabhaengige Voraussetzungen gehoeren NICHT hierher.
-bestaetigt_durch_mensch:
-  is_b2c_offer: true          # geprueft: DK, 20.08.2026
+# --- C4 (docs/ABSTIMMUNG_Regelwerk.md) ----------------------------------
+# Site-wide prerequisites a human has confirmed. With that the applicability
+# is ESTABLISHED rather than DERIVED, and "eindeutig" stays possible.
+# Product-dependent prerequisites do NOT belong here.
+confirmed_by_human:
+  is_b2c_offer: true          # checked: DK, 2026-08-20
 
-pfad:
-  - schritt: startseite
-  - schritt: suchergebnis
-    aktion: suche
-    wert: "Konzert München"
-  - schritt: produktdetail
-    aktion: klick_erstes_ergebnis
-  - schritt: warenkorb
-    aktion: klick
-    selektor: "[data-testid=buy]"
+path:
+  - step: startseite
+  - step: suchergebnis
+    action: search
+    value: "Konzert München"
+  - step: produktdetail
+    action: click_first_result
+  - step: warenkorb
+    action: click
+    selector: "[data-testid=buy]"

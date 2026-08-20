@@ -1,24 +1,41 @@
-# Fixtures — handgeschriebene Erfassungsläufe
+# Fixtures — hand-written capture runs
 
-Keine echten Messwerte. Zweck: die Auswertungsschicht (Regelwerk, Beweisakte,
-Marktübersicht) entwickeln und prüfen, **ohne auf die Erfassungsschicht zu
-warten** — und danach als Regressionstest dienen.
+No real measurements. Purpose: build and check the evaluation layer
+(rulebook, Beweisakte, market overview) **without waiting for the capture
+layer** — and afterwards serve as a regression test.
 
-| Ordner | Was es darstellt | Erwartetes Ergebnis |
+| Folder | What it represents | Expected result |
 |---|---|---|
-| `viagogo/` | Referenzfall, von der Verbraucherzentrale benannt | 3 × eindeutig, 3 × unklar |
-| `sauberer-shop/` | unauffälliger Shop, korrekt gestaltet | kein Befund |
-| `ratgeber-portal/` | redaktionelles Portal, kein Shop, kein Banner | Regeln greifen gar nicht |
+| `viagogo/` | reference case, named by the consumer agency | 3 × eindeutig, 3 × unklar |
+| `sauberer-shop/` | unremarkable shop, correctly designed | no finding |
+| `ratgeber-portal/` | editorial portal, no shop, no banner | rules do not apply at all |
 
-**`sauberer-shop` und `ratgeber-portal` haben bewusst kein Zielprofil in
-`data/targets/`.** Damit ist geprüft, dass ein beliebiges Ziel ohne
-Handeinrichtung durch die gesamte Kette läuft — das Werkzeug soll für jede
-Website taugen, nicht nur für die, die wir vorbereitet haben.
+**`sauberer-shop` and `ratgeber-portal` deliberately have no target profile
+in `data/targets/`.** That verifies an arbitrary target runs through the
+whole chain without hand setup — the tool is meant for any website, not
+only the ones we prepared.
 
-Die Folge ist sichtbar und gewollt: ohne menschliche Bestätigung im Zielprofil
-(`bestaetigt_durch_mensch`) bleibt eine Regel, deren Anwendbarkeit auf einer
-Ableitung beruht, auf `verdaechtig` begrenzt (C4).
+The consequence is visible and intended: without human confirmation in the
+target profile (`confirmed_by_human`), a rule whose applicability rests on
+a derivation is capped at `verdaechtig` (C4).
 
-Ändert sich ein Ergebnis, bricht `tests/test_befund.py` bzw.
-`tests/test_unauffaellig.py`. Dann bitte hinsehen, nicht stillschweigend
-den erwarteten Wert anpassen.
+## Schema
+
+English keys throughout:
+
+```jsonc
+{
+  "meta":   { "target", "industry", "start_url", "timestamp", "capture_mode",
+              "viewport", "locale", "timezone", "user_agent", "run_id" },
+  "steps":  [ { "step", "url", "screenshot", "dom_hash" } ],
+  "signals": { "<name>": { "value", "step", "evidence" } },
+  "signal_errors": { "<name>": "why it could not be measured" }
+}
+```
+
+The older German spellings (`schritte`, `wert`, `nachweis`, `ziel`,
+`branche`) are still read, but produce a warning.
+
+If a result changes, `tests/test_verdicts.py` or
+`tests/test_false_alarms.py` breaks. Then look at it — do not silently
+adjust the expected value.

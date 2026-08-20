@@ -1,62 +1,168 @@
 {
-  "_hinweis": "HANDGESCHRIEBENE FIXTURE. Keine echten Messwerte. Zweck: Engine, Beweisakte und Marktuebersicht entwickeln und testen, ohne auf die Erfassungsschicht zu warten. Dient zugleich als Regressionstest.",
-
+  "_note": "HAND-WRITTEN FIXTURE. Not real measurements. Purpose: develop and test the engine, the Beweisakte and the market overview without waiting for the capture layer. Doubles as a regression test.",
   "meta": {
-    "ziel": "viagogo",
-    "branche": "Ticketing",
+    "target": "viagogo",
+    "industry": "Ticketing",
     "start_url": "https://www.viagogo.de",
     "timestamp": "2026-08-20T14:22:03+02:00",
     "capture_mode": "fixture",
-    "viewport": { "width": 1440, "height": 900 },
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
     "locale": "de-DE",
     "timezone": "Europe/Berlin",
     "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) DarkPatternMonitor/0.1",
     "run_id": "2026-08-20T14-22-03_viagogo"
   },
-
-  "schritte": [
-    { "schritt": "startseite",    "url": "https://www.viagogo.de",              "screenshot": "S-01.png", "dom_hash": "sha256:a1b2c3d4e5f60718293a4b5c6d7e8f9012345678" },
-    { "schritt": "suchergebnis",  "url": "https://www.viagogo.de/Suche?q=...",  "screenshot": "S-02.png", "dom_hash": "sha256:b2c3d4e5f60718293a4b5c6d7e8f901234567890" },
-    { "schritt": "produktdetail", "url": "https://www.viagogo.de/Event/12345",  "screenshot": "S-03.png", "dom_hash": "sha256:c3d4e5f60718293a4b5c6d7e8f90123456789012" }
+  "steps": [
+    {
+      "step": "startseite",
+      "url": "https://www.viagogo.de",
+      "screenshot": "S-01.png",
+      "dom_hash": "sha256:a1b2c3d4e5f60718293a4b5c6d7e8f9012345678"
+    },
+    {
+      "step": "suchergebnis",
+      "url": "https://www.viagogo.de/Suche?q=...",
+      "screenshot": "S-02.png",
+      "dom_hash": "sha256:b2c3d4e5f60718293a4b5c6d7e8f901234567890"
+    },
+    {
+      "step": "produktdetail",
+      "url": "https://www.viagogo.de/Event/12345",
+      "screenshot": "S-03.png",
+      "dom_hash": "sha256:c3d4e5f60718293a4b5c6d7e8f90123456789012"
+    }
   ],
-
   "signals": {
-    "is_b2c_offer":                      { "wert": true,             "schritt": "startseite",    "nachweis": "S-01.png" },
-
-    "banner_detected":                   { "wert": true,             "schritt": "startseite",    "nachweis": "S-01.png" },
-    "accept_button_area_px2":            { "wert": 4200,             "schritt": "startseite",    "nachweis": "S-01.png" },
-    "reject_button_area_px2":            { "wert": 900,              "schritt": "startseite",    "nachweis": "S-01.png" },
-    "reject_button_present":             { "wert": true,             "schritt": "startseite",    "nachweis": "S-01.png" },
-    "reject_click_depth":                { "wert": 3,                "schritt": "startseite",    "nachweis": "S-01.png" },
-    "accept_contrast_ratio":             { "wert": 8.4,              "schritt": "startseite",    "nachweis": "S-01.png" },
-    "reject_contrast_ratio":             { "wert": 2.1,              "schritt": "startseite",    "nachweis": "S-01.png" },
-    "preselected_checkbox_count":        { "wert": 0,                "schritt": "startseite",    "nachweis": "S-01.png" },
-    "third_party_cookies_before_consent":{ "wert": 2,                "schritt": "startseite",    "nachweis": "S-01.png" },
-    "more_info_present":                 { "wert": true,             "schritt": "startseite",    "nachweis": "S-01.png" },
-    "more_info_leads_to_reject":         { "wert": true,             "schritt": "startseite",    "nachweis": "S-01.png" },
-    "more_info_click_depth":             { "wert": 2,                "schritt": "startseite",    "nachweis": "S-01.png" },
-
-    "has_checkout_flow":                 { "wert": true,             "schritt": "produktdetail", "nachweis": "S-03.png" },
-    "order_button_found":                { "wert": true,             "schritt": "produktdetail", "nachweis": "S-03.png" },
-    "order_button_label":                { "wert": "Jetzt bestellen","schritt": "produktdetail", "nachweis": "S-03.png" },
-
-    "countdown_element_present":         { "wert": true,             "schritt": "produktdetail", "nachweis": "S-03.png" },
-    "countdown_resets_on_revisit":       { "wert": true,             "schritt": "produktdetail", "nachweis": "S-03.png" },
-    "countdown_text":                    { "wert": "Angebot endet in 14:59", "schritt": "produktdetail", "nachweis": "S-03.png" },
-    "scarcity_text_present":             { "wert": true,             "schritt": "produktdetail", "nachweis": "S-03.png" },
-    "scarcity_value":                    { "wert": 3,                "schritt": "produktdetail", "nachweis": "S-03.png" },
-
-    "has_price_display":                 { "wert": true,             "schritt": "produktdetail", "nachweis": "S-03.png" },
-    "font_size_min_px":                  { "wert": 11,               "schritt": "produktdetail", "nachweis": "S-03.png" },
-    "hidden_by_opacity_count":           { "wert": 0,                "schritt": "produktdetail", "nachweis": "S-03.png" }
+    "is_b2c_offer": {
+      "value": true,
+      "step": "startseite",
+      "evidence": "S-01.png"
+    },
+    "banner_detected": {
+      "value": true,
+      "step": "startseite",
+      "evidence": "S-01.png"
+    },
+    "accept_button_area_px2": {
+      "value": 4200,
+      "step": "startseite",
+      "evidence": "S-01.png"
+    },
+    "reject_button_area_px2": {
+      "value": 900,
+      "step": "startseite",
+      "evidence": "S-01.png"
+    },
+    "reject_button_present": {
+      "value": true,
+      "step": "startseite",
+      "evidence": "S-01.png"
+    },
+    "reject_click_depth": {
+      "value": 3,
+      "step": "startseite",
+      "evidence": "S-01.png"
+    },
+    "accept_contrast_ratio": {
+      "value": 8.4,
+      "step": "startseite",
+      "evidence": "S-01.png"
+    },
+    "reject_contrast_ratio": {
+      "value": 2.1,
+      "step": "startseite",
+      "evidence": "S-01.png"
+    },
+    "preselected_checkbox_count": {
+      "value": 0,
+      "step": "startseite",
+      "evidence": "S-01.png"
+    },
+    "third_party_cookies_before_consent": {
+      "value": 2,
+      "step": "startseite",
+      "evidence": "S-01.png"
+    },
+    "more_info_present": {
+      "value": true,
+      "step": "startseite",
+      "evidence": "S-01.png"
+    },
+    "more_info_leads_to_reject": {
+      "value": true,
+      "step": "startseite",
+      "evidence": "S-01.png"
+    },
+    "more_info_click_depth": {
+      "value": 2,
+      "step": "startseite",
+      "evidence": "S-01.png"
+    },
+    "has_checkout_flow": {
+      "value": true,
+      "step": "produktdetail",
+      "evidence": "S-03.png"
+    },
+    "order_button_found": {
+      "value": true,
+      "step": "produktdetail",
+      "evidence": "S-03.png"
+    },
+    "order_button_label": {
+      "value": "Jetzt bestellen",
+      "step": "produktdetail",
+      "evidence": "S-03.png"
+    },
+    "countdown_element_present": {
+      "value": true,
+      "step": "produktdetail",
+      "evidence": "S-03.png"
+    },
+    "countdown_resets_on_revisit": {
+      "value": true,
+      "step": "produktdetail",
+      "evidence": "S-03.png"
+    },
+    "countdown_text": {
+      "value": "Angebot endet in 14:59",
+      "step": "produktdetail",
+      "evidence": "S-03.png"
+    },
+    "scarcity_text_present": {
+      "value": true,
+      "step": "produktdetail",
+      "evidence": "S-03.png"
+    },
+    "scarcity_value": {
+      "value": 3,
+      "step": "produktdetail",
+      "evidence": "S-03.png"
+    },
+    "has_price_display": {
+      "value": true,
+      "step": "produktdetail",
+      "evidence": "S-03.png"
+    },
+    "font_size_min_px": {
+      "value": 11,
+      "step": "produktdetail",
+      "evidence": "S-03.png"
+    },
+    "hidden_by_opacity_count": {
+      "value": 0,
+      "step": "produktdetail",
+      "evidence": "S-03.png"
+    }
   },
-
   "signal_errors": {
-    "banner_reappears_on_reject":    "Zweiter Aufruf mit sauberem Browserzustand noch nicht implementiert",
-    "banner_reappears_count_24h":    "Erfordert Erfassung ueber 24h",
-    "scarcity_value_unchanged_scans":"Erste Erfassung dieses Ziels, kein Vergleichswert vorhanden",
-    "price_at_checkout":             "Warenkorb ohne Anmeldung nicht erreichbar (Schritt warenkorb abgebrochen)",
-    "is_dauerschuldverhaeltnis":     "Rechtliche Qualifikation, wird nicht gemessen (siehe ABSTIMMUNG_Regelwerk.md Korb C)",
-    "required_info_found":           "Schritt warenkorb nicht erreicht"
+    "banner_reappears_on_reject": "Zweiter Aufruf mit sauberem Browserzustand noch nicht implementiert",
+    "banner_reappears_count_24h": "Erfordert Erfassung ueber 24h",
+    "scarcity_value_unchanged_scans": "Erste Erfassung dieses Ziels, kein Vergleichswert vorhanden",
+    "price_at_checkout": "Warenkorb ohne Anmeldung nicht erreichbar (Schritt warenkorb abgebrochen)",
+    "is_dauerschuldverhaeltnis": "Rechtliche Qualifikation, wird nicht gemessen (siehe ABSTIMMUNG_Regelwerk.md Korb C)",
+    "required_info_found": "Schritt warenkorb nicht erreicht"
   }
 }
