@@ -5,6 +5,7 @@ Ohne Einrichtung ausfuehrbar, keine externen Dienste:
 ```
 .venv/bin/python tests/test_conditions.py    # Bedingungsparser
 .venv/bin/python tests/test_befund.py        # Regelwerk gegen die Fixture
+.venv/bin/python tests/test_akte.py          # Beweisakte
 ```
 
 `tests/test_befund.py` prueft die handgeschriebene Fixture

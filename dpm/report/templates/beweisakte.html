@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>{{ produkt }} — Beweisakte {{ meta.ziel }}</title>
+<style>
+  @page { size: A4; }
+  * { box-sizing: border-box; }
+  body { font: 10.5pt/1.5 "Helvetica Neue", Arial, sans-serif; color: #16181d; margin: 0; }
+  h1 { font-size: 19pt; margin: 0 0 2mm; letter-spacing: -.2pt; }
+  h2 { font-size: 12pt; margin: 9mm 0 3mm; padding-bottom: 1.5mm;
+       border-bottom: 1.4pt solid #16181d; }
+  h3 { font-size: 10.5pt; margin: 0 0 2mm; }
+  p  { margin: 0 0 2.5mm; }
+  .kopf { border-bottom: 2.4pt solid #16181d; padding-bottom: 4mm; margin-bottom: 5mm; }
+  .marke { font-size: 8pt; letter-spacing: 1.6pt; text-transform: uppercase; color: #6b7280; }
+  .unterzeile { color: #4b5563; font-size: 9pt; }
+  table { width: 100%; border-collapse: collapse; margin: 0 0 4mm; }
+  th, td { text-align: left; vertical-align: top; padding: 1.8mm 2mm;
+           border-bottom: .5pt solid #d5d8de; font-size: 8.8pt; }
+  th { background: #f2f3f5; font-size: 7.6pt; text-transform: uppercase;
+       letter-spacing: .5pt; color: #4b5563; border-bottom: 1pt solid #b9bec7; }
+  td.nr { width: 7mm; color: #6b7280; }
+  .stufe { display: inline-block; padding: .4mm 1.8mm; border-radius: 1mm;
+           font-size: 7.6pt; font-weight: 700; text-transform: uppercase;
+           letter-spacing: .4pt; border: .8pt solid; }
+  .eindeutig   { color: #7f1d1d; border-color: #7f1d1d; background: #fdf0f0; }
+  .verdaechtig { color: #7c4a03; border-color: #7c4a03; background: #fdf6e8; }
+  .unklar      { color: #374151; border-color: #9ca3af; background: #f3f4f6; }
+  .befund { margin: 0 0 7mm; padding: 4mm 0 0; border-top: .6pt solid #d5d8de;
+            page-break-inside: avoid; }
+  .befund-kopf { display: flex; justify-content: space-between; gap: 4mm; margin-bottom: 3mm; }
+  .feld { margin: 0 0 3mm; }
+  .feld > .label { font-size: 7.4pt; text-transform: uppercase; letter-spacing: .6pt;
+                   color: #6b7280; margin-bottom: .8mm; }
+  .mono { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 8.2pt;
+          word-break: break-word; }
+  .bedingung { background: #f2f3f5; border-left: 2pt solid #9ca3af;
+               padding: 2mm 2.5mm; }
+  ul { margin: 0; padding-left: 4.5mm; }
+  li { margin-bottom: 1.2mm; font-size: 9pt; }
+  .bild { margin: 2mm 0; page-break-inside: avoid; }
+  .bild img { width: 100%; border: .6pt solid #b9bec7; display: block; }
+  .bild .bu { font-size: 7.4pt; color: #6b7280; margin-top: 1mm; }
+  .kasten { border: .8pt solid #b9bec7; padding: 3mm; margin: 3mm 0; background: #fafbfc; }
+  .warnung { border-color: #b45309; background: #fdf6e8; }
+  .fuss { margin-top: 9mm; padding-top: 3mm; border-top: 1pt solid #b9bec7;
+          font-size: 8pt; color: #4b5563; }
+</style>
+</head>
+<body>
+
+<div class="kopf">
+  <div class="marke">{{ produkt }} · Beweisakte</div>
+  <h1>{{ meta.ziel }}</h1>
+  <div class="unterzeile">
+    {{ meta.branche }} · {{ meta.start_url }}<br>
+    Erfassung {{ meta.timestamp }} · Vorgang <span class="mono">{{ meta.run_id }}</span>
+  </div>
+</div>
+
+<table>
+  <tr><th colspan="2">Erfassungsbedingungen — für die Reproduzierbarkeit maßgeblich</th></tr>
+  <tr><td>Darstellungsfläche</td><td class="mono">{{ meta.viewport.width }} × {{ meta.viewport.height }} px</td></tr>
+  <tr><td>Sprache / Zeitzone</td><td class="mono">{{ meta.locale }} · {{ meta.timezone }}</td></tr>
+  <tr><td>Kennung des Abrufs</td><td class="mono">{{ meta.user_agent }}</td></tr>
+  <tr><td>Erfassungsart</td><td class="mono">{{ meta.capture_mode }}</td></tr>
+</table>
+
+<h2>Befundübersicht</h2>
+<p>
+  {% for z in zusammenfassung %}{{ z.anzahl }} × {{ z.stufe }}{% if not loop.last %} · {% endif %}{% endfor %}.
+  Aufgenommen sind ausschließlich Befunde, die auf eine Messung gestützt sind.
+</p>
+
+<table>
+  <tr>
+    <th>Nr.</th><th>Befund</th><th>Gemessener Wert</th>
+    <th>Kategorie</th><th>Norm</th><th>Stufe</th><th>Nachweis</th>
+  </tr>
+  {% for e in eintraege %}
+  <tr>
+    <td class="nr">{{ e.nr }}</td>
+    <td>{{ e.regel.name_de }}<br><span class="mono">{{ e.regel.id }}</span></td>
+    <td class="mono">{{ e.messwerte }}</td>
+    <td>{{ kategorie.get(e.regel.kategorie, e.regel.kategorie) }}</td>
+    <td>{{ e.regel.norm }}</td>
+    <td><span class="stufe {{ e.stufe_code }}">{{ e.stufe }}</span></td>
+    <td class="mono">
+      {% for b in e.screenshots %}{{ b.datei }}{% if not loop.last %}, {% endif %}{% else %}—{% endfor %}
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+
+<h2>Die Befunde im Einzelnen</h2>
+
+{% for e in eintraege %}
+<div class="befund">
+  <div class="befund-kopf">
+    <h3>{{ e.nr }} · {{ e.regel.name_de }}</h3>
+    <span class="stufe {{ e.stufe_code }}">{{ e.stufe }}</span>
+  </div>
+
+  <div class="feld">
+    <div class="label">Herangezogene Vorschriften</div>
+    <ul>{% for norm in e.regel.legal_basis %}<li>{{ norm }}</li>{% endfor %}</ul>
+  </div>
+
+  {% if e.regel.tatbestand_de %}
+  <div class="feld">
+    <div class="label">Tatbestand</div>
+    {% for absatz in e.regel.tatbestand_de | absatz %}<p>{{ absatz }}</p>{% endfor %}
+  </div>
+  {% endif %}
+
+  {% if e.nachweise %}
+  <div class="feld">
+    <div class="label">Gemessene Werte und ihr Nachweis</div>
+    <table>
+      <tr><th>Signal</th><th>Wert</th><th>Schritt</th><th>Screenshot</th><th>Hash des Seitenzustands</th></tr>
+      {% for n in e.nachweise %}
+      <tr>
+        <td class="mono">{{ n.signal }}</td>
+        <td class="mono">{{ n.anzeige }}</td>
+        <td>{{ n.schritt }}</td>
+        <td class="mono">{{ n.nachweis }}</td>
+        <td class="mono">{{ n.dom_hash or "—" }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% endif %}
+
+  {% if e.bedingung %}
+  <div class="feld">
+    <div class="label">Zutreffende Bedingung des Regelwerks</div>
+    <div class="bedingung mono">{{ e.bedingung }}</div>
+    {% if e.begruendung %}<p style="margin-top:2mm">{{ e.begruendung }}</p>{% endif %}
+  </div>
+  {% endif %}
+
+  {% if e.unklar_wegen %}
+  <div class="feld">
+    <div class="label">Nicht erhoben — deshalb keine Feststellung</div>
+    <ul>
+      {% for l in e.unklar_wegen %}
+      <li><span class="mono">{{ l.signal }}</span> — {{ l.grund }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if e.erlaeuterung %}
+  <div class="feld">
+    <div class="label">Erläuterung</div>
+    {% for absatz in e.erlaeuterung | absatz %}<p>{{ absatz }}</p>{% endfor %}
+  </div>
+  {% endif %}
+
+  {% if e.regel.anspruchskette %}
+  <div class="feld">
+    <div class="label">Anspruchskette</div>
+    {% for absatz in e.regel.anspruchskette | absatz %}<p>{{ absatz }}</p>{% endfor %}
+  </div>
+  {% endif %}
+
+  {% if e.regel.threshold_source %}
+  <div class="kasten">
+    <div class="label">Herkunft der Schwellenwerte</div>
+    {% for absatz in e.regel.threshold_source | absatz %}<p>{{ absatz }}</p>{% endfor %}
+  </div>
+  {% endif %}
+
+  {% if e.regel.false_positive_risks %}
+  <div class="kasten warnung">
+    <div class="label">Bekannte Fehlalarmrisiken — vor einer Abmahnung zu prüfen</div>
+    <ul>{% for r in e.regel.false_positive_risks %}<li>{{ r }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+
+  {% if e.regel.menschliche_pruefung %}
+  <div class="kasten">
+    <div class="label">Rechtlich noch zu prüfen</div>
+    <ul>{% for f in e.regel.menschliche_pruefung %}<li>☐ {{ f }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+
+  {% for h in e.hinweise %}
+  <div class="kasten warnung"><p style="margin:0">{{ h }}</p></div>
+  {% endfor %}
+
+  {% for b in e.screenshots %}
+  <div class="bild">
+    <img src="{{ b.datei }}" alt="Screenshot {{ b.schritt }}">
+    <div class="bu">{{ b.datei }} · Schritt „{{ b.schritt }}" · <span class="mono">{{ b.dom_hash or "ohne Hash" }}</span></div>
+  </div>
+  {% endfor %}
+</div>
+{% endfor %}
+
+<h2>Erfassungsprotokoll</h2>
+<table>
+  <tr><th>Schritt</th><th>Adresse</th><th>Screenshot</th><th>Hash des Seitenzustands</th></tr>
+  {% for s in schritte %}
+  <tr>
+    <td>{{ s.schritt }}</td>
+    <td class="mono">{{ s.url }}</td>
+    <td class="mono">{{ s.screenshot }}</td>
+    <td class="mono">{{ s.dom_hash }}</td>
+  </tr>
+  {% endfor %}
+</table>
+
+<div class="fuss">
+  <strong>Hinweis.</strong> {{ hinweis }}
+</div>
+
+</body>
+</html>

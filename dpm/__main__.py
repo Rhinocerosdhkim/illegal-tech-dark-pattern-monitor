@@ -12,6 +12,7 @@ import argparse
 import sys
 from pathlib import Path
 
+from dpm.report.beweisakte import erzeuge as erzeuge_akte
 from dpm.engine.lauf import lade_lauf
 from dpm.engine.rules import lade_regelwerk
 from dpm.engine.verdict import (EINDEUTIG, NICHT_ANWENDBAR, UNAUFFAELLIG,
@@ -61,6 +62,26 @@ def befund(argumente) -> int:
     return 0
 
 
+def akte(argumente) -> int:
+    lauf = lade_lauf(argumente.lauf)
+    befunde = [pruefe(regel, lauf.tabelle)
+               for regel in lade_regelwerk(argumente.regeln)]
+
+    ergebnis = erzeuge_akte(lauf, befunde, ausgabe=argumente.ausgabe,
+                            als_pdf=not argumente.nur_html)
+
+    print(f"\nBeweisakte {lauf.meta.get('ziel')} — "
+          f"{ergebnis.anzahl_befunde} Befunde")
+    print(f"  {ergebnis.html}")
+    if ergebnis.pdf:
+        groesse = ergebnis.pdf.stat().st_size // 1024
+        print(f"  {ergebnis.pdf}  ({groesse} kB)")
+    else:
+        print("  (kein PDF — Playwright nicht verfuegbar)")
+    print()
+    return 0
+
+
 def main(argv=None) -> int:
     zerleger = argparse.ArgumentParser(prog="dpm", description=__doc__)
     unterbefehle = zerleger.add_subparsers(dest="befehl", required=True)
@@ -69,6 +90,14 @@ def main(argv=None) -> int:
     b.add_argument("lauf", type=Path, help="Ordner mit capture.json")
     b.add_argument("--regeln", type=Path, default=Path("rules"))
     b.set_defaults(funktion=befund)
+
+    a = unterbefehle.add_parser("akte", help="Beweisakte als HTML und PDF erzeugen")
+    a.add_argument("lauf", type=Path, help="Ordner mit capture.json")
+    a.add_argument("--regeln", type=Path, default=Path("rules"))
+    a.add_argument("--ausgabe", type=Path, default=Path("out"))
+    a.add_argument("--nur-html", action="store_true", dest="nur_html",
+                   help="ohne PDF, fuer schnelles Ausprobieren")
+    a.set_defaults(funktion=akte)
 
     argumente = zerleger.parse_args(argv)
     return argumente.funktion(argumente)

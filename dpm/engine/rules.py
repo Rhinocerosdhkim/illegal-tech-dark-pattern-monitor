@@ -38,6 +38,8 @@ class Regel:
     applies_when: dict = field(default_factory=dict)   # all / any / none
     verdict_rules: dict = field(default_factory=dict)  # Stufe -> [Bedingung]
     explanation_template_de: str = ""
+    threshold_source: str = ""
+    false_positive_risks: list = field(default_factory=list)
     menschliche_pruefung: list = field(default_factory=list)
     disclaimer_required: bool = True
 
@@ -72,6 +74,8 @@ def _baue(roh: dict, dateiname: str) -> Regel:
         applies_when=_applies_when(roh.get("applies_when")),
         verdict_rules=_verdict_rules(roh.get("verdict_rules")),
         explanation_template_de=(roh.get("explanation_template_de") or "").strip(),
+        threshold_source=(roh.get("threshold_source") or "").strip(),
+        false_positive_risks=[str(r).strip() for r in (roh.get("false_positive_risks") or [])],
         menschliche_pruefung=list(roh.get("menschliche_pruefung") or []),
         disclaimer_required=bool(roh.get("disclaimer_required", True)),
     )
