@@ -62,18 +62,23 @@ print("  ok  two or more -> eindeutig")
 assert level("DP-001", third_party_cookies_before_consent=0, **banner) == "unauffaellig"
 print("  ok  none -> no finding")
 
-print("DP-003 — a plain countdown is not by itself a finding")
-# The removed condition fired on every countdown, including session and
-# payment timers that the rule's own false_positive_risks want excluded.
+print("DP-003 — a countdown alone is no finding at any level")
+# Two deletions on 20.08. plus PV's removal of the eindeutig branch the same
+# evening. A resetting countdown only shows the timer is session-scoped;
+# session and checkout timers reset identically, and the rule's own
+# false_positive_risks want those excluded. Nothing in Anhang Nr. 7 is
+# established by a reset alone.
 clean = dict(confirmed=["is_b2c_offer"], is_b2c_offer=True,
              scarcity_text_present=False, scarcity_value=0,
              scarcity_value_unchanged_scans=1)
-assert level("DP-003", countdown_element_present=True,
-             countdown_resets_on_revisit=False, **clean) == "unauffaellig"
-print("  ok  countdown that does not reset -> no finding")
-assert level("DP-003", countdown_element_present=True,
-             countdown_resets_on_revisit=True, **clean) == "eindeutig"
-print("  ok  countdown that resets -> eindeutig (Anh. § 3 III UWG Nr. 7)")
+for resets in (False, True):
+    got = level("DP-003", countdown_element_present=True,
+                countdown_resets_on_revisit=resets, **clean)
+    assert got == "unauffaellig", f"countdown resets={resets} -> {got}"
+    print(f"  ok  countdown, resets={resets} -> no finding")
+assert not RULES["DP-003"].verdict_rules["eindeutig"], \
+    "DP-003 hat wieder einen eindeutig-Zweig — bitte gegen BEFUNDSTUFEN T1 pruefen"
+print("  ok  DP-003 carries no eindeutig branch")
 
 print("DP-006 — soft indicators only count in combination")
 # Small print in a footer describes practically every website. Each of the

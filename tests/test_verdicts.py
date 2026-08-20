@@ -18,7 +18,12 @@ findings = {f.rule.id: f for f in (assess(r, run.table) for r in load_rules())}
 EXPECTED = {
     "DP-001": "eindeutig",     # third-party cookies before any consent
     "DP-002": "verdaechtig",   # "Jetzt bestellen" is disputed, not clear-cut
-    "DP-003": "eindeutig",     # countdown resets on revisit
+    # PV hat den eindeutig-Zweig am 20.08. abgeraeumt: ein zuruecksetzender
+    # Countdown belegt nur, dass der Zaehler sitzungsbezogen erzeugt wird -
+    # nicht, dass die Angabe unwahr ist. Ersatz steht als Vorschlag in der
+    # Datei und braucht countdown_unchanged_scans + countdown_personalized.
+    # Bis dahin: die Knappheitsbedingung ist nicht auswertbar -> unklar.
+    "DP-003": "unklar",
     "DP-004": "unklar",        # Dauerschuldverhaeltnis not measurable
     "DP-005": "unklar",        # checkout not reachable without login
     "DP-006": "unklar",        # step "warenkorb" never reached
@@ -30,11 +35,11 @@ for rule_id, level in EXPECTED.items():
     print(f"  ok  {rule_id} -> {level}")
 
 print("\nEvidence binding")
-dp003 = findings["DP-003"]
-assert dp003.evidence, "DP-003 without evidence"
-for e in dp003.evidence:
+dp001 = findings["DP-001"]
+assert dp001.evidence, "DP-001 without evidence"
+for e in dp001.evidence:
     assert e["step"] and e["evidence"], f"evidence without provenance: {e}"
-assert any(e["evidence"] == "S-03.png" for e in dp003.evidence)
+assert any(e["evidence"] == "S-01.png" for e in dp001.evidence)
 print("  ok  every finding points at a step and a screenshot")
 
 print("\nC4 — derivation vs. finding of fact")

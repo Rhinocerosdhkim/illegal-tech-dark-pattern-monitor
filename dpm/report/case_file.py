@@ -118,7 +118,7 @@ def _entry(nr: int, finding: Finding, steps: dict, run: Run,
         "messwerte": ", ".join(f"{e['signal']} = {_short(e['value'])}"
                                for e in evidence) or "—",
         "screenshots": _images(evidence, folder),
-        "erlaeuterung": _explanation(finding.rule, run.table),
+        "erlaeuterung": _explanation(finding, run.table),
     }
 
 
@@ -155,8 +155,16 @@ def _images(evidence: list, folder: Path) -> list:
     return images
 
 
-def _explanation(rule: Rule, table: SignalTable) -> str:
-    """Substitute {signal_name} with the measured value.
+def _explanation(finding: Finding, table: SignalTable) -> str:
+    """Pick the text for THIS finding's level, then substitute placeholders.
+
+    The template is chosen per verdict level. A "verdaechtig" finding must
+    not be explained with a sentence that asserts the requirement was not
+    met — that would claim more than the level does
+    (docs/BEFUNDSTUFEN.md 6). Rules that give a single text keep it under
+    the key "*", and it then applies to every level.
+
+    {befund} is replaced by the reason of the condition that fired.
 
     The whole signal table is queried, not just the signals of the matching
     condition: the explanatory text regularly names measurements that
@@ -166,16 +174,21 @@ def _explanation(rule: Rule, table: SignalTable) -> str:
     a document that accompanies a warning letter, claiming something was
     not captured when it was would be a factual error.
     """
-    if not rule.explanation_template:
+    templates = finding.rule.explanation_template
+    template = templates.get(finding.level) or templates.get("*") or ""
+    if not template:
         return ""
 
     def substitute(match):
+        name = match.group(1)
+        if name == "befund":
+            return finding.reason or ""
         try:
-            return _short(table.get(match.group(1)))
+            return _short(table.get(name))
         except MissingSignal:
             return "[nicht erhoben]"
 
-    return _PLACEHOLDER.sub(substitute, rule.explanation_template)
+    return _PLACEHOLDER.sub(substitute, template)
 
 
 def _summary(findings: list) -> list:

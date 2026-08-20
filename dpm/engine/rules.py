@@ -24,7 +24,10 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 
-LEVELS = ("eindeutig", "verdaechtig")
+# "unklar" is declarable too: a rule may state explicitly what it could not
+# resolve, instead of leaving it to the automatic gap handling. See
+# docs/BEFUNDSTUFEN.md 4 - a failed keyword search is not a finding.
+LEVELS = ("eindeutig", "verdaechtig", "unklar")
 
 # YAML key -> attribute. Both spellings are read; the German one is what the
 # rule files use today.
@@ -65,7 +68,11 @@ class Rule:
     applicability_derived: bool = False
     verdict_rules: dict = field(default_factory=dict)  # level -> [Condition]
     lists: dict = field(default_factory=dict)          # listen
-    explanation_template: str = ""                     # explanation_template_de
+    # Level -> text. A rule may give one text per verdict level; the key "*"
+    # is the fallback for rules that give a single text. Bound to the level
+    # because an explanation must never assert more than the level does
+    # (docs/BEFUNDSTUFEN.md 6).
+    explanation_template: dict = field(default_factory=dict)
     threshold_source: str = ""
     false_positive_risks: list = field(default_factory=list)
     human_review: list = field(default_factory=list)   # menschliche_pruefung
@@ -122,7 +129,7 @@ def _build(raw: dict, filename: str) -> Rule:
         applicability_derived=bool(raw.get("applicability_derived", False)),
         verdict_rules=_verdict_rules(raw.get("verdict_rules")),
         lists=_lists(_pick(raw, "lists")),
-        explanation_template=str(_pick(raw, "explanation_template", "")).strip(),
+        explanation_template=_explanation_template(_pick(raw, "explanation_template")),
         threshold_source=(raw.get("threshold_source") or "").strip(),
         false_positive_risks=[str(r).strip()
                               for r in (raw.get("false_positive_risks") or [])],
@@ -139,6 +146,15 @@ def _applies_when(raw) -> dict:
     if isinstance(raw, list):
         return {**empty, "all": [str(c) for c in raw]}
     return {key: [str(c) for c in (raw.get(key) or [])] for key in empty}
+
+
+def _explanation_template(raw) -> dict:
+    """One text per level, or a single text under the key "*"."""
+    if isinstance(raw, dict):
+        return {level: str(text).strip()
+                for level, text in raw.items() if str(text or "").strip()}
+    text = str(raw or "").strip()
+    return {"*": text} if text else {}
 
 
 def _lists(raw) -> dict:

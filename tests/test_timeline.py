@@ -24,12 +24,17 @@ assert not timeline.warnings, timeline.warnings
 print("  ok  same target, correct order, same viewport — no objections")
 
 print("\nA finding disappears")
-for rule_id, before, after in [("DP-002", "verdaechtig", "unauffaellig"),
-                               ("DP-003", "eindeutig", "unauffaellig")]:
-    c = changes[rule_id]
-    assert (c.kind, c.before_level, c.after_level) == (RESOLVED, before, after), c
-    assert c.before_condition and not c.after_condition
-    print(f"  ok  {rule_id} {before} -> {after}, earlier condition recorded")
+c = changes["DP-002"]
+assert (c.kind, c.before_level, c.after_level) == (RESOLVED, "verdaechtig", "unauffaellig"), c
+assert c.before_condition and not c.after_condition
+print("  ok  DP-002 verdaechtig -> unauffaellig, earlier condition recorded")
+
+# DP-003 no longer carries a finding at all (PV removed the eindeutig branch),
+# so the countdown disappearing now shows up as a change in what could be
+# measured, not as a finding that was resolved. That is the honest reading.
+c = changes["DP-003"]
+assert (c.before_level, c.after_level) == ("unklar", "unauffaellig"), c
+print("  ok  DP-003 unklar -> unauffaellig (Messlage, kein Befund)")
 
 print("\nSame level, different facts — what a naive diff would miss")
 c = changes["DP-001"]
@@ -43,8 +48,10 @@ print(f"      {c.before_condition}  ->  {c.after_condition}")
 
 print("\nUnchanged rules are not reported as changes")
 assert all(changes[r].kind == UNCHANGED for r in ("DP-004", "DP-005", "DP-006"))
-assert len(timeline.noteworthy) == 3, [c.rule_id for c in timeline.noteworthy]
-print("  ok  3 of 6 rules noteworthy")
+# DP-003 is a "messlage" change, not a finding — deliberately not noteworthy.
+assert [c.rule_id for c in timeline.noteworthy] == ["DP-001", "DP-002"], \
+    [c.rule_id for c in timeline.noteworthy]
+print("  ok  2 of 6 rules noteworthy")
 
 print("\nSignal level")
 changed = {s.signal: s for s in timeline.signal_changes if s.kind == "geaendert"}

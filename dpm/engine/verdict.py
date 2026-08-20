@@ -73,11 +73,14 @@ def assess(rule: Rule, table: SignalTable) -> Finding:
     # (confirmed_by_human) unlocks it again.
     derived = [s for s in applicability_signals
                if is_derived(s) and s not in table.confirmed]
-    if rule.applicability_derived:
-        derived = derived or ["(applies_when ist eine Ableitung aus Tatsachen)"]
+    # A rule that declares its applicability derived cannot have the cap
+    # lifted per target: the inference is product-dependent, not site-wide.
+    # The note has to say so, or the evidence file tells the reader to do
+    # something that would not work.
+    locked = rule.applicability_derived
 
     skipped: list = []
-    for level in (CLEAR, SUSPECTED):
+    for level in (CLEAR, SUSPECTED, UNRESOLVED):
         for condition in rule.verdict_rules.get(level, []):
             result, gaps = _condition(condition, rule, table)
             if gaps:
@@ -87,7 +90,7 @@ def assess(rule: Rule, table: SignalTable) -> Finding:
                 if state == UNCERTAIN:
                     return _applicability_open(rule, level, condition, open_points)
                 return _hit(rule, level, condition, result, table,
-                            derived, applicability_signals)
+                            derived, locked, applicability_signals)
 
     if skipped:
         return Finding(rule=rule, level=UNRESOLVED, unresolved=_unique(skipped))
@@ -107,10 +110,20 @@ def _applicability_open(rule, level, condition, open_points) -> Finding:
                f"Seite ueberhaupt anwendbar ist, konnte nicht geprueft werden."])
 
 
-def _hit(rule, level, condition, result, table, derived, applicability_signals):
+def _hit(rule, level, condition, result, table, derived, locked,
+         applicability_signals):
     notes, downgraded = [], False
 
-    if level == CLEAR and derived:
+    if level == CLEAR and locked:
+        level = SUSPECTED
+        downgraded = True
+        notes.append(
+            "Herabgestuft auf 'verdaechtig': die Anwendbarkeit dieser Regel "
+            "wird aus Tatsachensignalen abgeleitet, nicht festgestellt. Die "
+            "Ableitung ist je Produkt verschieden und laesst sich deshalb "
+            "nicht site-weit im Zielprofil bestaetigen (C4). Die rechtliche "
+            "Einordnung steht unter 'Rechtlich noch zu pruefen'.")
+    elif level == CLEAR and derived:
         level = SUSPECTED
         downgraded = True
         notes.append(
