@@ -151,6 +151,7 @@ Stand: 19.08.2026 · Änderungen bitte über das Entwicklungsteam
 | Signal | Typ | Status | Bedeutung |
 |---|---|---|---|
 | `shipping_cost_amount` | Zahl | ✅ | Betrag der auf der Produktseite genannten Versandkosten |
+| `listed_price_components` | Liste | ✅ | die auf der Produktseite ausgewiesenen Preisbestandteile mit Bezeichnung und Betrag (Grundpreis, Versand, Gebühren …) — Grundlage für § 3 PAngV |
 | `gratis_claim_scope` | Text | ✅ | Text im Umfeld des Gratis-Versprechens |
 | `free_pickup_option_present` | bool | ✅ | kostenlose Abholung wählbar — beobachtbarer Anhaltspunkt für die Ausnahme des Anhangs Nr. 20 |
 | `vat_disclosure_present` | bool | ✅ | Hinweis auf die Umsatzsteuer im Preisumfeld — **hochgestuft von ⚪** |
@@ -198,11 +199,23 @@ Diese Merkmale sind **rechtliche Wertungen** und werden es auch bis Sonntag nich
 | `kuendigungsbutton_label_is_not_clearly_equivalent` | „entsprechend eindeutig" ist Auslegung — **stattdessen** `kuendigungsbutton_label` gegen eine Positiv-/Negativliste prüfen, siehe `_VORLAGE.yaml` |
 | „spürbare Beeinträchtigung" (§ 3a UWG) | reine Wertung, taucht als Signal gar nicht erst auf |
 
+### Kein eigenes Signal, weil in der Regel ausdrückbar
+
+`costs_present_despite_gratis_claim` ist kein Messwert, sondern eine **Verknüpfung zweier Messwerte**. Genau dafür ist `verdict_rules` da:
+
+```yaml
+  - condition: "gratis_claim_present == true and shipping_cost_amount > 0"
+```
+
+Grundsatz: Das System misst Tatsachen, die Regel verknüpft sie. Ein Signal, das bereits eine Schlussfolgerung enthält, verschiebt die Verknüpfung in den Code — dorthin, wo das juristische Team sie nicht mehr ändern kann.
+
+*Ob die Kosten sich überhaupt auf das als „gratis" beworbene Angebot beziehen, bleibt zudem eine Wertung. Beobachtbarer Anhaltspunkt für die Ausnahme des Anhangs Nr. 20: `free_pickup_option_present`.*
+
 ## Zurückgestellt mit DP-005b
 
 Alle Signale, die eine Navigation **bis zur Kasse** voraussetzen, bleiben ⚪ und werden nur gebaut, wenn nach dem Feature Freeze am Samstag noch Zeit ist:
 
-`mandatory_total_price_at_checkout` · `optional_costs_at_checkout` · `price_immediately_before_order` · `mandatory_price_delta` · `optional_price_delta` · `additional_mandatory_cost_count` · `additional_mandatory_cost_amount` · `additional_mandatory_cost_disclosed` · `additional_mandatory_cost_disclosed_before_order` · `additional_mandatory_cost_first_display_after_product_page` · `paid_addon_disclosed_before_selection` · `preselected_paid_addon_amount` · `additional_search_step_required` · `regular_login_required_for_service` · `required_info_visible_before_purchase_decision`
+`mandatory_total_price_at_checkout` · `optional_costs_at_checkout` · `price_immediately_before_order` · `mandatory_price_delta` · `optional_price_delta` · `additional_mandatory_cost_count` · `additional_mandatory_cost_amount` · `additional_mandatory_cost_disclosed` · `additional_mandatory_cost_disclosed_before_order` · `additional_mandatory_cost_first_display_after_product_page` · `paid_addon_disclosed_before_selection` · `preselected_paid_addon_amount` · `additional_search_step_required` · `regular_login_required_for_service` · `required_info_visible_before_purchase_decision` · `shipping_cost_disclosed_before_checkout`
 
 **Bitte keine Regel bauen, deren Kern auf diesen Signalen steht.** DP-005a kommt ohne sie aus.
 
