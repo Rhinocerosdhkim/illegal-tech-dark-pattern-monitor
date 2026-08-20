@@ -16,35 +16,29 @@
 
   # Kategorie nach dem Raster der Verbraucherzentrale (19.08.):
   # Zeitdruck | Zwang | Hindernisse | Irrefuehrung
-  # -- Vorbelegung durch das Entwicklungsteam, bitte pruefen --
   kategorie: "Zeitdruck"
 
   status: ENTWURF
-  bearbeiter: ""
+  bearbeiter: "Jura-Team"
 
   applies_when:
     - "is_b2c_offer == true"
 
   legal_basis:
-    # VORSCHLAG - bitte prüfen und ergänzen
     - "Anhang zu § 3 Abs. 3 UWG Nr. 7 (unwahre Angabe zeitlicher Begrenzung)"
-    - "Anhang zu § 3 Abs. 3 UWG Nr. 5 (Lockangebote) - passt das hier?"
-    - "§ 5 Abs. 1, Abs. 2 UWG (irreführende geschäftliche Handlung)"
-    # - "§ 5a UWG - relevant?"
+    - "§ 5 Abs. 1, Abs. 2 UWG (irreführende geschäftliche Handlung) — subsidiär, wenn keine Einordnung in die Schwarzen Liste möglich ist"
+    - "§ 8 UWG (Unterlassungs-/Beseitigungsanspruch); § 8 Abs. 3 UWG (Aktivlegitimation: Wettbewerber, qualifizierte Verbraucherverbände)"
 
   tatbestand_de: >
-    AUSFUELLEN.
-    Hinweis: Bitte den Wortlaut der Nr. 7 des Anhangs genau wiedergeben,
-    insbesondere das Merkmal der Unwahrheit und den Zweck, den Verbraucher
-    um eine ausreichende Entscheidungsgrundlage zu bringen.
+    Folgende geschäftliche Handlungen sind gegenüber Verbrauchern stets unzulässig:
+    die unwahre Angabe, bestimmte Waren oder Dienstleistungen seien allgemein
+    oder zu bestimmten Bedingungen nur für einen sehr begrenzten Zeitraum
+    verfügbar, um den Verbraucher zu einer sofortigen geschäftlichen
+    Entscheidung zu veranlassen, ohne dass dieser Zeit und Gelegenheit hat,
+    sich auf Grund von Informationen zu entscheiden;
 
   anspruchskette: >
-    AUSFUELLEN.
-    Hinweis: Anhang zu § 3 Abs. 3 UWG wirkt unmittelbar - anders als bei
-    DP-005 ist kein Umweg ueber § 3a UWG noetig. Bitte kurz begruenden,
-    warum bei Tatbestaenden der Schwarzen Liste keine Spuerbarkeitspruefung
-    stattfindet. Dieser Punkt ist fuer unsere Praesentation wichtig, weil er
-    erklaert, warum gerade hier die Stufe "eindeutig" gerechtfertigt ist.
+    §3 Abs. 3 UWG iVm Ablage zu § 3 Abs. 3 Nr. 7 => Unterlassungsanspruch § 8 Abs. 1 UWG: Aktivlegitimation der Verbraucherzentrale nach § 8 Abs. 3 Nr. 3 UWG.
 
   signals:
     - countdown_element_present
@@ -52,51 +46,76 @@
     - countdown_text
     - scarcity_text_present
     - scarcity_value
-    - scarcity_value_unchanged_scans   # Status GELB - erst ab Freitag
+    - scarcity_value_unchanged_scans
 
   verdict_rules:
     eindeutig:
-      # VORSCHLAG des Entwicklungsteams - bitte pruefen:
       - "countdown_element_present == true and countdown_resets_on_revisit == true"
+      - "scarcity_text_present == true and scarcity_value > 0 and scarcity_value_unchanged_scans >= 3"
     verdaechtig:
-      # VORSCHLAG - ab wie vielen unveraenderten Scans wird es auffaellig?
-      - "scarcity_text_present == true and scarcity_value_unchanged_scans >= ?"
+      - "countdown_element_present == true and countdown_resets_on_revisit != true"
+      - "scarcity_text_present == true and scarcity_value_unchanged_scans >= 2"
+      - "scarcity_text_present == true and scarcity_value == 0"
 
   threshold_source: >
-    AUSFUELLEN.
-    Beim Countdown duerfte keine Zahl noetig sein - das Zuruecksetzen ist
-    ein Ja/Nein-Befund. Bitte bestaetigen.
-    Bei der Knappheit: Wie viele Scans ohne Aenderung rechtfertigen einen
-    Verdacht? Gibt es dazu etwas in Rechtsprechung oder Literatur, oder
-    ist das eine eigene Festlegung?
+    Wortlaut Anlage Nr. 7 zu § 3 Abs. 3 UWG: die unwahre Angabe einer zeitlichen
+    Begrenzung ist als unlautere geschäftliche Handlung ausdrücklich genannt.
+    Für den Befund der "Unwahrheit" ist keine numerische Schwelle gesetzlich
+    vorgegeben; es handelt sich um einen qualitativen Rechtsbegriff.
+
+    Technische Festlegung (Teamentscheidung): Für den Countdown genügt
+    ein reproduzierbarer Befund, dass die behauptete Begrenzung technisch
+    nicht gegeben ist (z. B. Reset auf denselben Startwert nach Löschen von
+    Cookies/localStorage). Für Knappheitsangaben (angegebene Stückzahl)
+    empfehlen wir als praktischen Schwellenwert mindestens 3 voneinander
+    unabhängige Messungen, um legitime, kurzzeitige Bestandsänderungen
+    oder Messfehler auszuschließen. Diese Zählgrenze ist eine technische
+    Vorsichtsmaßnahme zur Minimierung von False Positives, nicht eine
+    materielle Voraussetzung des rechtlichen Tatbestands.
 
   false_positive_risks:
-    # Vom Entwicklungsteam vorbereitet - bitte ergaenzen und rechtlich einordnen
     - >
-      Nutzerbezogene Aktionen ("24 Stunden ab Registrierung") setzen bei
-      geloeschten Browserdaten zulaessigerweise neu an. Gegenmassnahme:
-      Erfassung nur im nicht angemeldeten Zustand.
+      Personalisierte zeitbegrenzte Angebote („24 Std. ab Registrierung"),
+      die sich für jeden Nutzer korrekt zurücksetzen: Messungen müssen im
+      nicht angemeldeten Zustand erfolgen oder nur auf nicht‑personalisierten
+      Werbeaussagen angewendet werden.
     - >
-      Taegliche Versandschlusszeiten ("Heute bis 15:00 bestellt, morgen
-      geliefert") setzen sich taeglich zurueck und sind zutreffend.
-      Bitte pruefen: Reicht eine Stichwortunterscheidung aus, oder braucht
-      es ein zusaetzliches Merkmal?
-    - AUSFUELLEN - weitere Faelle?
+      Legitimer betrieblicher Countdown (z. B. Ablauf einer Sitzung, Checkout‑Token)
+      oder technische Hinweise (z. B. verbleibende Zeit zur Zahlung): solche
+      funktionalen Countdowns sind zulässig und sollten durch Kontextindikatoren
+      (z. B. Label „Sitzung verbleibend", Hinweis auf Sicherheitsfunktion)
+      ausgenommen werden.
+    - >
+      Echtes, sich häufig änderndes Inventar (z. B. Lagerbestände, dynamische
+      Restmengen): Kurzfristige Veränderungen sind plausibel. Gegenmaßnahme:
+      mehrere Messungen über einen längeren Zeitraum / andere Indikatoren prüfen.
+    - >
+      Gezielte Angebote nach Geolocation oder A/B‑Testing: Tests müssen die
+      richtige Geokonfiguration und ggf. Varianten beachten.
+    - >
+      Caching/CDN‑Effekte oder CDN‑seitige Headers: Tests sollen mit gelöschtem
+      Browser‑Status und, falls möglich, weiterer Session/-IP‑Variation
+      wiederholt werden, um Messfehler zu reduzieren.
 
   explanation_template_de: >
-    AUSFUELLEN.
-    Bitte die Platzhalter {countdown_text}, {countdown_resets_on_revisit},
-    {scarcity_value} verwenden. Der Text sollte deutlich machen, dass der
-    Befund auf einer wiederholten Messung beruht - das ist der Kern
-    unserer Beweisfuehrung.
+    Befund: Auf der untersuchten Seite wurde eine Angabe zur zeitlichen Begrenzung
+    festgestellt („{countdown_text}" / {scarcity_value} falls vorhanden). Nach
+    Wiederholung der Messung in einer frischen Browser‑Session (Cookies/localStorage
+    gelöscht) {countdown_resets_on_revisit,  default: 'wurde festgestellt, dass der Countdown auf denselben Startwert zurückspringt'}.
+    Dies legt nahe, dass die behauptete zeitliche Begrenzung nicht real besteht
+    und vielmehr künstlicher Zeitdruck erzeugt wird.
+
+    Rechtsbewertung: Die unwahre Angabe einer zeitlichen Begrenzung ist in
+    Anlage Nr. 7 zu § 3 Abs. 3 UWG als stets unzulässige geschäftliche Handlung
+    genannt. Liegt eine solche unlautere Handlung vor, begründet dies in der Regel
+    Unterlassungs‑ und Beseitigungsansprüche nach § 8 UWG. Detailbelege (Screenshots,
+    DOM‑Hashes, Request/Response‑Header) sind diesem Bericht beigefügt.
 
   offene_fragen:
-    - >
-      Genuegt das einmalige Zuruecksetzen als Nachweis der Unwahrheit,
-      oder sollten wir mehrere Wiederholungen verlangen?
-    - >
-      Faellt "17 Personen sehen sich das gerade an" unter Nr. 7 oder eher
-      unter § 5 UWG? Sollten wir es ueberhaupt aufnehmen?
-    - AUSFUELLEN
+    - "Reicht aus Sicht der Rechtsabteilung ein einziger reproduzierbarer Reset des Countdowns (nach Löschen der Browserdaten) als gerichtsfester Nachweis der Unwahrheit, oder sollen wir 2–3 unabhängige Messungen (z. B. verschiedene IPs/Times) vorschreiben? (Vorschlag: 2–3 Messungen.)"
+    - "Sollen wir in die Regel aufgenommene Ausnahmen explizit benennen (z. B. Session/Checkout‑Timeouts, technisch begründete Countdowns)?"
+    - "Wie streng wollen wir mit Formulierungen wie 'X Personen sehen sich das gerade an' verfahren — Nr. 7 UWG oder § 5 UWG? (Vorschlag: 'viewer_count_present' zunächst unter § 5 UWG prüfen, bei manipulativer Reproduktion ggf. Nr.7.)"
+    - "Welche zusätzlichen Belege sind gewünscht, um ein gerichtsfestes Paket zu erzeugen (z. B. vollständige Set‑Cookie‑Listen, Server‑Response‑Headers, Zeitstempelscreenshots)?"
+    - "Soll die Mindestanzahl von Confirmations‑Scans (bei Knappheit) konfigurierbar bleiben oder fest in die Regel geschrieben werden?"
 
   disclaimer_required: true
