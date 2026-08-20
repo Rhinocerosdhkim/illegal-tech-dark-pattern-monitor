@@ -7,14 +7,14 @@ Die **rein mechanischen Fehler sind bereits behoben** (siehe Abschnitt 7). Was h
 
 ## Entscheidungsliste — wer entscheidet was, bis wann
 
-### A · Technik-Team (Donghyun + Karthik) — **bis 12:00**, sonst kann Sebastian nachmittags nicht arbeiten
+### A · Technik-Team — ✅ **entschieden am 20.08.**, siehe `DECISIONS.md`
 
 | | Entscheidung | Warum blockierend |
 |---|---|---|
-| **A1** | Signalliste: für jeden Wunsch aus Korb A/B/C ein ✅ / 🟡 / ❌ | Ohne Zusage schreibt Sebastian Regeln auf Signale, die es nie geben wird |
-| **A2** | Eine Schreibweise für `verdict_rules` festlegen (Punkt 2) | Die Engine kann nicht zwei Formen parsen. Ohne Festlegung kein Engine-Start |
-| **A3** | `applies_when`: `all:` / `none:` / **`any:`** übernehmen (Punkt 3) | `any:` wird für die Zerlegung von `is_dauerschuldverhaeltnis` gebraucht und fehlt bisher |
-| **A4** | Feld `menschliche_pruefung` einführen — ja oder nein (Punkt 1) | Schemaentscheidung, betrifft Engine und Beweisakte |
+| ~~A1~~ | ✅ **erledigt** — Signalliste in [`_SIGNALE.md`](../rules/_SIGNALE.md) eingearbeitet | |
+| ~~A2~~ | ✅ **erledigt** — Kurz- **und** Langform zulässig, Engine normalisiert. Kein `severity`. Neu: `or`, `in`/`not in`, Feld `listen:` | |
+| ~~A3~~ | ✅ **erledigt** — `all:` / `any:` / `none:` übernommen, flache Liste bleibt gültig | |
+| ~~A4~~ | ✅ **erledigt** — Feld eingeführt, steht in [`_VORLAGE.yaml`](../rules/_VORLAGE.yaml) | |
 
 ### B · Juristisches Team — **Zulieferung bis 14:00**
 

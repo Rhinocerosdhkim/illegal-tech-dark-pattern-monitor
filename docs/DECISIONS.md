@@ -7,6 +7,32 @@ Format: `## JJJJ-MM-TT — Entscheidung` + zwei bis vier Sätze Begründung. Kur
 
 ---
 
+## 2026-08-20 — A2: `verdict_rules` akzeptiert Kurz- und Langform, kein `severity`
+
+Zulässig sind eine Zeichenkette (Kurzform) und ein Objekt aus `condition` und `reason` (Langform). Die Engine normalisiert intern auf die Langform. Grund gegen eine erzwungene Migration: Fünf Regeln stehen in der Kurzform, die Umstellung träfe das juristische Team am Abgabetag.
+
+Die Langform ist die bevorzugte, weil `reason` je Bedingung in die Beweisakte wandert — damit erhält jeder Befund seine eigene Begründung statt eines Sammeltextes für die ganze Regel. Das löst zugleich den Platzhalter `[BEFUND]`: `{befund}` wird durch das `reason` der ausgelösten Bedingung ersetzt.
+
+`severity: HIGH/MEDIUM/LOW` wird **nicht** übernommen. Es wäre eine zweite Schwereskala neben `eindeutig`/`verdaechtig`/`unklar`, die wir in der Präsentation erklären und verteidigen müssten. In DP-005 war sie ohnehin nahezu eine Funktion der Stufe: alle `eindeutig`-Bedingungen trugen `HIGH`.
+
+Ergänzt wurden die Operatoren `or` sowie `in` / `not in` für benannte Wortlisten im neuen Feld `listen:`. Damit lässt sich die Beschriftung der Kündigungsschaltfläche gegen eine Positiv- und eine Negativliste prüfen, ohne dass jemand programmiert.
+
+## 2026-08-20 — A3: `applies_when` erhält `all:` / `any:` / `none:`
+
+`any:` wird gebraucht, sobald `is_dauerschuldverhaeltnis` in Tatsachensignale zerlegt wird — „mindestens eines der drei starken Signale". Eine flache Liste ohne Schlüsselwort gilt weiterhin als `all:`, bestehende Regeln bleiben also gültig.
+
+Semantik bei fehlendem Signal: Würde die Regel sonst anschlagen → `unklar`. Würde sie ohnehin nicht anschlagen → stillschweigend übersprungen. Andernfalls stünde in jedem Bericht für jede Seite ein `unklar` zu jeder Regel, und die Stufe verlöre ihre Aussagekraft.
+
+## 2026-08-20 — A4: Feld `menschliche_pruefung` eingeführt
+
+Merkmale, die eine rechtliche Wertung erfordern, verschwinden nicht mehr stillschweigend, sondern erscheinen in der Beweisakte als Prüfliste unter dem Befund: „Technisch festgestellt: A, B, C. Rechtlich noch zu prüfen: X, Y." Sebastian hat in DP-005 selbst geschrieben, die Spürbarkeit nach § 3a UWG dürfe nicht durch einen erfundenen Schwellenwert ersetzt werden — dieses Feld ist der Ort dafür.
+
+## 2026-08-20 — A1: Signalliste entschieden
+
+Rund 40 gewünschte Signale wurden eingeordnet: neu aufgenommen (✅ bzw. 🟡), auf vorhandene Namen zurückgeführt, durch die Pfaderfassung entfallen, als rechtliche Wertung nach `menschliche_pruefung` verschoben, oder mit DP-005b zurückgestellt. Einzelheiten in `rules/_SIGNALE.md`.
+
+`is_dauerschuldverhaeltnis` wird durch fünf Tatsachensignale ersetzt (Periodenangabe im Preis, Mindestlaufzeit, automatische Verlängerung, Kündigungsbedingungen, Schlagwort), gewichtet nach Aussagekraft. `button_is_clearly_legible` entfällt zugunsten von Schriftgröße und Kontrast als Indizien. `vat_disclosure_present` wurde von ⚪ auf ✅ hochgestuft, weil die Verbraucherzentrale die fehlende Mehrwertsteuer-Angabe ausdrücklich genannt hat.
+
 ## 2026-08-19 (abends) — Die Ausgabe heißt „Beweisakte"
 
 Die Verbraucherzentrale hat im Seminar genau dieses Wort benutzt: „Erstellen einer Beweisakte mit Screenshots und gegen was dieses Dark Pattern verstoßen könnte". Wir übernehmen den Begriff im Produkt und in der Präsentation. Bemerkenswert ist auch der Konjunktiv „verstoßen **könnte**" — die Adressatin will ausdrücklich keine maschinelle Feststellung eines Verstoßes, sondern die Grundlage für eine eigene Entscheidung. Das bestätigt unser Dreistufenmodell.

@@ -38,9 +38,24 @@
   # Onlineshop darf hier nicht auffällig werden.
   #
   # Nur Signale aus _SIGNALE.md, Abschnitt "Kontext".
+  # Drei Verknuepfungen stehen zur Verfuegung (A3, entschieden am 20.08.):
+  #   all:   ALLE muessen zutreffen
+  #   any:   MINDESTENS EINES muss zutreffen
+  #   none:  KEINES darf zutreffen
+  # Eine flache Liste ohne Schluesselwort wird wie "all:" behandelt.
   applies_when:
-    - "is_b2c_offer == true"
-    # - "has_recurring_contract_keywords == true"
+    all:
+      - "is_b2c_offer == true"
+    # any:
+    #   - "recurring_price_notation_present == true"
+    #   - "min_contract_term_stated == true"
+    # none:
+    #   - "is_financial_services == true"
+
+  # Kann eine Bedingung in applies_when nicht ausgewertet werden, weil das
+  # Signal fehlt, gilt: Wuerde die Regel sonst anschlagen -> "unklar".
+  # Wuerde sie ohnehin nicht anschlagen -> die Regel wird stillschweigend
+  # uebersprungen. So wird der Bericht nicht mit "unklar" geflutet.
 
   # ----------------------------------------------------------
   # RECHTLICHE GRUNDLAGE
@@ -90,11 +105,58 @@
   # "unklar" müsst ihr nicht angeben – das vergibt das System
   # automatisch, wenn ein benötigtes Signal nicht erhoben werden
   # konnte. Trifft nichts zu: "unauffällig".
+  # Zwei Schreibweisen sind zulaessig (A2, entschieden am 20.08.):
+  #
+  #   Kurzform  - nur die Bedingung als Zeichenkette
+  #   Langform  - condition + reason
+  #
+  # Die Langform ist die bevorzugte: "reason" erscheint in der Beweisakte
+  # als Begruendung genau dieses Befundes. Damit erhaelt jede ausgeloeste
+  # Bedingung ihren eigenen Text, statt eines Sammeltextes fuer die ganze
+  # Regel. Der Platzhalter {befund} im explanation_template_de wird durch
+  # das "reason" der ausgeloesten Bedingung ersetzt.
+  #
+  # KEIN Feld "severity". Wir haben genau eine Skala: eindeutig /
+  # verdaechtig / unklar / unauffaellig. Eine zweite Schwereskala daneben
+  # muessten wir in der Praesentation erklaeren und verteidigen.
+  #
+  # Operatoren:  >  <  >=  <=  ==  !=  and  or
+  #              in / not in   (Zugehoerigkeit zu einer Liste aus "listen:")
   verdict_rules:
     eindeutig:
-      - ""
+      - condition: ""
+        reason: >
+          
+
     verdaechtig:
+      # Kurzform, wenn keine eigene Begruendung noetig ist:
       - ""
+
+  # ----------------------------------------------------------
+  # LISTEN
+  # ----------------------------------------------------------
+  # Benannte Wortlisten fuer die Operatoren "in" und "not in".
+  # Damit lassen sich zulaessige und unzulaessige Beschriftungen
+  # pflegen, ohne dass jemand programmieren muss.
+  #
+  # Beispiel:
+  #   listen:
+  #     zulaessige_labels:
+  #       - "Vertraege hier kuendigen"
+  #       - "Vertrag hier kuendigen"
+  #     unzulaessige_labels:
+  #       - "Kontakt"
+  #       - "Mein Konto"
+  #
+  #   verdict_rules:
+  #     eindeutig:
+  #       - condition: "kuendigungsbutton_label in unzulaessige_labels"
+  #     verdaechtig:
+  #       - condition: "kuendigungsbutton_label not in zulaessige_labels"
+  #
+  # Trifft weder Positiv- noch Negativliste zu, bleibt es "unauffaellig" -
+  # bewusst, denn "entsprechend eindeutig" laesst Spielraum.
+  listen: {}
 
   # Woher kommen die Zahlen oben?
   # Rechtsprechung, Leitlinien, Literatur – oder ehrlich:
@@ -123,8 +185,33 @@
   # Sachlich formulieren, keine Feststellung eines Verstoßes,
   # sondern Beschreibung des Befundes und seiner rechtlichen
   # Einordnung.
+  #
+  # WICHTIG: Platzhalter in geschweiften Klammern muessen den EXAKTEN
+  # Signalnamen tragen - {price_listed}, nicht {Preis} oder [PREIS].
+  # Ein Name, den es nicht gibt, bleibt als Text stehen.
+  # Zusaetzlich verfuegbar:
+  #   {schritt}  - auf welchem Schritt des Pfades gemessen wurde
+  #   {befund}   - das "reason" der ausgeloesten Bedingung
   explanation_template_de: >
     
+
+  # ----------------------------------------------------------
+  # MENSCHLICHE PRUEFUNG   (neu, A4, entschieden am 20.08.)
+  # ----------------------------------------------------------
+  # Tatbestandsmerkmale, die das System nicht feststellen kann, weil sie
+  # eine rechtliche Wertung erfordern. Sie verschwinden damit nicht -
+  # sie erscheinen in der Beweisakte als Pruefliste unter dem Befund:
+  #
+  #   "Technisch festgestellt: A, B, C.
+  #    Rechtlich noch zu pruefen: X, Y."
+  #
+  # Als Frage formulieren, die eine Juristin mit ja/nein beantworten kann.
+  #
+  # Beispiele:
+  #   - "Ist die Beeintraechtigung im Sinne des § 3a UWG spuerbar?"
+  #   - "Ist fuer diesen Vertragstyp eine strengere Form vorgeschrieben?"
+  menschliche_pruefung:
+    - ""
 
   # ----------------------------------------------------------
   # OFFENE FRAGEN

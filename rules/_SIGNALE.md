@@ -98,6 +98,116 @@ Stand: 19.08.2026 · Änderungen bitte über das Entwicklungsteam
 
 ---
 
+## Vertragsart — ersetzt `is_dauerschuldverhaeltnis`
+
+**Neu, 20.08.** Ob ein Dauerschuldverhältnis vorliegt, ist eine **rechtliche Qualifikation** — die kann das System nicht vornehmen. Die Tatsachen, auf die sie sich stützt, sind dagegen messbar. Die Regel nimmt die Qualifikation vor, nicht das System.
+
+| Signal | Typ | Status | Bedeutung | Aussagekraft |
+|---|---|---|---|---|
+| `recurring_price_notation_present` | bool | ✅ | Preis mit Periodenangabe: „9,99 €/Monat", „pro Monat", „/Jahr" | **stark** |
+| `recurring_price_period` | Text | ✅ | die erkannte Periode im Wortlaut (`Monat`, `Jahr`, `Woche`) | — |
+| `min_contract_term_stated` | bool | ✅ | „Mindestlaufzeit", „Vertragslaufzeit 24 Monate" | **stark** |
+| `auto_renewal_text_present` | bool | ✅ | „verlängert sich automatisch" | **stark** |
+| `cancellation_terms_present` | bool | ✅ | „Kündigungsfrist", „monatlich kündbar" | mittel |
+| `has_recurring_contract_keywords` | bool | ✅ | `Abo`, `Mitgliedschaft`, `Tarif` — **bereits vorhanden** | **schwach** |
+
+> **Auswertung in der Regel:** mindestens ein **starkes** Signal → Regel greift, aber höchstens `verdaechtig`. Nur schwache Signale → `unklar`. Keines → Regel greift nicht.
+>
+> Das schwache Signal trägt allein nicht: Ein „Newsletter-Abo" ist unentgeltlich und begründet kein Dauerschuldverhältnis.
+>
+> **Gemessen wird auf der Produktdetailseite**, nicht auf der Startseite — ein Händler kann Einmalkäufe und Abonnements nebeneinander anbieten.
+
+---
+
+## Anwendbarkeit — weitere Kontextsignale
+
+| Signal | Typ | Status | Bedeutung |
+|---|---|---|---|
+| `is_financial_services` | bool | ✅ | BaFin-Hinweis im Impressum, Stichworte `Versicherung`, `Kredit`, `Depot`, `Bausparen` |
+| `order_button_found` | bool | ✅ | zahlungspflichtige Bestellschaltfläche vorhanden — **bereits vorhanden**, deckt zugleich `contract_concludable_on_website` und `is_electronic_business_transaction` ab |
+| `has_price_display` | bool | ✅ | überhaupt eine Preisangabe auf der Seite |
+
+---
+
+## Kündigungsschaltfläche — Ergänzungen
+
+| Signal | Typ | Status | Bedeutung |
+|---|---|---|---|
+| `kuendigungsbutton_hidden_in_menu` | bool | ✅ | steht nur in einem zugeklappten Bereich oder Aufklappmenü (`<details>`, `aria-expanded="false"`) |
+| `kuendigungsbutton_font_size_px` | Zahl | ✅ | Schriftgröße der Beschriftung — messbares Indiz für „gut lesbar" |
+| `kuendigungsbutton_contrast_ratio` | Zahl | ✅ | Kontrast der Beschriftung, dito |
+| `kuendigungsbutton_requires_login` | bool | 🟡 | führt erst nach einer Anmeldeaufforderung weiter |
+| `has_confirmation_page` | bool | 🟡 | eine Bestätigungsseite existiert |
+| `confirmation_page_directly_reached` | bool | 🟡 | ohne Zwischenschritt erreicht |
+
+> Die 🟡-Signale setzen voraus, dass wir die Kündigungsstrecke **anklicken**. Das ist ein eigener Pfad je Ziel und für Freitag geplant.
+>
+> **„gut lesbar" bleibt eine Wertung.** Es gibt kein Signal `button_is_clearly_legible`. Schriftgröße und Kontrast sind Indizien; die Bewertung nimmt die Regel vor.
+
+---
+
+## Preise — Ergänzungen
+
+| Signal | Typ | Status | Bedeutung |
+|---|---|---|---|
+| `shipping_cost_amount` | Zahl | ✅ | Betrag der auf der Produktseite genannten Versandkosten |
+| `gratis_claim_scope` | Text | ✅ | Text im Umfeld des Gratis-Versprechens |
+| `free_pickup_option_present` | bool | ✅ | kostenlose Abholung wählbar — beobachtbarer Anhaltspunkt für die Ausnahme des Anhangs Nr. 20 |
+| `vat_disclosure_present` | bool | ✅ | Hinweis auf die Umsatzsteuer im Preisumfeld — **hochgestuft von ⚪** |
+| `vat_disclosure_scroll_pct` | Zahl | ✅ | Position dieses Hinweises — misst „versteckt in der Kopf-/Fußzeile" |
+
+---
+
+## Verdeckung von Informationen — Ergänzung
+
+| Signal | Typ | Status | Bedeutung |
+|---|---|---|---|
+| `required_info_type` | Text | ✅ | welches Stichwort gegriffen hat (`Widerruf`, `Impressum`, `Gesamtpreis` …) |
+
+---
+
+## Umbenennungen — bitte die vorhandenen Namen verwenden
+
+Diese Signale wurden gewünscht, existieren aber bereits unter anderem Namen:
+
+| gewünscht | **bitte verwenden** |
+|---|---|
+| `is_consumer_offer`, `is_consumer_contract` | `is_b2c_offer` |
+| `listed_total_price` | `price_listed` |
+| `shipping_cost_disclosed` | `shipping_cost_disclosed_on_product_page` |
+| `contract_concludable_on_website`, `is_electronic_business_transaction` | `order_button_found` + `has_checkout_flow` |
+| `entrepreneur_owes_paid_performance` | `has_price_display` + `order_button_found` |
+| `subscription_keyword_present` | `has_recurring_contract_keywords` |
+
+## Entfallen — durch die Pfaderfassung bereits erfüllt
+
+`first_price_display_timestamp` · `additional_cost_first_display_timestamp` · `price_history_within_current_journey`
+
+Seit dem 19.08. führt **jedes** Signal mit, auf welchem Schritt es gemessen wurde (`schritt`) und welcher Screenshot es belegt. Wann eine Angabe erstmals erschien, ergibt sich daraus unmittelbar. Bitte stattdessen im Bericht auf `{schritt}` verweisen.
+
+## Nicht als Signal — gehört nach `menschliche_pruefung`
+
+Diese Merkmale sind **rechtliche Wertungen** und werden es auch bis Sonntag nicht:
+
+| Merkmal | warum |
+|---|---|
+| `stricter_form_required` | erfordert Kenntnis des konkreten Vertragstyps |
+| `costs_are_unavoidable_delivery_or_offer_costs` | Ausnahme des Anhangs Nr. 20 — Wertung. Beobachtbarer Anhaltspunkt: `free_pickup_option_present` |
+| `required_total_price_can_be_calculated` | „vernünftigerweise im Voraus berechenbar" ist ein Rechtsbegriff |
+| `shipping_cost_can_be_calculated_in_advance` | dito |
+| `kuendigungsbutton_label_is_not_clearly_equivalent` | „entsprechend eindeutig" ist Auslegung — **stattdessen** `kuendigungsbutton_label` gegen eine Positiv-/Negativliste prüfen, siehe `_VORLAGE.yaml` |
+| „spürbare Beeinträchtigung" (§ 3a UWG) | reine Wertung, taucht als Signal gar nicht erst auf |
+
+## Zurückgestellt mit DP-005b
+
+Alle Signale, die eine Navigation **bis zur Kasse** voraussetzen, bleiben ⚪ und werden nur gebaut, wenn nach dem Feature Freeze am Samstag noch Zeit ist:
+
+`mandatory_total_price_at_checkout` · `optional_costs_at_checkout` · `price_immediately_before_order` · `mandatory_price_delta` · `optional_price_delta` · `additional_mandatory_cost_count` · `additional_mandatory_cost_amount` · `additional_mandatory_cost_disclosed` · `additional_mandatory_cost_disclosed_before_order` · `additional_mandatory_cost_first_display_after_product_page` · `paid_addon_disclosed_before_selection` · `preselected_paid_addon_amount` · `additional_search_step_required` · `regular_login_required_for_service` · `required_info_visible_before_purchase_decision`
+
+**Bitte keine Regel bauen, deren Kern auf diesen Signalen steht.** DP-005a kommt ohne sie aus.
+
+---
+
 ## Wo gemessen wird — Pfaderfassung
 
 **Neu seit 19.08.** Die Verbraucherzentrale hat im Seminar darauf hingewiesen, dass die interessanten Muster **nicht auf der Startseite** stehen: „so viele Nutzer haben sich das Produkt zuletzt angeschaut" erscheint erst, wenn man das Produkt anklickt; dasselbe gilt für die Mehrwertsteuer-Angabe und für Gebühren.
