@@ -16,7 +16,7 @@
   # -- Vorbelegung durch das Entwicklungsteam, bitte pruefen --
   kategorie: "Irrefuehrung"
 
-  status: FERTIG
+  status: REVIEW
   bearbeiter: "Kickoff-Workshop"
 
   applies_when:
