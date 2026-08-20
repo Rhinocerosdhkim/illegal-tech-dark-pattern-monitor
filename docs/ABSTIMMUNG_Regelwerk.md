@@ -125,9 +125,26 @@ Aus diesen Tatsachen die Qualifikation abzuleiten, ist dann Aufgabe der **Regel*
 
 Alle diese Merkmale stehen in `applies_when` — sie entscheiden, **ob eine Regel überhaupt greift**. Ein Fehler hier trifft einen Shop, der gar nicht in den Anwendungsbereich fällt. Das ist die schädlichste Art von Fehlalarm und genau der Weg, auf dem wir selbst angreifbar werden (§ 4 Nr. 1, Nr. 2 UWG).
 
-> **Vorgeschlagene Regel: Stützt sich `applies_when` auf eine Ableitung aus Tatsachensignalen, darf die Regel höchstens `verdaechtig` erreichen.**
+> **Vorgeschlagene Regel: Stützt sich `applies_when` auf eine *unbestätigte* Ableitung, darf die Regel höchstens `verdaechtig` erreichen.**
 
-Für `eindeutig` muss die Anwendbarkeit **festgestellt**, nicht **abgeleitet** sein — und das heißt bis auf Weiteres: von einem Menschen bestätigt. Das ist keine Schwäche des Systems, sondern der Grund, warum unsere Befunde tragen.
+### Warum das Wort „unbestätigt" entscheidend ist
+
+Ohne diesen Zusatz würde die Regel unser stärkstes Muster erschlagen. `applies_when` von DP-003 lautet `is_b2c_offer == true` — und dieses Signal ist laut `_SIGNALE.md` selbst nur eine **Heuristik über Preisangaben inkl. MwSt.** Streng gelesen wäre DP-003 damit nie `eindeutig`, obwohl gerade dort der Anhang zu § 3 Abs. 3 UWG eine Per-se-Unlauterkeit anordnet.
+
+Der Ausweg ergibt sich aus der Arbeitsweise: Wir schreiben ohnehin je Ziel eine Datei `data/targets/*.yaml`. Dort kann ein Mensch site-weite Voraussetzungen in fünf Sekunden bestätigen:
+
+```yaml
+name: viagogo
+branche: Ticketing
+bestaetigt_durch_mensch:
+  is_b2c_offer: true        # von <Kürzel> am 20.08. geprüft
+```
+
+Damit ist die Voraussetzung **festgestellt** statt **abgeleitet**, und `eindeutig` bleibt möglich.
+
+Das entspricht auch der Praxis: Eine Verbraucherzentrale sucht sich die zu prüfenden Seiten aus und hat dabei längst entschieden, dass es sich um ein Verbraucherangebot handelt. Wir bilden nur ab, was ohnehin passiert.
+
+Für Voraussetzungen, die **je Produkt** unterschiedlich sind (Dauerschuldverhältnis!), hilft das nicht — die bleiben abgeleitet und damit auf `verdaechtig` begrenzt. Das ist richtig so.
 
 ### Für den Rest: das Feld `menschliche_pruefung`
 
