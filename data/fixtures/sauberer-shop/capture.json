@@ -1,0 +1,63 @@
+{
+  "_hinweis": "HANDGESCHRIEBENE FIXTURE — unauffaellige Seite. Zweck: messen, ob das System schweigen kann. Ein System, das ueberall Verstoesse sieht, ist wertlos (Briefing Paket 2). BEWUSST OHNE Zielprofil in data/targets/: so laeuft ein beliebiges, nicht von Hand eingerichtetes Ziel durch die Kette.",
+
+  "meta": {
+    "ziel": "sauberer-shop",
+    "branche": "Mode",
+    "start_url": "https://www.beispielshop.de",
+    "timestamp": "2026-08-20T15:40:11+02:00",
+    "capture_mode": "fixture",
+    "viewport": { "width": 1440, "height": 900 },
+    "locale": "de-DE",
+    "timezone": "Europe/Berlin",
+    "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) DarkPatternMonitor/0.1",
+    "run_id": "2026-08-20T15-40-11_sauberer-shop"
+  },
+
+  "schritte": [
+    { "schritt": "startseite",    "url": "https://www.beispielshop.de",             "screenshot": "S-01.png", "dom_hash": "sha256:11aa22bb33cc44dd55ee66ff778899aabbccddee" },
+    { "schritt": "produktdetail", "url": "https://www.beispielshop.de/artikel/4711","screenshot": "S-02.png", "dom_hash": "sha256:22bb33cc44dd55ee66ff778899aabbccddeeff00" }
+  ],
+
+  "signals": {
+    "is_b2c_offer":                      { "wert": true,  "schritt": "startseite",    "nachweis": "S-01.png" },
+
+    "banner_detected":                   { "wert": true,  "schritt": "startseite",    "nachweis": "S-01.png" },
+    "accept_button_area_px2":            { "wert": 1600,  "schritt": "startseite",    "nachweis": "S-01.png" },
+    "reject_button_area_px2":            { "wert": 1560,  "schritt": "startseite",    "nachweis": "S-01.png" },
+    "reject_button_present":             { "wert": true,  "schritt": "startseite",    "nachweis": "S-01.png" },
+    "reject_click_depth":                { "wert": 1,     "schritt": "startseite",    "nachweis": "S-01.png" },
+    "accept_contrast_ratio":             { "wert": 7.1,   "schritt": "startseite",    "nachweis": "S-01.png" },
+    "reject_contrast_ratio":             { "wert": 6.8,   "schritt": "startseite",    "nachweis": "S-01.png" },
+    "preselected_checkbox_count":        { "wert": 0,     "schritt": "startseite",    "nachweis": "S-01.png" },
+    "third_party_cookies_before_consent":{ "wert": 0,     "schritt": "startseite",    "nachweis": "S-01.png" },
+    "more_info_present":                 { "wert": true,  "schritt": "startseite",    "nachweis": "S-01.png" },
+    "more_info_leads_to_reject":         { "wert": true,  "schritt": "startseite",    "nachweis": "S-01.png" },
+    "more_info_click_depth":             { "wert": 1,     "schritt": "startseite",    "nachweis": "S-01.png" },
+
+    "has_checkout_flow":                 { "wert": true,  "schritt": "produktdetail", "nachweis": "S-02.png" },
+    "order_button_found":                { "wert": true,  "schritt": "produktdetail", "nachweis": "S-02.png" },
+    "order_button_label":                { "wert": "zahlungspflichtig bestellen", "schritt": "produktdetail", "nachweis": "S-02.png" },
+
+    "countdown_element_present":         { "wert": false, "schritt": "produktdetail", "nachweis": "S-02.png" },
+    "countdown_resets_on_revisit":       { "wert": false, "schritt": "produktdetail", "nachweis": "S-02.png" },
+    "scarcity_text_present":             { "wert": false, "schritt": "produktdetail", "nachweis": "S-02.png" },
+    "scarcity_value":                    { "wert": 0,     "schritt": "produktdetail", "nachweis": "S-02.png" },
+
+    "has_price_display":                 { "wert": true,  "schritt": "produktdetail", "nachweis": "S-02.png" },
+    "required_info_found":               { "wert": true,  "schritt": "produktdetail", "nachweis": "S-02.png" },
+    "font_size_min_px":                  { "wert": 14,    "schritt": "produktdetail", "nachweis": "S-02.png" },
+    "text_contrast_min":                 { "wert": 7.2,   "schritt": "produktdetail", "nachweis": "S-02.png" },
+    "hidden_by_opacity_count":           { "wert": 0,     "schritt": "produktdetail", "nachweis": "S-02.png" },
+    "scroll_depth_of_required_info_pct": { "wert": 30,    "schritt": "produktdetail", "nachweis": "S-02.png" },
+    "required_info_in_collapsed_element":{ "wert": false, "schritt": "produktdetail", "nachweis": "S-02.png" },
+    "aria_hidden_on_required_info":      { "wert": false, "schritt": "produktdetail", "nachweis": "S-02.png" },
+    "required_info_visible_before_purchase_decision": { "wert": true, "schritt": "produktdetail", "nachweis": "S-02.png" }
+  },
+
+  "signal_errors": {
+    "scarcity_value_unchanged_scans": "Erste Erfassung dieses Ziels, kein Vergleichswert vorhanden",
+    "is_dauerschuldverhaeltnis":      "Rechtliche Qualifikation, wird nicht gemessen (ABSTIMMUNG_Regelwerk.md Korb C)",
+    "price_at_checkout":              "Bestellabschluss nicht ohne Anmeldung erreichbar"
+  }
+}
