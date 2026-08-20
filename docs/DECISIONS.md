@@ -7,6 +7,24 @@ Format: `## JJJJ-MM-TT — Entscheidung` + zwei bis vier Sätze Begründung. Kur
 
 ---
 
+## 2026-08-20 — § 312k Abs. 2 wird in seine drei Elemente getrennt
+
+Die Norm kennt **drei** Elemente mit je eigenen Anforderungen: Kündigungsschaltfläche, Bestätigungsseite, Bestätigungsschaltfläche. Die Signalliste hat sie bisher vermischt — `kuendigungsbutton_confirm_label` trug den Präfix des ersten Elements, meinte aber das dritte. Der Name entfällt zugunsten von `confirmation_button_label`.
+
+Neu aufgenommen: `has_confirmation_button`, `confirmation_button_font_size_px`, `confirmation_button_contrast_ratio`, `confirmation_page_requires_login`.
+
+`has_confirmation_button` schließt eine Lücke, die im Ergebnis gefährlich gewesen wäre: Bisher gab es nur die Beschriftung. Fehlte die Schaltfläche vollständig, ließ sich „nicht vorhanden" nicht von „vorhanden, aber ohne Beschriftung" unterscheiden — zwei rechtlich völlig verschiedene Aussagen.
+
+„gut lesbar" verlangt das Gesetz für **beide** Schaltflächen; Schriftgröße und Kontrast werden daher für beide erhoben. Ein Signal `confirmation_button_clearly_legible` gibt es bewusst nicht — die Lesbarkeit ist eine Wertung und wird von der Regel vorgenommen, nicht gemessen.
+
+Fehlt die Bestätigungsseite trotz vorhandener Kündigungsschaltfläche, ist das nach Entscheidung des juristischen Teams `eindeutig` — § 312k Abs. 2 S. 3 verlangt die unmittelbare Weiterleitung, das Fehlen ist eine reine Tatsachenfeststellung.
+
+## 2026-08-20 — Bedingungen werden einzeln ausgewertet, nicht als Block
+
+Ergänzung zu A3. Kann eine einzelne Bedingung mangels Signal nicht ausgewertet werden, wird nur sie übersprungen und vermerkt; die übrigen gelten weiter. Löst danach eine Bedingung aus, steht der Befund. Löst keine aus und wurde übersprungen, lautet er `unklar`.
+
+Ohne diese Regel wäre DP-004 am Donnerstag nicht lauffähig gewesen: Zehn seiner vierzehn Signale erfordern das Durchklicken der Kündigungsstrecke und sind erst für Freitag vorgesehen. So liefert die Regel bereits am Donnerstag einen belastbaren `eindeutig`-Befund allein über `has_kuendigungsbutton` und wird am Freitag reicher.
+
 ## 2026-08-20 — A2: `verdict_rules` akzeptiert Kurz- und Langform, kein `severity`
 
 Zulässig sind eine Zeichenkette (Kurzform) und ein Objekt aus `condition` und `reason` (Langform). Die Engine normalisiert intern auf die Langform. Grund gegen eine erzwungene Migration: Fünf Regeln stehen in der Kurzform, die Umstellung träfe das juristische Team am Abgabetag.

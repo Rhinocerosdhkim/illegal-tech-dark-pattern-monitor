@@ -122,6 +122,18 @@
   #
   # Operatoren:  >  <  >=  <=  ==  !=  and  or
   #              in / not in   (Zugehoerigkeit zu einer Liste aus "listen:")
+  #
+  # FEHLENDE SIGNALE: Jede Bedingung wird EINZELN ausgewertet. Kann eine
+  # Bedingung nicht ausgewertet werden, weil ein Signal fehlt, wird nur
+  # SIE uebersprungen und im Bericht vermerkt - die uebrigen Bedingungen
+  # gelten weiter. Loest danach mindestens eine Bedingung aus, steht der
+  # Befund. Loest keine aus und wurde mindestens eine uebersprungen,
+  # lautet der Befund "unklar".
+  #
+  # Praktische Folge: Eine Regel funktioniert bereits, wenn nur ein Teil
+  # ihrer Signale erhoben werden konnte. DP-004 liefert deshalb schon am
+  # Donnerstag einen Befund ueber has_kuendigungsbutton, obwohl die
+  # Signale zur Bestaetigungsseite erst am Freitag dazukommen.
   verdict_rules:
     eindeutig:
       - condition: ""

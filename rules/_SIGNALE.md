@@ -44,7 +44,6 @@ Stand: 19.08.2026 · Änderungen bitte über das Entwicklungsteam
 | `has_kuendigungsbutton` | bool | ✅ | Existiert ein Kündigungsbutton auf der Seite? |
 | `kuendigungsbutton_label` | Text | ✅ | dessen Beschriftung im Wortlaut |
 | `kuendigungsbutton_click_depth` | Zahl | 🟡 | Klicks von der Startseite bis zum Kündigungsbutton |
-| `kuendigungsbutton_confirm_label` | Text | 🟡 | Beschriftung auf der Bestätigungsseite |
 
 ---
 
@@ -137,8 +136,27 @@ Stand: 19.08.2026 · Änderungen bitte über das Entwicklungsteam
 | `kuendigungsbutton_font_size_px` | Zahl | ✅ | Schriftgröße der Beschriftung — messbares Indiz für „gut lesbar" |
 | `kuendigungsbutton_contrast_ratio` | Zahl | ✅ | Kontrast der Beschriftung, dito |
 | `kuendigungsbutton_requires_login` | bool | 🟡 | führt erst nach einer Anmeldeaufforderung weiter |
+
+### Bestätigungsseite — zweites Element des § 312k Abs. 2
+
+| Signal | Typ | Status | Bedeutung |
+|---|---|---|---|
 | `has_confirmation_page` | bool | 🟡 | eine Bestätigungsseite existiert |
 | `confirmation_page_directly_reached` | bool | 🟡 | ohne Zwischenschritt erreicht |
+| `confirmation_page_requires_login` | bool | 🟡 | zwischen Kündigungsschaltfläche und Bestätigungsseite steht eine Anmeldeaufforderung — rechtlich etwas anderes als `kuendigungsbutton_requires_login` |
+
+### Bestätigungsschaltfläche — drittes Element des § 312k Abs. 2
+
+| Signal | Typ | Status | Bedeutung |
+|---|---|---|---|
+| `has_confirmation_button` | bool | 🟡 | auf der Bestätigungsseite existiert eine Bestätigungsschaltfläche |
+| `confirmation_button_label` | Text | 🟡 | deren Beschriftung im Wortlaut (*ersetzt* `kuendigungsbutton_confirm_label`) |
+| `confirmation_button_font_size_px` | Zahl | 🟡 | Schriftgröße — Indiz für „gut lesbar", das das Gesetz für **beide** Schaltflächen verlangt |
+| `confirmation_button_contrast_ratio` | Zahl | 🟡 | Kontrast, dito |
+
+> **Warum diese Trennung:** § 312k Abs. 2 kennt **drei** Elemente — Kündigungsschaltfläche, Bestätigungsseite, Bestätigungsschaltfläche. Jedes hat eigene Anforderungen. Der frühere Name `kuendigungsbutton_confirm_label` vermischte das erste und das dritte Element und ist deshalb entfallen.
+>
+> Besonders wichtig ist `has_confirmation_button`: Bisher gab es nur die Beschriftung. Fehlte die Schaltfläche ganz, wäre nicht unterscheidbar gewesen zwischen „nicht vorhanden" und „vorhanden, aber ohne Beschriftung" — zwei rechtlich völlig verschiedene Aussagen.
 
 > Die 🟡-Signale setzen voraus, dass wir die Kündigungsstrecke **anklicken**. Das ist ein eigener Pfad je Ziel und für Freitag geplant.
 >

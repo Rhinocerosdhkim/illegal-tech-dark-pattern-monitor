@@ -49,41 +49,96 @@
     unberührt.
 
   signals:
-    # ACHTUNG: Einige der folgenden Namen stehen noch nicht in _SIGNALE.md.
-    # Welche davon zugesagt, ersetzt oder gestrichen werden, klaert
-    # docs/ABSTIMMUNG_Regelwerk.md. Bis dahin nicht lauffaehig.
-    - "has_kuendigungsbutton"
-    - "kuendigungsbutton_label"
-    - "kuendigungsbutton_click_depth"
-    - "kuendigungsbutton_requires_login"
-    - "kuendigungsbutton_hidden_in_menu"
-    - "additional_search_step_required"
-    - "confirmation_page_directly_reached"
-    - "has_confirmation_page"
-    - "regular_login_required_for_service"
-    - "button_is_clearly_legible"
-    - "intermediate_login_required"
-    - "kuendigungsbutton_label_is_not_clearly_equivalent"
+
+    # 1. Kuendigungsschaltflaeche  (§ 312k Abs. 2 S. 1, 2)
+    - "has_kuendigungsbutton"               # gruen
+    - "kuendigungsbutton_label"             # gruen
+    - "kuendigungsbutton_font_size_px"      # gruen
+    - "kuendigungsbutton_contrast_ratio"    # gruen
+    - "kuendigungsbutton_hidden_in_menu"    # gruen
+    - "kuendigungsbutton_click_depth"       # gelb
+    - "kuendigungsbutton_requires_login"    # gelb
+
+    # 2. Bestaetigungsseite  (§ 312k Abs. 2 S. 3)
+    - "has_confirmation_page"               # gelb
+    - "confirmation_page_directly_reached"  # gelb
+    - "confirmation_page_requires_login"    # gelb
+
+    # 3. Bestaetigungsschaltflaeche  (§ 312k Abs. 2 S. 3)
+    - "has_confirmation_button"             # gelb
+    - "confirmation_button_label"           # gelb
+    - "confirmation_button_font_size_px"    # gelb
+    - "confirmation_button_contrast_ratio"  # gelb
+
+  # ----------------------------------------------------------
+  # LISTEN
+  # ----------------------------------------------------------
+  # Das Gesetz verlangt fuer BEIDE Schaltflaechen einen Wortlaut
+  # "oder eine entsprechend eindeutige Formulierung". Deshalb zwei
+  # getrennte Listen. Bitte ergaenzen - bisher steht nur der
+  # gesetzliche Wortlaut selbst darin.
+  listen:
+    zulaessige_kuendigungs_labels:
+      - "Verträge hier kündigen"
+    zulaessige_bestaetigungs_labels:
+      - "jetzt kündigen"
 
   verdict_rules:
     eindeutig:
-      - "has_kuendigungsbutton == false"
-      - "kuendigungsbutton_requires_login == true and regular_login_required_for_service == false"
-      - "kuendigungsbutton_hidden_in_menu == true and additional_search_step_required == true"
-      - "confirmation_page_directly_reached == false and intermediate_login_required == true"
+      - condition: "has_kuendigungsbutton == false"
+        reason: >
+          Auf der Website wurde keine Kündigungsschaltfläche gefunden.
+          § 312k Abs. 1, 2 BGB verlangt eine solche Schaltfläche.
+
+      - condition: "has_kuendigungsbutton == true and has_confirmation_page == false"
+        reason: >
+          Die Kündigungsschaltfläche führt zu keiner Bestätigungsseite.
+          § 312k Abs. 2 S. 3 BGB verlangt, dass sie den Verbraucher
+          unmittelbar zu einer Bestätigungsseite führt.
+
+      - condition: "has_confirmation_page == true and has_confirmation_button == false"
+        reason: >
+          Die Bestätigungsseite enthält keine Bestätigungsschaltfläche.
 
     verdaechtig:
-      - "button_is_clearly_legible == false"
-      - "kuendigungsbutton_label_is_not_clearly_equivalent == true"
-      # DEAKTIVIERT durch das Entwicklungsteam, 20.08.
-      # "> 0" trifft auf praktisch jede Website zu: eine Kuendigungs-
-      # schaltflaeche liegt nie auf der Startseite selbst. Die Regel
-      # wuerde also immer ausloesen. Ausserdem steht sie im Widerspruch
-      # zum eigenen threshold_source ("Die Klicktiefe darf nicht allein
-      # ueber die Rechtswidrigkeit entscheiden").
-      # Bitte einen belastbaren Wert einsetzen oder die Bedingung streichen.
-      # - "kuendigungsbutton_click_depth > ?"
-      - "confirmation_page_directly_reached == false"
+      # Beschriftung ausserhalb der Positivliste - "entsprechend eindeutig"
+      # laesst Spielraum, deshalb hoechstens verdaechtig.
+      - condition: "kuendigungsbutton_label not in zulaessige_kuendigungs_labels"
+        reason: >
+          Die Beschriftung der Kündigungsschaltfläche entspricht nicht dem
+          gesetzlichen Wortlaut. Ob sie eine "entsprechend eindeutige
+          Formulierung" darstellt, bedarf der Prüfung.
+
+      - condition: "confirmation_button_label not in zulaessige_bestaetigungs_labels"
+        reason: >
+          Die Beschriftung der Bestätigungsschaltfläche entspricht nicht dem
+          gesetzlichen Wortlaut.
+
+      - condition: "kuendigungsbutton_hidden_in_menu == true"
+        reason: >
+          Die Kündigungsschaltfläche ist nur über ein zugeklapptes Menü
+          erreichbar. § 312k Abs. 2 verlangt unmittelbare und leichte
+          Zugänglichkeit.
+
+      - condition: "confirmation_page_directly_reached == false"
+        reason: >
+          Zwischen Kündigungsschaltfläche und Bestätigungsseite liegt ein
+          Zwischenschritt.
+
+      - condition: "confirmation_page_requires_login == true"
+        reason: >
+          Vor der Bestätigungsseite steht eine Anmeldeaufforderung.
+
+      - condition: "kuendigungsbutton_requires_login == true"
+        reason: >
+          Die Kündigungsschaltfläche ist erst nach einer Anmeldung erreichbar.
+
+      # DEAKTIVIERT, 20.08. -- "> 0" trifft auf praktisch jede Website zu:
+      # eine Kuendigungsschaltflaeche liegt nie auf der Startseite selbst.
+      # Die Bedingung wuerde also immer ausloesen und widerspricht dem
+      # eigenen threshold_source. Bitte belastbaren Wert einsetzen oder
+      # ersatzlos streichen (Punkt B2).
+      # - condition: "kuendigungsbutton_click_depth > ?"
 
   threshold_source: >
     Es gibt keinen gesetzlichen festen Schwellenwert für die zulässige
@@ -125,6 +180,11 @@
     Websitegestaltung juristisch überprüft werden. Bei einem Verstoß gegen
     § 312k Abs. 1 und 2 BGB kann der Verbraucher nach § 312k Abs. 6 BGB den
     Vertrag jederzeit ohne Einhaltung einer Kündigungsfrist kündigen.
+
+  menschliche_pruefung:
+    - "Setzt der Dienst seiner Natur nach ein regelmäßiges Login voraus? Falls ja, ist ein vorgeschalteter Login nicht ohne Weiteres unzulässig."
+    - "Ermöglicht die Bestätigungsseite die nach § 312k Abs. 2 erforderlichen Angaben?"
+    - "Liegt ein Dauerschuldverhältnis vor? Die Tatsachensignale liefern dafür nur Anhaltspunkte."
 
   offene_fragen:
     - >
