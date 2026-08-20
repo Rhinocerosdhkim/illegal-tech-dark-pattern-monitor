@@ -37,6 +37,7 @@ class Regel:
     anspruchskette: str = ""
     applies_when: dict = field(default_factory=dict)   # all / any / none
     verdict_rules: dict = field(default_factory=dict)  # Stufe -> [Bedingung]
+    listen: dict = field(default_factory=dict)         # benannte Wortlisten
     explanation_template_de: str = ""
     threshold_source: str = ""
     false_positive_risks: list = field(default_factory=list)
@@ -73,6 +74,7 @@ def _baue(roh: dict, dateiname: str) -> Regel:
         anspruchskette=(roh.get("anspruchskette") or "").strip(),
         applies_when=_applies_when(roh.get("applies_when")),
         verdict_rules=_verdict_rules(roh.get("verdict_rules")),
+        listen=_listen(roh.get("listen")),
         explanation_template_de=(roh.get("explanation_template_de") or "").strip(),
         threshold_source=(roh.get("threshold_source") or "").strip(),
         false_positive_risks=[str(r).strip() for r in (roh.get("false_positive_risks") or [])],
@@ -90,6 +92,18 @@ def _applies_when(roh) -> dict:
         return {**leer, "all": [str(b) for b in roh]}
     return {schluessel: [str(b) for b in (roh.get(schluessel) or [])]
             for schluessel in leer}
+
+
+def _listen(roh) -> dict:
+    """Benannte Wortlisten fuer die Operatoren 'in' und 'not in'.
+
+    Damit pflegt das juristische Team zulaessige und unzulaessige
+    Beschriftungen, ohne dass jemand programmiert (_VORLAGE.yaml, LISTEN).
+    """
+    if not isinstance(roh, dict):
+        return {}
+    return {name: [str(e) for e in (eintraege or [])]
+            for name, eintraege in roh.items()}
 
 
 def _verdict_rules(roh) -> dict:

@@ -1,19 +1,29 @@
 """Bedingungsparser fuer rules/*.yaml — ohne eval().
 
-Unterstuetzt genau das, was das Regelwerk tatsaechlich verwendet:
+Unterstuetzt genau das, was rules/_VORLAGE.yaml dem juristischen Team zusagt:
 
-    Vergleich       a == b   a != b   a > b   a >= b   a < b   a <= b
-    Verknuepfung    ... and ...
-    Verhaeltnis     accept_button_area_px2 / reject_button_area_px2 > 2.0
-    Listenpruefung  order_button_label not_in_whitelist ["a", "b"]
-                    order_button_label in_greylist ["c", "d"]
+    Vergleich       == != > >= < <=
+    Verknuepfung    and   or          (and bindet staerker)
+    Rechnung        accept_button_area_px2 / reject_button_area_px2 > 2.0
+                    accept_contrast_ratio - reject_contrast_ratio > 3.0
+    Listen          kuendigungsbutton_label not in zulaessige_labels
+                    order_button_label not_in_whitelist ["a", "b"]
 
 Warum kein eval(): Eine Datei, die vom juristischen Team geschrieben wird,
 darf niemals als Programmcode ausgefuehrt werden. Ausserdem waere ein
 Tippfehler dann ein Absturz statt einer verstaendlichen Fehlermeldung.
 
-Ein fehlendes Signal ist KEIN Fehler, sondern ein Befund: MissingSignal
-wird nach oben gereicht und dort zur Stufe "unklar".
+Dreiwertige Logik. Ein fehlendes Signal macht eine Bedingung nicht
+automatisch unauswertbar:
+
+    a and b   ist falsch, sobald ein Glied falsch ist — auch wenn ein
+              anderes nicht gemessen wurde
+    a or b    ist wahr, sobald ein Glied wahr ist — ebenso
+
+Erst wenn das Ergebnis wirklich von dem fehlenden Wert abhaengt, wird
+MissingSignal geworfen und daraus oben die Stufe "unklar". Das ist nicht
+Bequemlichkeit, sondern Genauigkeit: Wir sollen nur dort "unklar" sagen,
+wo wir es tatsaechlich nicht wissen.
 """
 
 from __future__ import annotations
@@ -22,8 +32,16 @@ import re
 from dataclasses import dataclass, field
 
 _VERGLEICH = re.compile(r"(>=|<=|==|!=|>|<)")
-_LISTENOP = re.compile(r"\b(not_in_[a-z_]+|in_[a-z_]+)\b")
+_LISTENOP_INLINE = re.compile(r"\b(not_in_[a-z_]+|in_[a-z_]+)\b")
+_LISTENOP_BENANNT = re.compile(
+    r"^([a-zA-Z_][a-zA-Z0-9_]*)\s+(not\s+in|in)\s+([a-zA-Z_][a-zA-Z0-9_]*)$")
 _ZAHL = re.compile(r"^-?\d+(\.\d+)?$")
+_NAME = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
+
+# Rechenzeichen nur mit Leerzeichen ringsum. Sonst waere "-1" nicht mehr von
+# einer Subtraktion zu unterscheiden.
+_RECHNEN = {"/": lambda a, b: a / b, "-": lambda a, b: a - b,
+            "+": lambda a, b: a + b, "*": lambda a, b: a * b}
 
 
 class MissingSignal(Exception):
@@ -76,15 +94,45 @@ class Auswertung:
     benutzte_signale: list
 
 
-def auswerten(bedingung: str, tabelle: Signaltabelle) -> Auswertung:
-    """Wertet eine Bedingung aus. Kann MissingSignal werfen."""
+def auswerten(bedingung: str, tabelle: Signaltabelle,
+              listen: dict | None = None) -> Auswertung:
+    """Wertet eine Bedingung aus. Kann MissingSignal oder RuleSyntaxError werfen."""
     benutzt: list = []
-    ergebnis = all(_teilbedingung(t, tabelle, benutzt)
-                   for t in _trenne_und(_normalisiere(bedingung)))
-    return Auswertung(wahr=ergebnis, benutzte_signale=benutzt)
+    wahr = _oder(_normalisiere(bedingung), tabelle, listen or {}, benutzt)
+    return Auswertung(wahr=wahr, benutzte_signale=benutzt)
 
 
-# --- Zerlegung -----------------------------------------------------------
+# --- Verknuepfung, dreiwertig -------------------------------------------
+
+def _oder(text: str, tabelle, listen, benutzt) -> bool:
+    werte, fehlend = _glieder(_trenne(text, "or"),
+                              lambda t: _und(t, tabelle, listen, benutzt))
+    if any(werte):
+        return True
+    if fehlend:
+        raise fehlend[0]
+    return False
+
+
+def _und(text: str, tabelle, listen, benutzt) -> bool:
+    werte, fehlend = _glieder(_trenne(text, "and"),
+                              lambda t: _teilbedingung(t, tabelle, listen, benutzt))
+    if not all(werte):
+        return False
+    if fehlend:
+        raise fehlend[0]
+    return True
+
+
+def _glieder(teile: list, auswerter):
+    werte, fehlend = [], []
+    for teil in teile:
+        try:
+            werte.append(auswerter(teil))
+        except MissingSignal as fehler:
+            fehlend.append(fehler)
+    return werte, fehlend
+
 
 def _normalisiere(bedingung: str) -> str:
     """Vereinheitlicht die Schreibweisen, die in den Regeldateien vorkommen.
@@ -99,20 +147,14 @@ def _normalisiere(bedingung: str) -> str:
     return text
 
 
-def _trenne_und(text: str) -> list:
-    """Trennt an ' and ', aber nicht innerhalb von [] oder Anfuehrungszeichen."""
+def _trenne(text: str, schluesselwort: str) -> list:
+    """Trennt an ' and ' bzw. ' or ', aber nicht in [] oder Anfuehrungszeichen."""
     teile, puffer, tiefe, quote = [], [], 0, None
-    worte = text.split(" ")
-    for wort in worte:
-        if wort == "and" and tiefe == 0 and quote is None:
+    for wort in text.split(" "):
+        if wort == schluesselwort and tiefe == 0 and quote is None:
             teile.append(" ".join(puffer))
             puffer = []
             continue
-        if wort == "or" and tiefe == 0 and quote is None:
-            raise RuleSyntaxError(
-                "'or' wird nicht unterstuetzt. Fuer Oder-Verknuepfungen bitte "
-                "mehrere Bedingungen unter derselben Befundstufe anlegen — "
-                "die Stufe trifft, sobald eine davon zutrifft.")
         for zeichen in wort:
             if quote:
                 if zeichen == quote:
@@ -130,57 +172,69 @@ def _trenne_und(text: str) -> list:
 
 # --- Einzelbedingung -----------------------------------------------------
 
-def _teilbedingung(text: str, tabelle: Signaltabelle, benutzt: list) -> bool:
-    listenop = _LISTENOP.search(text)
-    if listenop and "[" in text:
-        return _listenpruefung(text, listenop, tabelle, benutzt)
+def _teilbedingung(text: str, tabelle, listen, benutzt) -> bool:
+    benannt = _LISTENOP_BENANNT.match(text)
+    if benannt:
+        return _liste(benannt.group(1), benannt.group(3),
+                      benannt.group(2).startswith("not"),
+                      _aus_listen(benannt.group(3), listen, text),
+                      tabelle, benutzt)
+
+    inline = _LISTENOP_INLINE.search(text)
+    if inline and "[" in text:
+        return _liste(text[:inline.start()].strip(), None,
+                      inline.group(1).startswith("not_"),
+                      _inline_liste(text, inline), tabelle, benutzt)
 
     treffer = _VERGLEICH.search(text)
     if not treffer:
         raise RuleSyntaxError(f"Kein Vergleichsoperator in der Bedingung: {text!r}")
 
-    links = text[:treffer.start()].strip()
-    rechts = text[treffer.end():].strip()
     operator = treffer.group(1)
-
-    a = _wert(links, tabelle, benutzt)
-    b = _wert(rechts, tabelle, benutzt)
+    a = _wert(text[:treffer.start()], tabelle, listen, benutzt)
+    b = _wert(text[treffer.end():], tabelle, listen, benutzt)
 
     if operator == "==":
         return a == b
     if operator == "!=":
         return a != b
 
-    if not isinstance(a, (int, float)) or not isinstance(b, (int, float)) \
-            or isinstance(a, bool) or isinstance(b, bool):
-        raise RuleSyntaxError(
-            f"Operator '{operator}' braucht Zahlen, bekam {a!r} und {b!r} "
-            f"in: {text!r}")
-
+    for wert in (a, b):
+        if not isinstance(wert, (int, float)) or isinstance(wert, bool):
+            raise RuleSyntaxError(
+                f"Operator '{operator}' braucht Zahlen, bekam {a!r} und {b!r} "
+                f"in: {text!r}")
     return {">": a > b, ">=": a >= b, "<": a < b, "<=": a <= b}[operator]
 
 
-def _listenpruefung(text, listenop, tabelle: Signaltabelle, benutzt: list) -> bool:
-    """'signal in_whitelist [...]' bzw. 'signal not_in_whitelist [...]'.
+def _aus_listen(name: str, listen: dict, text: str) -> list:
+    if name not in (listen or {}):
+        raise RuleSyntaxError(
+            f"Die Regel verweist auf die Liste '{name}', die unter 'listen:' "
+            f"nicht angelegt ist. Bedingung: {text!r}")
+    return [str(e) for e in listen[name]]
 
-    Der Listenname (whitelist, greylist, ...) ist fuer die Auswertung
-    bedeutungslos — er dokumentiert nur, wofuer die Liste juristisch steht.
-    Verglichen wird ohne Ruecksicht auf Gross-/Kleinschreibung und
-    ueberzaehlige Leerzeichen: § 312j BGB stellt auf den Wortlaut ab,
-    nicht auf die Typografie.
-    """
-    signalname = text[:listenop.start()].strip()
-    verneint = listenop.group(1).startswith("not_")
 
-    beginn, ende = text.find("[", listenop.end()), text.rfind("]")
+def _inline_liste(text: str, inline) -> list:
+    beginn, ende = text.find("[", inline.end()), text.rfind("]")
     if beginn == -1 or ende == -1:
         raise RuleSyntaxError(f"Liste nicht lesbar in: {text!r}")
+    return [_entkleide(e) for e in
+            re.split(r",(?=(?:[^\"']*[\"'][^\"']*[\"'])*[^\"']*$)",
+                     text[beginn + 1:ende]) if e.strip()]
 
-    eintraege = [_entkleide(e) for e in
-                 re.split(r",(?=(?:[^\"']*[\"'][^\"']*[\"'])*[^\"']*$)",
-                          text[beginn + 1:ende]) if e.strip()]
 
-    wert = _wert(signalname, tabelle, benutzt)
+def _liste(signalname: str, listenname, verneint: bool, eintraege: list,
+           tabelle, benutzt) -> bool:
+    """Zugehoerigkeit zu einer Wortliste.
+
+    Verglichen wird ohne Ruecksicht auf Gross-/Kleinschreibung und
+    ueberzaehlige Leerzeichen: § 312j BGB stellt auf den Wortlaut ab,
+    nicht auf die Typografie. Welche Liste (Weiss-, Grau-, Positivliste)
+    gemeint ist, hat fuer die Auswertung keine Bedeutung — der Name
+    dokumentiert nur, wofuer sie juristisch steht.
+    """
+    wert = _wert(signalname, tabelle, {}, benutzt)
     enthalten = _falte(wert) in {_falte(e) for e in eintraege}
     return not enthalten if verneint else enthalten
 
@@ -196,20 +250,21 @@ def _entkleide(text: str) -> str:
     return text.strip()
 
 
-def _wert(zeichenkette: str, tabelle: Signaltabelle, benutzt: list):
-    """Loest einen Operanden auf: Zahl, Wahrheitswert, Text oder Signal."""
+def _wert(zeichenkette: str, tabelle, listen, benutzt):
+    """Loest einen Operanden auf: Rechnung, Zahl, Wahrheitswert, Text, Signal."""
     text = zeichenkette.strip()
 
-    if "/" in text and not text[0] in "\"'":
-        zaehler, _, nenner = text.partition("/")
-        oben = _wert(zaehler, tabelle, benutzt)
-        unten = _wert(nenner, tabelle, benutzt)
-        if not isinstance(oben, (int, float)) or not isinstance(unten, (int, float)):
-            raise RuleSyntaxError(f"Verhaeltnis braucht Zahlen: {text!r}")
-        if unten == 0:
+    teile = text.split(" ")
+    if len(teile) == 3 and teile[1] in _RECHNEN:
+        links = _wert(teile[0], tabelle, listen, benutzt)
+        rechts = _wert(teile[2], tabelle, listen, benutzt)
+        for wert in (links, rechts):
+            if not isinstance(wert, (int, float)) or isinstance(wert, bool):
+                raise RuleSyntaxError(f"Rechnung braucht Zahlen: {text!r}")
+        if teile[1] == "/" and rechts == 0:
             # Division durch null ist keine Aussage, sondern eine Messluecke.
-            raise MissingSignal(nenner.strip(), "Wert 0, Verhaeltnis nicht bildbar")
-        return oben / unten
+            raise MissingSignal(teile[2], "Wert 0, Verhaeltnis nicht bildbar")
+        return _RECHNEN[teile[1]](links, rechts)
 
     if text in ("true", "True"):
         return True
@@ -220,7 +275,7 @@ def _wert(zeichenkette: str, tabelle: Signaltabelle, benutzt: list):
     if len(text) >= 2 and text[0] == text[-1] and text[0] in "\"'":
         return text[1:-1]
 
-    if not re.fullmatch(r"[a-zA-Z_][a-zA-Z0-9_]*", text):
+    if not _NAME.match(text):
         raise RuleSyntaxError(f"Kein gueltiger Signalname: {text!r}")
 
     if text not in benutzt:

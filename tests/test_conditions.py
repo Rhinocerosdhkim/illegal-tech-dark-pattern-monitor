@@ -31,11 +31,17 @@ pruefe("groesser nicht",   "preselected_checkbox_count > 0", False, preselected_
 pruefe("groesser gleich",  "banner_reappears_count_24h >= 2", True, banner_reappears_count_24h=2)
 pruefe("kleiner",          "font_size_min_px < 12",          True,  font_size_min_px=11)
 
-print("Verhaeltnis")
+print("Rechnungen")
 pruefe("faktor ueber 2", "accept_button_area_px2 / reject_button_area_px2 > 2.0", True,
        accept_button_area_px2=4200, reject_button_area_px2=900)
 pruefe("faktor unter 2", "accept_button_area_px2 / reject_button_area_px2 > 2.0", False,
        accept_button_area_px2=1000, reject_button_area_px2=900)
+# Aus dem Briefing 3.4: "Ablehnung visuell zurueckgesetzt -> Kontrastdifferenz > 3.0".
+# Ohne Subtraktion fiel diese Bedingung stillschweigend als Regelwerksfehler aus.
+pruefe("kontrastdifferenz ueber 3", "accept_contrast_ratio - reject_contrast_ratio > 3.0", True,
+       accept_contrast_ratio=8.4, reject_contrast_ratio=2.1)
+pruefe("kontrastdifferenz unter 3", "accept_contrast_ratio - reject_contrast_ratio > 3.0", False,
+       accept_contrast_ratio=7.1, reject_contrast_ratio=6.8)
 
 print("Und-Verknuepfung")
 pruefe("beide wahr", "countdown_element_present == true and countdown_resets_on_revisit == true",
@@ -84,7 +90,6 @@ print("  ok  Signalherkunft")
 
 print("Regelwerksfehler werden benannt, nicht verschluckt")
 for kaputt, stichwort in [("banner_detected", "Vergleichsoperator"),
-                          ("a == true or b == true", "'or'"),
                           ("banner_detected > true", "Zahlen")]:
     try:
         auswerten(kaputt, tabelle(banner_detected=True, a=True, b=True))
@@ -92,5 +97,49 @@ for kaputt, stichwort in [("banner_detected", "Vergleichsoperator"),
     except RuleSyntaxError as fehler:
         assert stichwort in str(fehler), fehler
         print(f"  ok  {kaputt!r}")
+
+# --- Nachtrag: was rules/_VORLAGE.yaml dem juristischen Team zusagt -------
+
+print("\nOder-Verknuepfung (_VORLAGE.yaml: Operatoren ... and or)")
+pruefe("oder, erstes wahr",  "a == true or b == true", True,  a=True,  b=False)
+pruefe("oder, zweites wahr", "a == true or b == true", True,  a=False, b=True)
+pruefe("oder, keines",       "a == true or b == true", False, a=False, b=False)
+pruefe("and bindet staerker", "a == true and b == true or c == true", True,
+       a=False, b=False, c=True)
+
+print("Benannte Listen (_VORLAGE.yaml: listen:)")
+LISTEN = {"zulaessige_labels": ["Verträge hier kündigen", "Vertrag hier kündigen"]}
+for bedingung, erwartet, label in [
+        ("kuendigungsbutton_label not in zulaessige_labels", True,  "Mein Konto"),
+        ("kuendigungsbutton_label not in zulaessige_labels", False, "Verträge hier kündigen"),
+        ("kuendigungsbutton_label in zulaessige_labels",     True,  "vertrag hier kündigen")]:
+    got = auswerten(bedingung, tabelle(kuendigungsbutton_label=label), LISTEN).wahr
+    assert got is erwartet, f"{bedingung!r} mit {label!r} -> {got}"
+    print(f"  ok  {label!r}")
+
+try:
+    auswerten("kuendigungsbutton_label not in gibt_es_nicht",
+              tabelle(kuendigungsbutton_label="x"), LISTEN)
+    raise AssertionError("kein Fehler bei unbekannter Liste")
+except RuleSyntaxError as fehler:
+    assert "listen:" in str(fehler)
+    print("  ok  unbekannte Liste wird benannt, nicht verschluckt")
+
+print("Dreiwertige Logik — ein fehlendes Signal blockiert nicht mehr als noetig")
+t = Signaltabelle(werte={"a": {"wert": False, "schritt": "s", "nachweis": "S-01.png"}},
+                  fehler={"b": "nicht erhoben"})
+assert auswerten("a == true and b == true", t).wahr is False
+print("  ok  'and' ist falsch, sobald ein Glied falsch ist")
+t2 = Signaltabelle(werte={"a": {"wert": True, "schritt": "s", "nachweis": "S-01.png"}},
+                   fehler={"b": "nicht erhoben"})
+assert auswerten("a == true or b == true", t2).wahr is True
+print("  ok  'or' ist wahr, sobald ein Glied wahr ist")
+for bedingung, tab in [("a == true and b == true", t2), ("a == true or b == true", t)]:
+    try:
+        auswerten(bedingung, tab)
+        raise AssertionError(f"MissingSignal fehlt bei {bedingung!r}")
+    except MissingSignal:
+        pass
+print("  ok  MissingSignal nur, wenn das Ergebnis wirklich davon abhaengt")
 
 print("\nAlle Parsertests bestanden.")

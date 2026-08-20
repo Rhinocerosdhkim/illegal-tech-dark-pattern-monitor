@@ -1,21 +1,34 @@
 """Vom Messwert zur Befundstufe.
 
-    eindeutig    schwer zu bestreiten
-    verdaechtig  Anhaltspunkt, Auslegungsspielraum
-    unklar       ein benoetigtes Signal wurde nicht erhoben
-    unauffaellig nichts trifft zu
+    eindeutig       schwer zu bestreiten
+    verdaechtig     Anhaltspunkt, Auslegungsspielraum
+    unklar          ein benoetigtes Signal wurde nicht erhoben
+    unauffaellig    nichts trifft zu
+    nicht_anwendbar die Regel greift fuer diese Seite gar nicht
 
-'unklar' bauen wir nicht — die Stufe entsteht von selbst, weil ein nicht
-erhobenes Signal als MissingSignal ankommt. Wer nicht gemessen hat, kann
-nichts behaupten.
+"unklar" bauen wir nicht — die Stufe entsteht von selbst, weil ein nicht
+erhobenes Signal als MissingSignal ankommt.
+
+Semantik bei fehlenden Signalen, nach DECISIONS.md vom 20.08. (A3 und
+"Bedingungen werden einzeln ausgewertet"):
+
+    Jede Bedingung wird EINZELN ausgewertet. Ist eine nicht auswertbar,
+    wird nur sie uebersprungen und vermerkt; die uebrigen gelten weiter.
+    Loest danach eine aus, steht der Befund. Loest keine aus und wurde
+    mindestens eine uebersprungen, lautet er "unklar".
+
+    Fuer die Anwendbarkeit gilt zusaetzlich: Wuerde die Regel ohnehin
+    nicht anschlagen, wird sie stillschweigend uebersprungen. Andernfalls
+    stuende in jedem Bericht zu jeder Seite ein "unklar" zu jeder Regel,
+    und die Stufe verloere ihre Aussagekraft.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .conditions import (Auswertung, MissingSignal, RuleSyntaxError,
-                         Signaltabelle, auswerten)
+from .conditions import (MissingSignal, RuleSyntaxError, Signaltabelle,
+                         auswerten)
 from .rules import Bedingung, Regel
 from .signale import ist_ableitung
 
@@ -24,6 +37,8 @@ VERDAECHTIG = "verdaechtig"
 UNKLAR = "unklar"
 UNAUFFAELLIG = "unauffaellig"
 NICHT_ANWENDBAR = "nicht_anwendbar"
+
+JA, NEIN, UNSICHER = "ja", "nein", "unsicher"
 
 
 @dataclass
@@ -35,6 +50,7 @@ class Befund:
     nachweise: list = field(default_factory=list)   # je Signal: Wert, Schritt, Screenshot
     unklar_wegen: list = field(default_factory=list)
     herabgestuft: bool = False
+    wuerde_stufe: str | None = None                 # bei ungeklaerter Anwendbarkeit
     hinweise: list = field(default_factory=list)
 
     @property
@@ -44,37 +60,50 @@ class Befund:
 
 
 def pruefe(regel: Regel, tabelle: Signaltabelle) -> Befund:
-    anwendbar, unklar_anwendbarkeit, anwendbarkeitssignale = _anwendbar(regel, tabelle)
+    zustand, offen, aw_signale = _anwendbar(regel, tabelle)
 
-    if unklar_anwendbarkeit:
-        return Befund(regel=regel, stufe=UNKLAR, unklar_wegen=unklar_anwendbarkeit,
-                      hinweise=["Anwendbarkeit der Regel konnte nicht geprueft werden"])
-    if not anwendbar:
+    if zustand == NEIN:
         return Befund(regel=regel, stufe=NICHT_ANWENDBAR)
 
     # C4: Ist die Anwendbarkeit abgeleitet statt festgestellt, ist "eindeutig"
     # gesperrt. Bestaetigt ein Mensch die Voraussetzung im Zielprofil
     # (bestaetigt_durch_mensch), bleibt "eindeutig" moeglich.
-    abgeleitet = [s for s in anwendbarkeitssignale
+    abgeleitet = [s for s in aw_signale
                   if ist_ableitung(s) and s not in tabelle.bestaetigt]
 
-    unklar_wegen: list = []
+    uebersprungen: list = []
     for stufe in (EINDEUTIG, VERDAECHTIG):
         for bedingung in regel.verdict_rules.get(stufe, []):
-            treffer, fehlend = _bedingung(bedingung, tabelle)
-            if fehlend:
-                unklar_wegen.extend(fehlend)
+            treffer, luecken = _bedingung(bedingung, regel, tabelle)
+            if luecken:
+                uebersprungen.extend(luecken)
                 continue
             if treffer and treffer.wahr:
+                if zustand == UNSICHER:
+                    return _anwendbarkeit_offen(regel, stufe, bedingung, offen)
                 return _treffer(regel, stufe, bedingung, treffer, tabelle,
-                                abgeleitet, anwendbarkeitssignale)
+                                abgeleitet, aw_signale)
 
-    if unklar_wegen:
-        return Befund(regel=regel, stufe=UNKLAR, unklar_wegen=_eindeutige(unklar_wegen))
+    if uebersprungen:
+        return Befund(regel=regel, stufe=UNKLAR, unklar_wegen=_eindeutige(uebersprungen))
+    if zustand == UNSICHER:
+        # Die Regel wuerde ohnehin nicht anschlagen — stillschweigend uebergehen,
+        # statt die Akte mit einem nichtssagenden "unklar" zu fuellen.
+        return Befund(regel=regel, stufe=NICHT_ANWENDBAR)
     return Befund(regel=regel, stufe=UNAUFFAELLIG)
 
 
-def _treffer(regel, stufe, bedingung, treffer, tabelle, abgeleitet, anwendbarkeitssignale):
+def _anwendbarkeit_offen(regel, stufe, bedingung, offen) -> Befund:
+    return Befund(
+        regel=regel, stufe=UNKLAR, wuerde_stufe=stufe,
+        bedingung=" ".join(bedingung.text.split()),
+        unklar_wegen=offen,
+        hinweise=[f"Die Regel wuerde anschlagen ({stufe}); ob sie auf diese "
+                  f"Seite ueberhaupt anwendbar ist, konnte nicht geprueft "
+                  f"werden."])
+
+
+def _treffer(regel, stufe, bedingung, treffer, tabelle, abgeleitet, aw_signale):
     hinweise, herabgestuft = [], False
 
     if stufe == EINDEUTIG and abgeleitet:
@@ -88,7 +117,7 @@ def _treffer(regel, stufe, bedingung, treffer, tabelle, abgeleitet, anwendbarkei
 
     nachweise = [n for n in
                  (tabelle.nachweis(s) for s in
-                  _eindeutige(list(treffer.benutzte_signale) + anwendbarkeitssignale))
+                  _eindeutige(list(treffer.benutzte_signale) + aw_signale))
                  if n]
 
     return Befund(regel=regel, stufe=stufe,
@@ -98,17 +127,16 @@ def _treffer(regel, stufe, bedingung, treffer, tabelle, abgeleitet, anwendbarkei
 
 
 def _anwendbar(regel: Regel, tabelle: Signaltabelle):
-    """(anwendbar, unklar_wegen, benutzte Signale)"""
+    """(ja | nein | unsicher, uebersprungene Bedingungen, benutzte Signale)"""
     benutzte: list = []
-    unklar: list = []
+    offen: list = []
 
     def wahrheiten(bedingungen):
         ergebnisse = []
         for text in bedingungen:
-            try:
-                auswertung = auswerten(text, tabelle)
-            except MissingSignal as fehler:
-                unklar.append({"signal": fehler.name, "grund": fehler.grund})
+            auswertung, luecken = _bedingung(Bedingung(text=text), regel, tabelle)
+            if luecken:
+                offen.extend(luecken)
                 continue
             benutzte.extend(auswertung.benutzte_signale)
             ergebnisse.append(auswertung.wahr)
@@ -117,21 +145,25 @@ def _anwendbar(regel: Regel, tabelle: Signaltabelle):
     alle = wahrheiten(regel.applies_when.get("all", []))
     eines = wahrheiten(regel.applies_when.get("any", []))
     keines = wahrheiten(regel.applies_when.get("none", []))
+    hat_any = bool(regel.applies_when.get("any"))
 
-    # Eine Regel, die ohnehin nicht greift, muss nicht "unklar" heissen:
-    # steht schon fest, dass eine Voraussetzung fehlt, ist das eine Aussage.
-    if (alle and not all(alle)) or (keines and any(keines)):
-        return False, [], _eindeutige(benutzte)
-    if unklar:
-        return False, unklar, _eindeutige(benutzte)
-    if regel.applies_when.get("any") and not any(eines):
-        return False, [], _eindeutige(benutzte)
-    return True, [], _eindeutige(benutzte)
+    # Steht schon fest, dass eine Voraussetzung fehlt, ist das eine Aussage —
+    # kein "unklar".
+    if any(w is False for w in alle) or any(w is True for w in keines):
+        return NEIN, [], _eindeutige(benutzte)
+    if hat_any and any(eines):
+        pass                                  # mindestens eines erfuellt
+    elif hat_any and not offen:
+        return NEIN, [], _eindeutige(benutzte)
+
+    if offen:
+        return UNSICHER, _eindeutige(offen), _eindeutige(benutzte)
+    return JA, [], _eindeutige(benutzte)
 
 
-def _bedingung(bedingung: Bedingung, tabelle: Signaltabelle):
+def _bedingung(bedingung: Bedingung, regel: Regel, tabelle: Signaltabelle):
     try:
-        return auswerten(bedingung.text, tabelle), None
+        return auswerten(bedingung.text, tabelle, regel.listen), None
     except MissingSignal as fehler:
         return None, [{"signal": fehler.name, "grund": fehler.grund}]
     except RuleSyntaxError as fehler:
