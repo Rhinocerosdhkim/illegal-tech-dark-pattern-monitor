@@ -8,7 +8,7 @@
 
   applies_when:
     all:
-      - "is_consumer_offer == true"
+      - "is_b2c_offer == true"      # umbenannt 20.08., Korb B
       - "has_price_display == true"
       - "has_checkout_flow == true"
     none:
@@ -139,6 +139,21 @@
   verdict_rules:
 
     eindeutig:
+
+      # Ergaenzt 20.08. Die uebrigen eindeutig-Bedingungen dieser Regel
+      # beruhen saemtlich auf Signalen aus DP-005b (Navigation bis zur
+      # Kasse), die es noch nicht gibt. Diese hier laeuft mit zwei bereits
+      # zugesagten Signalen und deckt Anhang Nr. 20 zu § 3 Abs. 3 UWG ab:
+      # eine Bewerbung als "gratis" trotz anfallender Versandkosten.
+      # Vorschlag steht so in _SIGNALE.md.
+      - condition: "gratis_claim_present == true and shipping_cost_amount > 0"
+        reason: >
+          Die Seite bewirbt ein Angebot als gratis, kostenlos oder umsonst,
+          obwohl auf der Produktseite Versandkosten ausgewiesen sind.
+          Nach Anhang Nr. 20 zu § 3 Abs. 3 UWG ist eine solche Bewerbung
+          stets unzulaessig, soweit es sich nicht um unvermeidbare Kosten
+          des Eingehens auf das Angebot oder der Abholung bzw. Lieferung
+          handelt.
 
       - condition: >
           "mandatory_total_price_at_checkout == false

@@ -51,31 +51,52 @@
     - order_button_found
     - order_button_label
 
+  # Umgestellt 20.08. auf benannte Listen (_VORLAGE.yaml, Abschnitt LISTEN).
+  # So stehen die Formulierungen an einer Stelle und lassen sich pflegen,
+  # ohne eine Bedingung anzufassen.
+  listen:
+    # Zulaessige Formulierungen. Grundlage: EuGH, Urteil vom 07.04.2022,
+    # Rs. C-249/21 (Fuhrmann-2) - massgeblich ist allein die Beschriftung
+    # der Schaltflaeche, nicht die Begleitumstaende des Bestellvorgangs.
+    zulaessige_bestell_labels:
+      - "zahlungspflichtig bestellen"
+      - "kostenpflichtig bestellen"
+      - "zahlungspflichtigen Vertrag schließen"
+      - "kaufen"
+      - "jetzt kaufen"
+
+    # In Rechtsprechung und Literatur umstritten. Nicht als eindeutiger
+    # Verstoss behandeln, aber zur Pruefung vorlegen.
+    umstrittene_bestell_labels:
+      - "jetzt bestellen"
+      - "Bestellung abschließen"
+      - "verbindlich bestellen"
+      - "Buchung abschließen"
+
   verdict_rules:
     eindeutig:
-      # Zulässige Formulierungen (Weißliste). Trifft keine davon zu,
-      # liegt ein Verstoß vor. Grundlage: EuGH, Urteil vom 07.04.2022,
-      # Rs. C-249/21 (Fuhrmann-2) - maßgeblich ist allein die Beschriftung
-      # der Schaltfläche, nicht die Begleitumstände des Bestellvorgangs.
-      - >
-        order_button_label not_in_whitelist [
-          "zahlungspflichtig bestellen",
-          "kostenpflichtig bestellen",
-          "zahlungspflichtigen Vertrag schließen",
-          "kaufen",
-          "jetzt kaufen"
-        ]
+      # BEHOBEN 20.08. Vorher lautete die Bedingung nur "nicht auf der
+      # Weissliste". Da keine der umstrittenen Formulierungen auf der
+      # Weissliste steht und "eindeutig" zuerst geprueft wird, war die Stufe
+      # "verdaechtig" unerreichbar: ein Shop mit "Jetzt bestellen" - einer
+      # in der Rechtsprechung gerade umstrittenen Formulierung - wurde als
+      # eindeutiger Verstoss ausgewiesen. Genau die Art von Fehlalarm, die
+      # uns nach § 4 Nr. 1, Nr. 2 UWG selbst angreifbar macht.
+      - condition: >
+          order_button_label not in zulaessige_bestell_labels and
+          order_button_label not in umstrittene_bestell_labels
+        reason: >
+          Die Beschriftung der Bestellschaltflaeche entspricht weder dem
+          gesetzlichen Wortlaut noch einer der in Rechtsprechung und
+          Literatur diskutierten Formulierungen.
 
     verdaechtig:
-      # Formulierungen, die in Rechtsprechung und Literatur umstritten sind.
-      # Nicht als eindeutiger Verstoß behandeln, aber zur Prüfung vorlegen.
-      - >
-        order_button_label in_greylist [
-          "jetzt bestellen",
-          "Bestellung abschließen",
-          "verbindlich bestellen",
-          "Buchung abschließen"
-        ]
+      - condition: "order_button_label in umstrittene_bestell_labels"
+        reason: >
+          Die Beschriftung gehoert zu den Formulierungen, deren Eindeutigkeit
+          im Sinne des § 312j Abs. 3 BGB umstritten ist. Ob sie eine
+          "entsprechend eindeutige Formulierung" darstellt, bedarf der
+          rechtlichen Pruefung.
 
   threshold_source: >
     EuGH, Urteil vom 07.04.2022, Rs. C-249/21 (Fuhrmann-2 GmbH):

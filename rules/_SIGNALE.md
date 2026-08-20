@@ -30,6 +30,10 @@ Stand: 19.08.2026 · Änderungen bitte über das Entwicklungsteam
 | `preselected_checkbox_count` | Zahl | ✅ | Anzahl vorausgewählter Auswahlfelder im Banner |
 | `third_party_cookies_before_consent` | Zahl | ✅ | Anzahl Drittanbieter-Cookies, die **vor** jeder Einwilligung gesetzt wurden |
 | `banner_reappears_on_reject` | bool | 🟡 | Erscheint das Banner nach Ablehnung erneut? (sog. *nagging*) |
+| `banner_reappears_count_24h` | Zahl | 🟡 | Wie oft erscheint das Banner innerhalb von 24 Stunden erneut? **Setzt mehrere Erfassungen voraus** — kommt mit der Zeitachse |
+| `more_info_present` | bool | 🟡 | Bietet das Banner statt einer Ablehnung nur „Mehr Informationen" / „Einstellungen"? |
+| `more_info_leads_to_reject` | bool | 🟡 | Führt dieser Weg zu einer unmittelbaren Ablehnmöglichkeit? |
+| `more_info_click_depth` | Zahl | 🟡 | Wie viele Klicks von dort bis zur vollständigen Ablehnung? |
 
 > **Hinweis zu `third_party_cookies_before_consent`:** Dieses Signal ist unabhängig von der Gestaltung des Banners. Es misst, ob bereits vor jeder Interaktion Tracking stattfindet. Technisch sehr zuverlässig.
 
@@ -56,7 +60,7 @@ Stand: 19.08.2026 · Änderungen bitte über das Entwicklungsteam
 | `countdown_resets_on_revisit` | bool | ✅ | **Springt der Countdown nach Löschen aller Browserdaten und erneutem Aufruf auf denselben Startwert zurück?** |
 | `countdown_text` | Text | ✅ | umgebender Text im Wortlaut |
 | `scarcity_text_present` | bool | ✅ | Knappheitshinweis vorhanden (z. B. „nur noch 2 verfügbar") |
-| `scarcity_value` | Zahl | ✅ | die genannte Stückzahl |
+| `scarcity_value` | Zahl | ✅ | die genannte Stückzahl. **Ist keine Zahl lesbar** („nur noch wenige verfügbar"), gehört das Signal nach `signal_errors` — nicht als 0 melden. 0 hieße „gemessen und null Stück", und darauf würde eine Regel anschlagen |
 | `scarcity_value_unchanged_scans` | Zahl | 🟡 | Über wie viele aufeinanderfolgende Scans ist der Wert unverändert? |
 | `viewer_count_present` | bool | 🟡 | „17 Personen sehen sich das gerade an" |
 

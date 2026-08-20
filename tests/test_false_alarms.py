@@ -45,7 +45,7 @@ print("  ok  DP-002, DP-003, DP-006 explicitly unremarkable")
 print("\nEditorial portal — no shop, no banner")
 run, f = findings_for("data/fixtures/ratgeber-portal")
 not_applicable = [i for i, x in f.items() if x.level == "nicht_anwendbar"]
-assert len(not_applicable) >= 4, not_applicable
+assert len(not_applicable) == 6, not_applicable  # no shop at all: no rule applies
 print(f"  ok  {len(not_applicable)} rules do not apply: {', '.join(sorted(not_applicable))}")
 
 assert not any(x.reportable and x.level != "unklar" for x in f.values()), \

@@ -57,6 +57,12 @@ class Rule:
     legal_test: str = ""                               # tatbestand_de
     claim_chain: str = ""                              # anspruchskette
     applies_when: dict = field(default_factory=dict)   # all / any / none
+    # C4: set when applicability is INFERRED from facts rather than
+    # established (e.g. concluding a Dauerschuldverhaeltnis from a monthly
+    # price). Such a rule may reach at most "verdaechtig". Site-wide
+    # prerequisites can be lifted per target via confirmed_by_human;
+    # product-dependent ones cannot, which is why the rule declares it.
+    applicability_derived: bool = False
     verdict_rules: dict = field(default_factory=dict)  # level -> [Condition]
     lists: dict = field(default_factory=dict)          # listen
     explanation_template: str = ""                     # explanation_template_de
@@ -113,6 +119,7 @@ def _build(raw: dict, filename: str) -> Rule:
         legal_test=str(_pick(raw, "legal_test", "")).strip(),
         claim_chain=str(_pick(raw, "claim_chain", "")).strip(),
         applies_when=_applies_when(raw.get("applies_when")),
+        applicability_derived=bool(raw.get("applicability_derived", False)),
         verdict_rules=_verdict_rules(raw.get("verdict_rules")),
         lists=_lists(_pick(raw, "lists")),
         explanation_template=str(_pick(raw, "explanation_template", "")).strip(),

@@ -54,9 +54,22 @@
       - "countdown_element_present == true and countdown_resets_on_revisit == true"
       - "scarcity_text_present == true and scarcity_value > 0 and scarcity_value_unchanged_scans >= 3"
     verdaechtig:
-      - "countdown_element_present == true and countdown_resets_on_revisit != true"
+      # GESTRICHEN 20.08.: "countdown_element_present == true and
+      # countdown_resets_on_revisit != true". Sie haette bei JEDEM Countdown
+      # ausgeloest - auch bei Sitzungs- und Zahlungsfristen, die die eigenen
+      # Fehlalarmrisiken dieser Regel ausdruecklich ausnehmen wollen, und
+      # entgegen dem eigenen threshold_source, der einen reproduzierbaren
+      # Befund verlangt, dass die behauptete Begrenzung nicht besteht.
+      # Der Fall ist ohnehin abgedeckt: springt der Countdown zurueck, greift
+      # "eindeutig"; springt er nicht zurueck, ist er echt; laesst es sich
+      # nicht messen, entsteht "unklar" von selbst.
+      #
+      # GESTRICHEN 20.08.: "scarcity_text_present == true and
+      # scarcity_value == 0". Ein Knappheitshinweis ohne lesbare Zahl
+      # ("nur noch wenige verfuegbar") liefert 0 - damit wurde eine
+      # Messluecke als Befund gewertet. Ist keine Zahl vorhanden, gehoert
+      # scarcity_value nach signal_errors (siehe _SIGNALE.md).
       - "scarcity_text_present == true and scarcity_value_unchanged_scans >= 2"
-      - "scarcity_text_present == true and scarcity_value == 0"
 
   threshold_source: >
     Wortlaut Anlage Nr. 7 zu § 3 Abs. 3 UWG: die unwahre Angabe einer zeitlichen

@@ -235,8 +235,19 @@ def _membership(signal_name: str, negated: bool, entries: list,
     return not contained if negated else contained
 
 
+# Trailing punctuation and decoration are not part of the wording.
+_DECORATION = " \t\n.,;:!?…\"'»«*→>-"
+
+
 def _fold(value) -> str:
-    return " ".join(str(value).split()).casefold()
+    """Normalise a label for comparison against a word list.
+
+    § 312j Abs. 3 BGB is about the wording of the button, not its
+    typography. "Jetzt kaufen!" and "jetzt kaufen" are the same wording;
+    treating the exclamation mark as a violation would be a false alarm we
+    could not defend (EuGH C-249/21, Fuhrmann-2, turns on the label alone).
+    """
+    return " ".join(str(value).split()).strip(_DECORATION).casefold()
 
 
 def _unquote(text: str) -> str:

@@ -73,6 +73,8 @@ def assess(rule: Rule, table: SignalTable) -> Finding:
     # (confirmed_by_human) unlocks it again.
     derived = [s for s in applicability_signals
                if is_derived(s) and s not in table.confirmed]
+    if rule.applicability_derived:
+        derived = derived or ["(applies_when ist eine Ableitung aus Tatsachen)"]
 
     skipped: list = []
     for level in (CLEAR, SUSPECTED):

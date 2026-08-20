@@ -6,16 +6,40 @@
   status: REVIEW
   bearbeiter: "Jura-Team"
 
+  # Umgestellt 20.08. auf Namen aus _SIGNALE.md (ABSTIMMUNG Korb B/C).
+  # Vorher standen hier fuenf rechtliche Qualifikationen, die niemand misst;
+  # die Regel war dadurch auf JEDER Seite "unklar" und damit wertlos -
+  # obwohl ihre staerkste Bedingung (has_kuendigungsbutton == false) auf
+  # einem laengst zugesagten Signal beruht.
+  #
+  #   is_consumer_contract              -> is_b2c_offer
+  #   contract_concludable_on_website   -> order_button_found
+  #   is_electronic_business_transaction-> dieselbe Tatsache, entfaellt
+  #   entrepreneur_owes_paid_performance-> has_price_display + order_button_found
+  #   is_dauerschuldverhaeltnis         -> die drei starken Tatsachensignale
+  #   stricter_form_required            -> nach menschliche_pruefung verschoben
   applies_when:
     all:
-      - "is_consumer_contract == true"
-      - "contract_concludable_on_website == true"
-      - "is_electronic_business_transaction == true"
-      - "is_dauerschuldverhaeltnis == true"
-      - "entrepreneur_owes_paid_performance == true"
+      - "is_b2c_offer == true"
+      - "order_button_found == true"
+      - "has_price_display == true"
+    any:
+      - "recurring_price_notation_present == true"
+      - "min_contract_term_stated == true"
+      - "auto_renewal_text_present == true"
     none:
-      - "stricter_form_required == true"
       - "is_financial_services == true"
+
+  # Aus den drei Tatsachensignalen auf ein Dauerschuldverhaeltnis zu
+  # schliessen, ist eine Ableitung, keine Feststellung - und sie ist je
+  # Produkt verschieden, laesst sich also nicht site-weit im Zielprofil
+  # bestaetigen. Nach C4 bleibt die Regel deshalb auf "verdaechtig"
+  # begrenzt, bis ein Mensch den Vertragstyp bestaetigt.
+  applicability_derived: true
+
+  menschliche_pruefung:
+    - "Liegt tatsaechlich ein Dauerschuldverhaeltnis im Sinne des § 312k Abs. 1 BGB vor?"
+    - "Ist fuer diesen Vertragstyp eine strengere Form vorgeschrieben (§ 312k Abs. 6 BGB)?"
 
   legal_basis:
     - "§ 312k Abs. 1 BGB"

@@ -17,7 +17,7 @@ findings = {f.rule.id: f for f in (assess(r, run.table) for r in load_rules())}
 
 EXPECTED = {
     "DP-001": "eindeutig",     # third-party cookies before any consent
-    "DP-002": "eindeutig",     # label not on the whitelist
+    "DP-002": "verdaechtig",   # "Jetzt bestellen" is disputed, not clear-cut
     "DP-003": "eindeutig",     # countdown resets on revisit
     "DP-004": "unklar",        # Dauerschuldverhaeltnis not measurable
     "DP-005": "unklar",        # checkout not reachable without login

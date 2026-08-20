@@ -6,9 +6,15 @@
   status: REVIEW
   bearbeiter: "Jura-Team"
 
+  # Umgestellt 20.08. "required_info_found == true" stand hier als
+  # Voraussetzung. Damit fiel der schlimmste Fall, den diese Regel ueberhaupt
+  # erfassen soll, stillschweigend heraus: Eine Seite, die die
+  # Pflichtinformation gar nicht enthaelt oder so gruendlich verbirgt, dass
+  # die Stichwortsuche sie nicht findet, galt als "nicht anwendbar" und
+  # verschwand aus dem Bericht. Das Merkmal gehoert nicht in die
+  # Anwendbarkeit, sondern in die Befundbedingungen - dort steht es jetzt.
   applies_when:
     - "is_b2c_offer == true"
-    - "required_info_found == true"
 
   legal_basis:
     - "§ 5a Abs. 1 UWG (Vorenthalten wesentlicher Informationen)"
@@ -65,12 +71,36 @@
   verdict_rules:
     # Bewusst KEINE Stufe "eindeutig".
     verdaechtig:
+      # Pflichtinformation ueberhaupt nicht auffindbar. Steht seit dem
+      # 20.08. hier statt in applies_when - siehe dort.
+      - condition: "required_info_found == false"
+        reason: >
+          Auf der untersuchten Seite liess sich die Pflichtinformation nicht
+          auffinden. Das kann ein Vorenthalten nach § 5a Abs. 1 UWG sein
+          oder eine Grenze der Stichwortsuche - beides ist zu pruefen.
+
+      # --- Strukturelle Verbergung: traegt jeweils fuer sich -------------
+      # Diese drei beschreiben ein aktives Verbergen im Sinne des
+      # § 5a Abs. 2 UWG, nicht bloss eine ungluenstige Darstellung.
       - "hidden_by_opacity_count > 0"
-      - "font_size_min_px < 12"
-      - "text_contrast_min < 4.5"
       - "required_info_in_collapsed_element == true"
       - "aria_hidden_on_required_info == true"
-      - "scroll_depth_of_required_info_pct > 75"
+
+      # --- Weiche Indizien: nur in Kombination ---------------------------
+      # Umgestellt 20.08. Schriftgroesse, Kontrast und Position loesten
+      # bisher EINZELN aus. Jede der drei Bedingungen widersprach damit dem
+      # eigenen threshold_source bzw. den eigenen Fehlalarmrisiken dieser
+      # Regel: "Die Unterschreitung dieses Wertes begruendet fuer sich allein
+      # keinen Verstoss" und "Eine Platzierung in der Fusszeile ist nicht
+      # automatisch unzulaessig". In der bisherigen Fassung haette die Regel
+      # auf nahezu jeder Website ausgeloest - jede Seite hat ein Impressum
+      # in kleiner Schrift in der Fusszeile - und die Stufe "verdaechtig"
+      # damit entwertet. Verlangt werden jetzt zwei Indizien.
+      - "font_size_min_px < 12 and text_contrast_min < 4.5"
+      - "font_size_min_px < 12 and scroll_depth_of_required_info_pct > 75"
+      - "text_contrast_min < 4.5 and scroll_depth_of_required_info_pct > 75"
+
+      # Erst mit DP-005b messbar (Navigation bis zur Kasse).
       - "required_info_visible_before_purchase_decision == false"
 
   threshold_source: >
