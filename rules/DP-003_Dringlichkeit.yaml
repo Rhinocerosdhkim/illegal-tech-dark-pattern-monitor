@@ -26,25 +26,33 @@
 
   legal_basis:
     - "§ 3 Abs. 3 iVm Anhang zu § 3 Abs. 3 UWG Nr. 7 (unwahre Angabe zeitlicher Begrenzung)"
-    - "§ 5 Abs. 1, Abs. 2 UWG (irreführende geschäftliche Handlung) — subsidiär, wenn keine Einordnung in die Schwarzen Liste möglich ist"
-    - "§ 8 UWG (Unterlassungs-/Beseitigungsanspruch); § 8 Abs. 3 UWG (Aktivlegitimation: Wettbewerber, qualifizierte Verbraucherverbände)"
+    - "§ 5 Abs. 1 UWG (irreführende geschäftliche Handlung) — subsidiär, wenn keine Einordnung in die Schwarzen Liste möglich ist"
+    - "§ 8 UWG (Unterlassungs-/Beseitigungsanspruch)"
+    - "§ 8 Abs. 3 UWG (Aktivlegitimation: Wettbewerber, qualifizierte Verbraucherverbände)"
 
   tatbestand_de: >
-    Folgende geschäftliche Handlungen sind gegenüber Verbrauchern stets unzulässig:
-    die unwahre Angabe, bestimmte Waren oder Dienstleistungen seien allgemein
-    oder zu bestimmten Bedingungen nur für einen sehr begrenzten Zeitraum
-    verfügbar, um den Verbraucher zu einer sofortigen geschäftlichen
-    Entscheidung zu veranlassen, ohne dass dieser Zeit und Gelegenheit hat,
-    sich auf Grund von Informationen zu entscheiden;
+    Gegenüber Verbrauchern ist die unwahre Angabe, bestimmte Waren oder 
+    Dienstleistungen seien allgemein oder zu bestimmten Bedingungen nur für 
+    einen sehr begrenzten Zeitraum verfügbar, um den Verbraucher zu einer 
+    sofortigen geschäftlichen Entscheidung zu veranlassen, ohne dass dieser 
+    Zeit und Gelegenheit hat, sich auf Grund von Informationen zu entscheiden, 
+    stets unzulässig.
 
   anspruchskette: >
-    §3 Abs. 3 UWG iVm Ablage zu § 3 Abs. 3 Nr. 7 => Unterlassungsanspruch § 8 Abs. 1 UWG;
+    Unlautere geschäftliche Handlung gemäß Anhang zu § 3 Abs. 3 Nr. 7 UWG (Schwarze Liste)
+    → Verstoß gegen § 3 Abs. 3 UWG 
+    → Unterlassungsanspruch nach § 8 Abs. 1 UWG, ggf. auch Beseitigung nach
+    § 8 Abs. 1 S. 2 UWG.
     Aktivlegitimation der Verbraucherzentrale nach § 8 Abs. 3 Nr. 3 UWG.
 
   signals:
+    # Countdown-Muster
     - countdown_element_present
     - countdown_resets_on_revisit
     - countdown_text
+    - countdown_initial_value_seconds
+
+    # Knappheits-Muster
     - scarcity_text_present
     - scarcity_value
     - scarcity_value_unchanged_scans
