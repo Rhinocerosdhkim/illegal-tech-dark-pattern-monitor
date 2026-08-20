@@ -29,8 +29,14 @@ EXPECTED = {
     # Datei und braucht countdown_unchanged_scans + countdown_personalized.
     # Bis dahin: die Knappheitsbedingung ist nicht auswertbar -> unklar.
     "DP-003": "unklar",
-    "DP-004": "unklar",        # Dauerschuldverhaeltnis not measurable
-    "DP-005": "unklar",        # checkout not reachable without login
+    # Die drei Tatsachensignale zum Dauerschuldverhaeltnis stehen jetzt auf
+    # false: viagogo verkauft Tickets, kein Abonnement. Die Regel greift also
+    # gar nicht - richtiger als das frueher Ausgewiesene "unklar".
+    "DP-004": "nicht_anwendbar",
+    # Neu seit dem 20.08.: fehlende MwSt-Angabe im Preisumfeld. Von der
+    # Verbraucherzentrale im Seminar ausdruecklich genannt, bis dahin nutzte
+    # keine Bedingung das Signal.
+    "DP-005": "verdaechtig",
     "DP-006": "unklar",        # step "warenkorb" never reached
 }
 
@@ -55,8 +61,22 @@ assert "is_b2c_offer" in run.table.confirmed, \
 print("  ok  facts do not cap, and neither do confirmed derivations")
 
 print("\n'unklar' arises on its own")
-assert findings["DP-006"].unresolved[0]["signal"] == "required_info_found"
-assert "warenkorb" in findings["DP-006"].unresolved[0]["reason"]
+gaps = {g["signal"]: g["reason"] for g in findings["DP-003"].unresolved}
+assert "scarcity_value_unchanged_scans" in gaps, gaps
+assert "Vergleichswert" in gaps["scarcity_value_unchanged_scans"]
 print("  ok  measurement gap is passed through with its reason")
+
+print("\n'unklar' can also be declared by the rule itself")
+# DP-006 states in its own rulebook that a failed keyword search is not a
+# finding but an open question (§ 5a Abs. 3 Nr. 2 UWG). On viagogo the
+# signal is not even in signal_errors-free reach — the step "warenkorb" was
+# never taken — so the automatic path fires instead. Both roads end at
+# "unklar", which is the point; the declared form is exercised in
+# tests/test_rule_defects.py.
+dp006 = findings["DP-006"]
+assert dp006.level == "unklar", dp006.level
+assert any(g["signal"] == "required_info_found" and "warenkorb" in g["reason"]
+           for g in dp006.unresolved), dp006.unresolved
+print("  ok  a step that was never reached becomes unklar, with its reason")
 
 print("\nAll verdict tests passed.")

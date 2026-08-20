@@ -1,5 +1,5 @@
 {
-  "_note": "HAND-WRITTEN FIXTURE - unremarkable site. Purpose: measure whether the system can stay silent. A system that sees violations everywhere is worthless (briefing, packet 2). DELIBERATELY without a target profile in data/targets/, so an arbitrary target that nobody set up by hand runs through the whole chain.",
+  "_note": "HAND-WRITTEN FIXTURE - unremarkable shop, correctly designed. Purpose: measure whether the system can stay silent. A system that sees violations everywhere is worthless (briefing, packet 2). The footer values are those of a REAL German shop footer - 11px, contrast 4.6, at 92% of page height. They were 14px / 7.2 / 30% until 21.08., which no real footer produces and made the false-alarm result look better than it was. DELIBERATELY without a target profile in data/targets/, so an arbitrary target that nobody set up by hand runs through the whole chain.",
   "meta": {
     "target": "sauberer-shop",
     "industry": "Mode",
@@ -141,12 +141,12 @@
       "evidence": "S-02.png"
     },
     "font_size_min_px": {
-      "value": 14,
+      "value": 11,
       "step": "produktdetail",
       "evidence": "S-02.png"
     },
     "text_contrast_min": {
-      "value": 7.2,
+      "value": 4.6,
       "step": "produktdetail",
       "evidence": "S-02.png"
     },
@@ -156,7 +156,7 @@
       "evidence": "S-02.png"
     },
     "scroll_depth_of_required_info_pct": {
-      "value": 30,
+      "value": 92,
       "step": "produktdetail",
       "evidence": "S-02.png"
     },
@@ -170,15 +170,55 @@
       "step": "produktdetail",
       "evidence": "S-02.png"
     },
-    "required_info_visible_before_purchase_decision": {
-      "value": true,
-      "step": "produktdetail",
-      "evidence": "S-02.png"
-    },
     "is_financial_services": {
       "value": false,
       "step": "startseite",
       "evidence": "S-01.png"
+    },
+    "required_info_type": {
+      "value": "Widerruf",
+      "step": "produktdetail",
+      "evidence": "S-02.png"
+    },
+    "vat_disclosure_present": {
+      "value": true,
+      "step": "produktdetail",
+      "evidence": "S-02.png"
+    },
+    "gratis_claim_present": {
+      "value": false,
+      "step": "produktdetail",
+      "evidence": "S-02.png"
+    },
+    "free_pickup_option_present": {
+      "value": true,
+      "step": "produktdetail",
+      "evidence": "S-02.png"
+    },
+    "has_recurring_contract_keywords": {
+      "value": false,
+      "step": "produktdetail",
+      "evidence": "S-02.png"
+    },
+    "cancellation_terms_present": {
+      "value": false,
+      "step": "produktdetail",
+      "evidence": "S-02.png"
+    },
+    "min_contract_term_stated": {
+      "value": false,
+      "step": "produktdetail",
+      "evidence": "S-02.png"
+    },
+    "auto_renewal_text_present": {
+      "value": false,
+      "step": "produktdetail",
+      "evidence": "S-02.png"
+    },
+    "recurring_price_notation_present": {
+      "value": false,
+      "step": "produktdetail",
+      "evidence": "S-02.png"
     }
   },
   "signal_errors": {

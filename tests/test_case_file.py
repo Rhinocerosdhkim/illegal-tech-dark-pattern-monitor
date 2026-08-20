@@ -18,8 +18,10 @@ with tempfile.TemporaryDirectory() as tmp:
     case = build(run, findings, output=tmp, as_pdf=False)
     html = case.html.read_text(encoding="utf-8")
 
-    assert case.finding_count == 6, case.finding_count
-    print("  ok  6 reportable findings")
+    # DP-004 greift auf einem Ticketverkauf nicht (kein Dauerschuldverhaeltnis)
+    # und erscheint deshalb gar nicht in der Akte.
+    assert case.finding_count == 5, case.finding_count
+    print("  ok  5 reportable findings, DP-004 correctly absent")
 
     # The decisive test: no measured value may be shown as "not captured".
     # That would be a false statement of fact.

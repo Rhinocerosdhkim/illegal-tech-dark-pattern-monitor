@@ -160,6 +160,46 @@
       "value": false,
       "step": "startseite",
       "evidence": "S-01.png"
+    },
+    "vat_disclosure_present": {
+      "value": false,
+      "step": "produktdetail",
+      "evidence": "S-03.png"
+    },
+    "gratis_claim_present": {
+      "value": false,
+      "step": "produktdetail",
+      "evidence": "S-03.png"
+    },
+    "required_info_type": {
+      "value": "Widerruf",
+      "step": "produktdetail",
+      "evidence": "S-03.png"
+    },
+    "text_contrast_min": {
+      "value": 5.1,
+      "step": "produktdetail",
+      "evidence": "S-03.png"
+    },
+    "scroll_depth_of_required_info_pct": {
+      "value": 88,
+      "step": "produktdetail",
+      "evidence": "S-03.png"
+    },
+    "recurring_price_notation_present": {
+      "value": false,
+      "step": "produktdetail",
+      "evidence": "S-03.png"
+    },
+    "min_contract_term_stated": {
+      "value": false,
+      "step": "produktdetail",
+      "evidence": "S-03.png"
+    },
+    "auto_renewal_text_present": {
+      "value": false,
+      "step": "produktdetail",
+      "evidence": "S-03.png"
     }
   },
   "signal_errors": {

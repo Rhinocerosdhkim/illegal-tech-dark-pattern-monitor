@@ -13,8 +13,16 @@
   # die Stichwortsuche sie nicht findet, galt als "nicht anwendbar" und
   # verschwand aus dem Bericht. Das Merkmal gehoert nicht in die
   # Anwendbarkeit, sondern in die Befundbedingungen - dort steht es jetzt.
+  # Ergaenzt 20.08. is_b2c_offer allein ist eine Heuristik ueber Preisangaben
+  # und stellt weder ein Angebot im Sinne des § 5b Abs. 1 UWG ("Werden Waren
+  # oder Dienstleistungen unter Hinweis auf deren Merkmale und Preis
+  # angeboten") noch einen Transaktionsbezug fest. Dieselbe Ergaenzung, die
+  # DP-004 am selben Tag bekommen hat.
   applies_when:
-    - "is_b2c_offer == true"
+    all:
+      - "is_b2c_offer == true"
+      - "has_price_display == true"
+      - "order_button_found == true"
 
   legal_basis:
     - "§ 5a Abs. 1 UWG (Vorenthalten wesentlicher Informationen)"
@@ -68,42 +76,95 @@
     - aria_hidden_on_required_info
     - required_info_visible_before_purchase_decision
 
-  verdict_rules:
-    # Bewusst KEINE Stufe "eindeutig".
-    verdaechtig:
-      # Pflichtinformation ueberhaupt nicht auffindbar. Steht seit dem
-      # 20.08. hier statt in applies_when - siehe dort.
-      - condition: "required_info_found == false"
-        reason: >
-          Auf der untersuchten Seite liess sich die Pflichtinformation nicht
-          auffinden. Das kann ein Vorenthalten nach § 5a Abs. 1 UWG sein
-          oder eine Grenze der Stichwortsuche - beides ist zu pruefen.
+  listen:
+    # Auf welche Pflichtinformation es ankommt. Ein Impressum in der
+    # Fusszeile ist der vom Gesetz selbst vorgesehene Ort (§ 5 Abs. 1 DDG:
+    # "leicht erkennbar, unmittelbar erreichbar und staendig verfuegbar") -
+    # es dort zu finden, ist kein Verdachtsmoment. Die weichen Indizien
+    # greifen deshalb nur bei transaktionsbezogenen Pflichtangaben.
+    transaktionsbezogene_pflichtinfos:
+      - "Widerruf"
+      - "Widerrufsbelehrung"
+      - "Gesamtpreis"
+      - "Lieferkosten"
+      - "Versandkosten"
+      - "Liefer- und Versandkosten"
 
+  verdict_rules:
+    # Bewusst KEINE Stufe "eindeutig". § 5a Abs. 1 UWG verlangt, dass die
+    # Information WESENTLICH ist und dass ihr Vorenthalten geeignet ist, den
+    # Verbraucher zu einer anderen geschaeftlichen Entscheidung zu
+    # veranlassen. Beides ist aus einem Screenshot nicht feststellbar.
+
+    verdaechtig:
       # --- Strukturelle Verbergung: traegt jeweils fuer sich -------------
-      # Diese drei beschreiben ein aktives Verbergen im Sinne des
-      # § 5a Abs. 2 UWG, nicht bloss eine ungluenstige Darstellung.
+      # Ein aktives Verheimlichen im Sinne des § 5a Abs. 2 UWG, nicht bloss
+      # eine ungluenstige Darstellung.
       - "hidden_by_opacity_count > 0"
       - "required_info_in_collapsed_element == true"
       - "aria_hidden_on_required_info == true"
 
-      # --- Weiche Indizien: nur in Kombination ---------------------------
-      # Umgestellt 20.08. Schriftgroesse, Kontrast und Position loesten
-      # bisher EINZELN aus. Jede der drei Bedingungen widersprach damit dem
-      # eigenen threshold_source bzw. den eigenen Fehlalarmrisiken dieser
-      # Regel: "Die Unterschreitung dieses Wertes begruendet fuer sich allein
-      # keinen Verstoss" und "Eine Platzierung in der Fusszeile ist nicht
-      # automatisch unzulaessig". In der bisherigen Fassung haette die Regel
-      # auf nahezu jeder Website ausgeloest - jede Seite hat ein Impressum
-      # in kleiner Schrift in der Fusszeile - und die Stufe "verdaechtig"
-      # damit entwertet. Verlangt werden jetzt zwei Indizien.
-      - "font_size_min_px < 12 and text_contrast_min < 4.5"
-      - "font_size_min_px < 12 and scroll_depth_of_required_info_pct > 75"
-      - "text_contrast_min < 4.5 and scroll_depth_of_required_info_pct > 75"
+      # --- Weiche Indizien -----------------------------------------------
+      # UMGESTELLT 20.08., zum zweiten Mal. Zuerst loesten Schriftgroesse,
+      # Kontrast und Scrolltiefe EINZELN aus; danach paarweise. Auch die
+      # Paare loesten noch auf allen fuenf Vergleichsseiten aus, weil die
+      # Scrolltiefe als Paarhaelfte nichts beitraegt: eine Pflichtangabe in
+      # der Fusszeile liegt definitionsgemaess unten, der Wert ist bei dieser
+      # Sachlage praktisch immer ueber 75. Zwei der drei Paare waren damit
+      # die alten Einzelbedingungen in Verkleidung.
+      #
+      # Geblieben ist eine Bedingung, die beide typografischen Merkmale
+      # zugleich verlangt, und zwar unterhalb JEDER WCAG-Stufe - auch der
+      # 3:1 fuer grosse Schrift. Die Scrolltiefe wird nur noch als Nachweis
+      # mitgefuehrt, nicht mehr bewertet.
+      - condition: >
+          font_size_min_px < 10 and
+          text_contrast_min < 3.0 and
+          required_info_type in transaktionsbezogene_pflichtinfos
+        reason: >
+          Schriftgröße und Kontrast der Pflichtinformation unterschreiten
+          zugleich deutlich das, was technisch als lesbar gilt. Das ist ein
+          Anhaltspunkt für eine unklare Bereitstellung im Sinne des
+          § 5a Abs. 2 Nr. 2 UWG — für sich allein kein Verstoß.
 
-      # Erst mit DP-005b messbar (Navigation bis zur Kasse).
-      - "required_info_visible_before_purchase_decision == false"
+      # AUSKOMMENTIERT 20.08. "required_info_visible_before_purchase_decision"
+      # steht in _SIGNALE.md unter "Zurueckgestellt mit DP-005b" (⚪), mit dem
+      # ausdruecklichen Hinweis, keine Regel darauf zu bauen. Eine AKTIVE
+      # Bedingung auf einem solchen Signal setzt DP-006 auf jeder realen
+      # Seite auf "unklar" - die Regel koennte dann nie "unauffaellig" sagen.
+      # - "required_info_visible_before_purchase_decision == false"
+
+    unklar:
+      # VERSCHOBEN 20.08. von "verdaechtig". Am Vormittag war das Merkmal aus
+      # applies_when herausgenommen worden, weil dort der schwerste Fall
+      # stillschweigend herausfiel. Der Landeplatz "verdaechtig" war aber
+      # eine Stufe zu weit: Wir suchen ueber Stichworte auf drei bis vier
+      # Seiten. Ein negativer Treffer sagt etwas ueber unsere Suche, nicht
+      # ueber die Seite (T3). § 5a Abs. 3 Nr. 2 UWG verlangt zudem
+      # ausdruecklich, andere Wege der Bereitstellung zu beruecksichtigen -
+      # die sieht unsere Erfassung nicht.
+      #
+      # Der Fall verschwindet dadurch NICHT aus dem Bericht: "unklar" ist
+      # berichtsrelevant. Genau das war die Sorge bei der ersten Korrektur.
+      - condition: "required_info_found == false"
+        reason: >
+          Die Pflichtinformation ließ sich auf dem erfassten Pfad über die
+          Stichwortsuche nicht auffinden. Das ist kein Befund, sondern eine
+          offene Frage: § 5a Abs. 3 Nr. 2 UWG verlangt, andere Wege der
+          Bereitstellung zu berücksichtigen, und die sieht die Erfassung
+          nicht. Bitte manuell nachprüfen.
 
   threshold_source: >
+    Zu den Werten 10 px und 3,0: eigene Festlegung des Teams, bewusst
+    unterhalb jeder Stufe der WCAG 2.2. Erfolgskriterium 1.4.3 verlangt fuer
+    normalen Text 4,5:1, fuer grosse Schrift dagegen nur 3:1; Logos,
+    dekorative und inaktive Elemente sind ausgenommen. Da unsere Signale
+    jeweils das MINIMUM ueber einen ganzen Bereich sind, unterschreitet auch
+    eine vollstaendig WCAG-konforme Seite den Wert 4,5 - eine graue
+    Unterzeile oder ein Wortmarken-Logo genuegt. 4,5 taugt daher nicht als
+    Warnschwelle fuer ein Blockminimum. Es handelt sich ausdruecklich um
+    technische Warnschwellen und nicht um rechtliche Grenzwerte.
+
     Das Gesetz enthält keine festen Schwellenwerte für Schriftgröße,
     Kontrast, Opazität oder Scrolltiefe. Die genannten Werte sind daher
     ausschließlich technische Warnschwellen und keine rechtlichen
@@ -135,15 +196,28 @@
       bereitgestellt worden sein; dies muss bei der menschlichen
       Prüfung berücksichtigt werden.
 
-  explanation_template_de: >
-    PatternWatch hat eine potentiell wesentliche Pflichtinformation
-    erkannt, deren Darstellung technisch auffällig erscheint. Festgestellte
-    Auffälligkeit: [BEFUND]. Die Information ist technisch vorhanden bzw.
-    wurde als solche erkannt. Ob sie im konkreten Fall wesentlich ist und
-    ob ihre konkrete Darstellung ein Vorenthalten im Sinne des § 5a UWG
-    darstellt, muss juristisch geprüft werden. Dieser Befund ist daher
-    ausschließlich als Prüfkandidat und nicht als abschließende
-    Rechtsbewertung zu verstehen.
+  explanation_template_de:
+    verdaechtig: >
+      {befund}
+
+      Gemessen wurde im Bereich der Pflichtinformation: geringste
+      Schriftgröße {font_size_min_px} px, geringster Kontrast
+      {text_contrast_min}, Position bei {scroll_depth_of_required_info_pct} %
+      der Seitenhöhe.
+
+      § 5a Abs. 1 UWG setzt voraus, dass die Information wesentlich ist und
+      dass ihr Vorenthalten geeignet ist, den Verbraucher zu einer anderen
+      geschäftlichen Entscheidung zu veranlassen. Beides ist technisch nicht
+      feststellbar und bleibt der rechtlichen Prüfung vorbehalten. Nach
+      § 5a Abs. 3 UWG sind zudem räumliche oder zeitliche Beschränkungen des
+      Kommunikationsmittels zu berücksichtigen. **Mit diesem Befund wird kein
+      Verstoß festgestellt.**
+
+    unklar: >
+      {befund}
+
+    "*": >
+      Zu dieser Regel konnten nicht alle benötigten Messwerte erhoben werden.
 
   offene_fragen:
     - >

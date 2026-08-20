@@ -24,9 +24,16 @@
       - "order_button_found == true"
       - "has_price_display == true"
     any:
-      - "recurring_price_notation_present == true"
+      # Verschaerft 20.08. "recurring_price_notation_present" allein reicht
+      # nicht: das Signal erfasst jede Periodenangabe im Preis, also auch
+      # Finanzierungs- und Ratenhinweise ("ab 9,99 €/Monat") auf einem
+      # gewoehnlichen Einmalkauf-Shop. Eine Zahlungsweise sagt nichts ueber
+      # ein Dauerschuldverhaeltnis. Die beiden anderen Signale bezeichnen
+      # dagegen unmittelbar eine fortlaufende Bindung; sie tragen allein.
       - "min_contract_term_stated == true"
       - "auto_renewal_text_present == true"
+      - "recurring_price_notation_present == true and cancellation_terms_present == true"
+      - "recurring_price_notation_present == true and has_recurring_contract_keywords == true"
     none:
       - "is_financial_services == true"
 
@@ -36,10 +43,6 @@
   # bestaetigen. Nach C4 bleibt die Regel deshalb auf "verdaechtig"
   # begrenzt, bis ein Mensch den Vertragstyp bestaetigt.
   applicability_derived: true
-
-  menschliche_pruefung:
-    - "Liegt tatsaechlich ein Dauerschuldverhaeltnis im Sinne des § 312k Abs. 1 BGB vor?"
-    - "Ist fuer diesen Vertragstyp eine strengere Form vorgeschrieben (§ 312k Abs. 6 BGB)?"
 
   legal_basis:
     - "§ 312k Abs. 1 BGB"
@@ -101,30 +104,64 @@
   # "oder eine entsprechend eindeutige Formulierung". Deshalb zwei
   # getrennte Listen. Bitte ergaenzen - bisher steht nur der
   # gesetzliche Wortlaut selbst darin.
+  # Erweitert 20.08. Beide Listen enthielten je einen Eintrag, verglichen
+  # wird aber auf vollstaendige Zeichengleichheit. Damit war praktisch jede
+  # rechtstreue Einzelvertrags-Seite ein Verdachtsfall. § 312k Abs. 2 S. 2
+  # BGB laesst ausdruecklich "eine entsprechend eindeutige Formulierung" zu -
+  # eine geschlossene Liste kann das nicht abbilden (T4). Die Stufe bleibt
+  # deshalb "verdaechtig"; eine Negativliste wie in DP-002 ist hier nicht
+  # moeglich, weil eine Kuendigungsschaltflaeche ohne Kuendigungsbezug
+  # praktisch nicht vorkommt.
   listen:
     zulaessige_kuendigungs_labels:
       - "Verträge hier kündigen"
+      - "Vertrag hier kündigen"
+      - "Abo hier kündigen"
+      - "Abonnement hier kündigen"
+      - "Mitgliedschaft hier kündigen"
+      - "Hier kündigen"
     zulaessige_bestaetigungs_labels:
       - "jetzt kündigen"
+      - "Vertrag jetzt kündigen"
+      - "Abo jetzt kündigen"
+      - "Kündigung jetzt absenden"
+      - "Kündigung absenden"
 
   verdict_rules:
     eindeutig:
-      - condition: "has_kuendigungsbutton == false"
-        reason: >
-          Auf der Website wurde keine Kündigungsschaltfläche gefunden.
-          § 312k Abs. 1, 2 BGB verlangt eine solche Schaltfläche.
-
-      - condition: "has_kuendigungsbutton == true and has_confirmation_page == false"
-        reason: >
-          Die Kündigungsschaltfläche führt zu keiner Bestätigungsseite.
-          § 312k Abs. 2 S. 3 BGB verlangt, dass sie den Verbraucher
-          unmittelbar zu einer Bestätigungsseite führt.
-
+      # Von drei eindeutig-Bedingungen bleibt eine (20.08.). Massgeblich ist
+      # T3: ein Befund darf sich nur auf etwas stuetzen, das wir GESEHEN
+      # haben. Die Erfassung besucht drei bis vier Seiten eines Ziels und
+      # sucht nach Stichworten - "nicht gefunden" ist Abwesenheit von Beweis,
+      # nicht Beweis der Abwesenheit. Dieselbe Begruendung, mit der
+      # "required_info_found == false" in DP-006 auf "verdaechtig" steht.
       - condition: "has_confirmation_page == true and has_confirmation_button == false"
         reason: >
-          Die Bestätigungsseite enthält keine Bestätigungsschaltfläche.
+          Die Bestätigungsseite wurde erreicht und enthält keine
+          Bestätigungsschaltfläche. § 312k Abs. 2 S. 3, S. 4 BGB verlangt
+          eine solche Schaltfläche. Die Bestätigungsseite ist hier
+          tatsächlich aufgerufen worden, der Befund beruht also auf einer
+          Beobachtung und nicht auf einer erfolglosen Suche.
 
     verdaechtig:
+      # HERUNTERGESTUFT 20.08. nach T3, siehe oben.
+      - condition: "has_kuendigungsbutton == false"
+        reason: >
+          Auf den erfassten Seiten wurde keine Kündigungsschaltfläche
+          gefunden. § 312k Abs. 2 S. 1 BGB verlangt eine solche Schaltfläche,
+          die ständig verfügbar sowie unmittelbar und leicht zugänglich ist.
+          Die Erfassung hat nur die Schritte des Zielpfads besucht; ob die
+          Schaltfläche an anderer Stelle vorhanden ist, ist zu prüfen.
+
+      # HERUNTERGESTUFT 20.08. nach T3, mit Ausschluss des haeufigsten
+      # Messgrundes: hindert eine Anmeldung die Erfassung, ist "keine
+      # Bestaetigungsseite" keine Aussage ueber die Seite.
+      - condition: "has_kuendigungsbutton == true and has_confirmation_page == false and kuendigungsbutton_requires_login == false"
+        reason: >
+          Die Kündigungsschaltfläche führte im erfassten Ablauf zu keiner
+          Bestätigungsseite. § 312k Abs. 2 S. 3 BGB verlangt, dass sie den
+          Verbraucher unmittelbar zu einer Bestätigungsseite führt.
+
       # Beschriftung ausserhalb der Positivliste - "entsprechend eindeutig"
       # laesst Spielraum, deshalb hoechstens verdaechtig.
       - condition: "kuendigungsbutton_label not in zulaessige_kuendigungs_labels"
@@ -165,6 +202,16 @@
       # - condition: "kuendigungsbutton_click_depth > ?"
 
   threshold_source: >
+    Zum Anwendungsbereich: BGH, Urteil vom 22.05.2025, I ZR 161/24
+    (Kündigungsschaltfläche; Kläger war der Bundesverband der
+    Verbraucherzentralen). Danach ist eine Kündigungsschaltfläche auch dann
+    bereitzustellen, wenn der Verbraucher für die vertraglichen Leistungen
+    ein EINMALIGES Entgelt zu entrichten hat und der Vertrag nach Ablauf der
+    vereinbarten Laufzeit automatisch endet. Für uns folgt daraus, dass die
+    Tatsachensignale unter „any:" den Anwendungsbereich eher zu ENG als zu
+    weit abbilden — was in der gewählten Richtung liegt, aber bei der
+    Auswertung mitzudenken ist.
+
     Es gibt keinen gesetzlichen festen Schwellenwert für die zulässige
     Klicktiefe. Maßgeblich sind die gesetzlichen Anforderungen an die
     ständige Verfügbarkeit sowie die unmittelbare und leichte
@@ -195,20 +242,42 @@
       nicht automatisch einen Verstoß. Entscheidend ist, ob die
       Kündigungsschaltfläche tatsächlich leicht auffindbar und zugänglich ist.
 
-  explanation_template_de: >
-    Die untersuchte Website fällt voraussichtlich in den Anwendungsbereich
-    des § 312k BGB. PatternWatch hat festgestellt, dass die gesetzlich
-    erforderliche Kündigungsmöglichkeit fehlt oder nicht unmittelbar und
-    leicht zugänglich ist. Als technische Auffälligkeit wurde festgestellt:
-    [BEFUND]. Die Feststellung sollte anhand der dokumentierten
-    Websitegestaltung juristisch überprüft werden. Bei einem Verstoß gegen
-    § 312k Abs. 1 und 2 BGB kann der Verbraucher nach § 312k Abs. 6 BGB den
-    Vertrag jederzeit ohne Einhaltung einer Kündigungsfrist kündigen.
+  explanation_template_de:
+    eindeutig: >
+      Die Bestätigungsseite nach § 312k Abs. 2 S. 3 BGB wurde erreicht. Sie
+      enthält keine Bestätigungsschaltfläche, mit der die Kündigungserklärung
+      abgegeben werden könnte.
 
+      {befund}
+
+      Bei einem Verstoß gegen § 312k Abs. 1 und 2 BGB kann der Verbraucher
+      nach § 312k Abs. 6 BGB den Vertrag jederzeit ohne Einhaltung einer
+      Kündigungsfrist kündigen.
+
+    verdaechtig: >
+      {befund}
+
+      Ob die Website in den Anwendungsbereich des § 312k BGB fällt, ist aus
+      Tatsachensignalen abgeleitet und nicht festgestellt; die Punkte unter
+      „Rechtlich noch zu prüfen" sind vorrangig zu klären. **Mit diesem
+      Befund wird kein Verstoß festgestellt.**
+
+    unklar: >
+      Zu dieser Regel konnten nicht alle benötigten Messwerte erhoben werden.
+      Insbesondere setzen mehrere Signale voraus, dass die Kündigungsstrecke
+      tatsächlich durchgeklickt wurde. Eine Aussage zur Sache wird nicht
+      getroffen.
+
+  # ZUSAMMENGEFUEHRT 20.08. Dieser Schluessel stand zweimal in der Datei.
+  # YAML behaelt den letzten - die beiden Fragen, die am selben Tag oben
+  # ergaenzt worden waren, erreichten die Engine nie. Wer die Datei las, sah
+  # fuenf Eintraege; in der Beweisakte standen drei.
   menschliche_pruefung:
+    - "Liegt tatsächlich ein Dauerschuldverhältnis im Sinne des § 312k Abs. 1 S. 1 BGB vor? Die Tatsachensignale liefern dafür nur Anhaltspunkte."
+    - "Ist für diesen Vertragstyp eine strengere Form als die Textform vorgeschrieben (§ 312k Abs. 1 S. 2 Nr. 1 BGB)? Dann greift die Vorschrift nicht."
     - "Setzt der Dienst seiner Natur nach ein regelmäßiges Login voraus? Falls ja, ist ein vorgeschalteter Login nicht ohne Weiteres unzulässig."
     - "Ermöglicht die Bestätigungsseite die nach § 312k Abs. 2 erforderlichen Angaben?"
-    - "Liegt ein Dauerschuldverhältnis vor? Die Tatsachensignale liefern dafür nur Anhaltspunkte."
+    - "Wurde die Kündigungsstrecke tatsächlich durchgeklickt? Nur dann sagt ein fehlender Befund etwas über die Seite aus."
 
   offene_fragen:
     - >

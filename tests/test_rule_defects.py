@@ -105,20 +105,29 @@ print("  ok  DP-003 carries no eindeutig branch")
 print("DP-006 — soft indicators only count in combination")
 # Small print in a footer describes practically every website. Each of the
 # three conditions contradicted its own threshold_source when standalone.
-info = dict(confirmed=["is_b2c_offer"], is_b2c_offer=True,
-            required_info_found=True, hidden_by_opacity_count=0,
+info = dict(confirmed=["is_b2c_offer"], is_b2c_offer=True, has_price_display=True,
+            order_button_found=True, required_info_found=True,
+            required_info_type="Widerruf", hidden_by_opacity_count=0,
             required_info_in_collapsed_element=False,
-            aria_hidden_on_required_info=False,
-            required_info_visible_before_purchase_decision=True)
-assert level("DP-006", font_size_min_px=11, text_contrast_min=7.0,
-             scroll_depth_of_required_info_pct=40, **info) == "unauffaellig"
-print("  ok  small print alone -> no finding")
-assert level("DP-006", font_size_min_px=14, text_contrast_min=7.0,
-             scroll_depth_of_required_info_pct=95, **info) == "unauffaellig"
-print("  ok  footer position alone -> no finding")
-assert level("DP-006", font_size_min_px=11, text_contrast_min=3.0,
-             scroll_depth_of_required_info_pct=40, **info) == "verdaechtig"
-print("  ok  small AND low contrast -> verdaechtig")
+            aria_hidden_on_required_info=False)
+# Five real German footers. Scroll depth is no longer part of any verdict:
+# a mandatory notice in the footer is below 75% by definition, so it added
+# nothing to a pair and turned both pairs back into the single conditions
+# they were meant to replace.
+for name, px, contrast, depth in [("Modeshop", 11, 4.54, 92), ("Bank", 10, 3.5, 88),
+                                  ("Nachrichten", 12, 2.85, 95), ("Baeckerei", 11, 4.68, 90),
+                                  ("Behoerde", 14, 3.1, 85)]:
+    got = level("DP-006", font_size_min_px=px, text_contrast_min=contrast,
+                scroll_depth_of_required_info_pct=depth, **info)
+    assert got == "unauffaellig", f"{name} ({px}px/{contrast}) -> {got}"
+    print(f"  ok  {name}: {px}px / {contrast} / {depth}% -> no finding")
+assert level("DP-006", font_size_min_px=8, text_contrast_min=2.0,
+             scroll_depth_of_required_info_pct=90, **info) == "verdaechtig"
+print("  ok  8px AND contrast 2.0 -> verdaechtig")
+assert level("DP-006", font_size_min_px=8, text_contrast_min=2.0,
+             scroll_depth_of_required_info_pct=90,
+             **{**info, "required_info_type": "Impressum"}) == "unauffaellig"
+print("  ok  a tiny Impressum in the footer is the place § 5 DDG contemplates")
 
 print("DP-006 — the worst case no longer disappears")
 # "required_info_found == true" used to sit in applies_when, so a site that
@@ -126,23 +135,44 @@ print("DP-006 — the worst case no longer disappears")
 missing = {**info, "required_info_found": False,
            "font_size_min_px": 14, "text_contrast_min": 7.0,
            "scroll_depth_of_required_info_pct": 40}
-assert level("DP-006", **missing) == "verdaechtig"
-print("  ok  mandatory information not findable -> verdaechtig, not dropped")
+# Landed on "unklar" on 20.08.: we search by keyword over three or four pages,
+# and § 5a Abs. 3 Nr. 2 UWG requires other ways of providing the information
+# to be taken into account. "unklar" is reportable, so the worst case still
+# appears in the evidence file — which was the worry behind the first fix.
+assert level("DP-006", **missing) == "unklar"
+print("  ok  mandatory information not findable -> unklar, still reported")
 
 print("DP-004 — applicability now rests on measurable facts")
+# Tightened on 20.08.: a periodic price notation alone matches financing
+# widgets ("ab 9,99 €/Monat") on ordinary one-off shops. It now has to be
+# accompanied by a second indicator.
 shop = dict(confirmed=["is_b2c_offer"], is_b2c_offer=True, order_button_found=True,
             has_price_display=True, is_financial_services=False,
             recurring_price_notation_present=True, min_contract_term_stated=False,
-            auto_renewal_text_present=False)
+            auto_renewal_text_present=True, cancellation_terms_present=False,
+            has_recurring_contract_keywords=False)
 finding = assess(RULES["DP-004"], table(has_kuendigungsbutton=False, **shop))
 assert finding.level == "verdaechtig", finding.level
-assert finding.downgraded, "C4: a derived Dauerschuldverhaeltnis must cap the level"
-print("  ok  subscription shop without a cancellation button -> verdaechtig (C4 cap)")
+print("  ok  subscription shop without a cancellation button -> verdaechtig")
 
-single = {**shop, "recurring_price_notation_present": False}
+# Two independent reasons keep this off "eindeutig": the condition itself was
+# moved down under T3 (we only visited a few pages), and the rule declares
+# applicability_derived, which caps it regardless. Check the cap really works
+# by testing the one condition that DOES sit at eindeutig.
+reached = assess(RULES["DP-004"], table(
+    has_kuendigungsbutton=True, has_confirmation_page=True,
+    has_confirmation_button=False, **shop))
+assert reached.level == "verdaechtig" and reached.downgraded, reached.level
+assert "abgeleitet" in " ".join(reached.notes)
+assert "confirmed_by_human" not in " ".join(reached.notes), \
+    "the note must not promise a lift that applicability_derived cannot give"
+print("  ok  C4 caps the eindeutig condition, and says so truthfully")
+
+single = {**shop, "recurring_price_notation_present": True,
+          "auto_renewal_text_present": False}
 assert assess(RULES["DP-004"], table(has_kuendigungsbutton=False, **single)).level \
     == "nicht_anwendbar"
-print("  ok  one-off purchase, no recurring signals -> rule does not apply")
+print("  ok  financing notation alone -> rule does not apply")
 
 print("\nDP-001 — a site with no banner at all no longer disappears")
 # "banner_detected == true" used to gate the whole rule, so the gravest case
@@ -171,15 +201,42 @@ print("\nDP-005 — shipping costs fall under the statutory exception")
 # unavoidable for collection or delivery of the goods are exempt. Shipping
 # costs are exactly that. Asserting "eindeutig" where the statute carves out
 # an exception is a false alarm.
-gratis = assess(RULES["DP-005"], table(
-    confirmed=["is_b2c_offer"], is_b2c_offer=True, has_price_display=True,
-    has_checkout_flow=True, is_financial_services=False,
-    gratis_claim_present=True, shipping_cost_amount=4.95))
+shop5 = dict(confirmed=["is_b2c_offer"], is_b2c_offer=True, has_price_display=True,
+             has_checkout_flow=True, is_financial_services=False,
+             vat_disclosure_present=True, preselected_paid_addon_count=0,
+             gratis_claim_present=True, shipping_cost_amount=4.95,
+             gratis_claim_scope="Gratis zum Bestellwert")
+
+gratis = assess(RULES["DP-005"], table(free_pickup_option_present=False, **shop5))
 assert gratis.level == "verdaechtig", gratis.level
 assert "unvermeidbar" in (gratis.reason or ""), gratis.reason
-print("  ok  gratis claim + shipping costs -> verdaechtig, exception named")
+print("  ok  gratis claim + shipping costs, no pickup -> verdaechtig, exception named")
+
+# Narrowed on 21.08. Anhang Nr. 20 exempts costs unavoidable for collection
+# or delivery. Where free pickup IS offered, they are avoidable and the
+# exemption does not apply — but the far more common case is that the "free"
+# promise simply is not about the goods the shipping is charged for.
+assert assess(RULES["DP-005"], table(free_pickup_option_present=True, **shop5)
+              ).level == "unauffaellig"
+print("  ok  free pickup offered -> no finding")
+for scope in ("Gratis Rücksendung", "Versandkostenfrei ab", "Gratis Abholung"):
+    got = assess(RULES["DP-005"], table(
+        **{**shop5, "free_pickup_option_present": False, "gratis_claim_scope": scope})).level
+    assert got == "unauffaellig", f"{scope!r} -> {got}"
+    print(f"  ok  {scope!r} is not about the goods -> no finding")
+
 assert any("Abholung" in q for q in RULES["DP-005"].human_review), \
     "the unavoidability question must go to a human"
 print("  ok  unavoidability is put to a human, not guessed")
+
+print("\nDP-005 — the missing VAT notice, asked for by the agency itself")
+vat = assess(RULES["DP-005"], table(
+    **{**shop5, "vat_disclosure_present": False, "gratis_claim_present": False,
+       "free_pickup_option_present": True}))
+assert vat.level == "verdaechtig" and "Umsatzsteuer" in (vat.reason or ""), vat.level
+print("  ok  no VAT notice in the price area -> verdaechtig (§ 6 Abs. 1 Nr. 1 PAngV)")
+assert not RULES["DP-005"].verdict_rules["eindeutig"], \
+    "DP-005 hat wieder einen eindeutig-Zweig — bitte gegen T1/T2/T3 pruefen"
+print("  ok  DP-005 carries no eindeutig branch")
 
 print("\nAll rule-defect guards passed.")

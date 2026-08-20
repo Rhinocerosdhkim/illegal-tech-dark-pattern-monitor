@@ -32,9 +32,19 @@ assert not run.table.confirmed, "fixture is meant to run without a profile"
 print("  ok  runs without an entry in data/targets/")
 
 for rule_id in ("DP-001", "DP-002", "DP-003", "DP-004", "DP-005", "DP-006"):
-    assert f[rule_id].level in ("unauffaellig", "unklar"), \
+    assert f[rule_id].level in ("unauffaellig", "unklar", "nicht_anwendbar"), \
         f"{rule_id}: {f[rule_id].level} — false alarm on a clean site"
 print("  ok  not a single finding on the clean site")
+
+# The footer of this fixture carries the values of a real German shop footer:
+# 11px, contrast 4.6, at 92% of page height. Until 21.08. it said 14px / 7.2 /
+# 30%, which no real footer produces — the false-alarm result was flattering
+# itself. DP-006 has to stay quiet on the realistic values.
+assert run.table.get("font_size_min_px") == 11
+assert run.table.get("text_contrast_min") == 4.6
+assert run.table.get("scroll_depth_of_required_info_pct") == 92
+assert f["DP-006"].level == "unauffaellig", f["DP-006"].level
+print("  ok  realistic German footer -> DP-006 stays silent")
 
 assert f["DP-002"].level == "unauffaellig", \
     "'zahlungspflichtig bestellen' is on the whitelist"

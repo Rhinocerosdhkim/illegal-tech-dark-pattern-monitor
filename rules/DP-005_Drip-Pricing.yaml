@@ -136,116 +136,158 @@
     - "shipping_cost_can_be_calculated_in_advance"
     - "additional_mandatory_cost_first_display_after_product_page"
 
+  # VOLLSTAENDIG UEBERARBEITET 20.08. nach dem Befundstufen-Massstab.
+  # Ausgangslage: neun Bedingungen, von denen genau EINE ueberhaupt lauffaehig
+  # war - alle uebrigen stuetzten sich auf Signale aus DP-005b (Navigation bis
+  # zur Kasse), auf Namen, die _SIGNALE.md ausdruecklich als Rechtsbegriff
+  # abgelehnt hat, oder auf einen umbenannten Namen. Und die eine lauffaehige
+  # loeste auf praktisch jedem deutschen Shop aus.
+  listen:
+    # Formulierungen, bei denen sich das Gratis-Versprechen erkennbar NICHT
+    # auf die Ware bezieht, fuer die die Versandkosten anfallen. Anhang Nr. 20
+    # setzt voraus, dass die Kosten "fuer die Ware" anfallen.
+    gratis_ohne_warenbezug:
+      - "Gratis Versand ab"
+      - "Versandkostenfrei ab"
+      - "Gratis Rücksendung"
+      - "Kostenlose Rücksendung"
+      - "Kostenlose Retoure"
+      - "Gratis Abholung"
+      - "Gratis Zugabe"
+      - "Gratis Probe"
+
   verdict_rules:
 
     eindeutig:
-
-      - condition: >
-          "mandatory_total_price_at_checkout == false
-           and required_total_price_can_be_calculated == true"
-        result: "LEGAL_RELEVANT"
-        severity: "HIGH"
-
-      - condition: >
-          "additional_mandatory_cost_count > 0
-           and additional_mandatory_cost_disclosed_before_order == false"
-        result: "LEGAL_RELEVANT"
-        severity: "HIGH"
-
-      - condition: >
-          "shipping_cost_amount > 0
-           and shipping_cost_disclosed == false
-           and shipping_cost_can_be_calculated_in_advance == true"
-        result: "LEGAL_RELEVANT"
-        severity: "HIGH"
-
-      - condition: >
-          "gratis_claim_present == true
-           and costs_present_despite_gratis_claim == true
-           and costs_are_unavoidable_delivery_or_offer_costs == false"
-        result: "LEGAL_RELEVANT"
-        severity: "HIGH"
+      # KEINE. Nach T1 bis T3 traegt derzeit keine Bedingung dieser Regel die
+      # staerkste Stufe:
+      #   - der Gesamtpreis-Zweig braucht "required_total_price_can_be_
+      #     calculated", von _SIGNALE.md als Rechtsbegriff abgelehnt (T1);
+      #   - die Zusatzkosten-Zweige beruhen auf DP-005b-Signalen, die erst
+      #     entstehen, wenn die Bestelluebersicht erreicht wurde - ein "false"
+      #     bedeutet sonst "wir sind nicht so weit gekommen" (T3);
+      #   - der Gratis-Zweig steht unter der Ausnahme des zweiten Halbsatzes
+      #     von Anhang Nr. 20 (T2).
 
     verdaechtig:
+      # --- DP-005a: laeuft heute, ohne Navigation bis zur Kasse ----------
+      # Von der Verbraucherzentrale im Seminar vom 19.08. ausdruecklich
+      # genannt; vat_disclosure_present wurde deswegen auf ✅ hochgestuft.
+      # Bis zum 20.08. nutzte keine Bedingung das Signal.
+      - condition: "has_price_display == true and vat_disclosure_present == false"
+        reason: >
+          Im Preisumfeld fehlt ein Hinweis auf die Umsatzsteuer. Nach
+          § 6 Abs. 1 Nr. 1 PAngV ist bei Angeboten gegenüber Verbrauchern
+          anzugeben, dass die geforderten Preise die Umsatzsteuer und
+          sonstige Preisbestandteile enthalten. Ob im Einzelfall eine
+          Ausnahme greift, ist zu prüfen.
 
-      # Ergaenzt 20.08., am selben Tag korrigiert. Die uebrigen Bedingungen
-      # dieser Regel beruhen saemtlich auf Signalen aus DP-005b (Navigation
-      # bis zur Kasse), die es noch nicht gibt; diese laeuft mit zwei bereits
-      # zugesagten Signalen.
-      #
-      # Zunaechst stand sie unter "eindeutig". Das war falsch. Der Wortlaut
-      # des Anhangs Nr. 20 lautet im zweiten Halbsatz:
-      #
-      #   "dies gilt nicht fuer Kosten, die im Zusammenhang mit dem Eingehen
-      #    auf das Waren- oder Dienstleistungsangebot oder fuer die Abholung
-      #    oder Lieferung der Ware ... unvermeidbar sind"
-      #
-      # Versandkosten sind genau "Kosten fuer die Lieferung der Ware". Sie
-      # fallen also in die gesetzliche Ausnahme, SOFERN sie unvermeidbar
-      # sind - etwa weil keine kostenlose Abholung angeboten wird. Genau das
-      # misst niemand (das Signal dafuer wurde als Rechtsbegriff abgelehnt).
-      # Eine Bedingung, die "eindeutig" behauptet, wo das Gesetz eine
-      # Ausnahme vorsieht, ist ein Fehlalarm - und widerspraeche dem eigenen
-      # tatbestand_de dieser Regel, der die Ausnahme ausdruecklich nennt.
-      - condition: "gratis_claim_present == true and shipping_cost_amount > 0"
+      # Gratis-Versprechen trotz Versandkosten. ENGER GEFASST 20.08.:
+      # Anhang Nr. 20 nimmt Kosten aus, die fuer die Abholung oder Lieferung
+      # unvermeidbar sind. Wird eine kostenlose Abholung angeboten, sind sie
+      # gerade vermeidbar - dann greift die Ausnahme nicht. Und bezieht sich
+      # das Versprechen erkennbar auf etwas anderes als die Ware ("Gratis
+      # Rücksendung", "Versandkostenfrei ab 50 €"), fehlt schon der
+      # Warenbezug. Ohne diese beiden Einschraenkungen loeste die Bedingung
+      # bei allen fuenf Vergleichsseiten aus.
+      - condition: >
+          gratis_claim_present == true and
+          shipping_cost_amount > 0 and
+          free_pickup_option_present == false and
+          gratis_claim_scope not in gratis_ohne_warenbezug
         reason: >
           Die Seite bewirbt ein Angebot als gratis, kostenlos oder umsonst,
-          obwohl auf der Produktseite Versandkosten ausgewiesen sind. Nach
-          Anhang Nr. 20 zu § 3 Abs. 3 UWG ist eine solche Bewerbung stets
-          unzulaessig - ausgenommen sind jedoch Kosten, die fuer die Abholung
-          oder Lieferung der Ware unvermeidbar sind. Ob die hier
-          ausgewiesenen Versandkosten unvermeidbar sind, insbesondere ob eine
-          kostenlose Abholung angeboten wird, ist nicht maschinell
-          feststellbar und bleibt zu pruefen.
+          obwohl auf der Produktseite Versandkosten ausgewiesen sind, und
+          eine kostenlose Abholung wird nicht angeboten. Nach Anhang Nr. 20
+          zu § 3 Abs. 3 UWG ist eine solche Bewerbung stets unzulässig —
+          ausgenommen sind jedoch Kosten, die für die Abholung oder Lieferung
+          der Ware unvermeidbar sind. Ob sich das Gratis-Versprechen auf
+          dieselbe Ware bezieht, für die die Kosten anfallen, ist zu prüfen.
 
-      - condition: >
-          "price_delta > 0
-           and mandatory_price_delta > 0
-           and additional_mandatory_cost_disclosed == true
-           and additional_mandatory_cost_disclosed_before_order == true"
-        result: "SUSPICIOUS"
-        severity: "LOW"
+      # Vorausgewaehlte kostenpflichtige Zusatzleistung.
+      - condition: "preselected_paid_addon_count > 0 and paid_addon_disclosed_before_selection == false"
         reason: >
-          Der Preis steigt während des Bestellvorgangs, die zusätzliche
-          Kostenkomponente wird jedoch rechtzeitig offengelegt. Eine
-          Preiserhöhung als solche ist nicht ohne Weiteres unzulässig.
+          Im Bestellvorgang war eine kostenpflichtige Zusatzleistung
+          vorausgewählt, ohne dass vor der Auswahl auf sie hingewiesen wurde.
+          Für Zusatzentgelte verlangt § 312a Abs. 3 BGB eine ausdrückliche
+          Vereinbarung; eine Voreinstellung genügt dafür nicht.
 
-      - condition: >
-          "shipping_cost_disclosed == false
-           and shipping_cost_can_be_calculated_in_advance == false"
-        result: "SUSPICIOUS"
-        severity: "MEDIUM"
-        reason: >
-          Die Höhe der zusätzlichen Kosten kann möglicherweise nicht
-          vernünftigerweise im Voraus berechnet werden. Es ist daher zu
-          prüfen, ob zumindest auf das mögliche Anfallen zusätzlicher
-          Kosten hingewiesen wurde.
+      # --- DP-005b: AUSKOMMENTIERT bis die Signale existieren ------------
+      # Zunaechst am 20.08. von "eindeutig" auf "verdaechtig" gestuft (T3:
+      # ein "false" bei "..._disclosed_before_order" bedeutet nur dann "nicht
+      # offengelegt", wenn der Schritt bestelluebersicht erreicht wurde).
+      # Am 21.08. ganz stillgelegt, aus demselben Grund wie in DP-006:
+      #
+      # Eine AKTIVE Bedingung auf einem zurueckgestellten Signal setzt die
+      # ganze Regel auf jeder realen Seite auf "unklar" - DP-005 koennte dann
+      # nie "unauffaellig" sagen. Und "unauffaellig" ist gegenueber dem
+      # Unternehmen eine Entlastung, die wir schuldig bleiben wuerden.
+      # Wieder aktivieren, sobald die Pfaderfassung die Bestelluebersicht
+      # zuverlaessig erreicht (DP-005b).
+      #
+      # - condition: "additional_mandatory_cost_count > 0 and additional_mandatory_cost_disclosed_before_order == false"
+      #   reason: Gesamtpreis nicht unmittelbar vor der Bestellung genannt,
+      #           § 312j Abs. 2 BGB i. V. m. Art. 246a § 1 Abs. 1 S. 1 Nr. 5 EGBGB.
+      #
+      # - condition: "mandatory_price_delta > 0 and additional_mandatory_cost_first_display_after_product_page == true"
+      #   reason: verpflichtender Preisbestandteil erst nach der Produktseite
+      #           sichtbar. Eine Preiserhoehung ist fuer sich nicht unzulaessig.
 
-      - condition: >
-          "preselected_paid_addon_count > 0
-           and paid_addon_disclosed_before_selection == false"
-        result: "SUSPICIOUS"
-        severity: "MEDIUM"
-        reason: >
-          Eine vorausgewählte kostenpflichtige Zusatzleistung kann eine
-          zusätzliche Zahlungspflicht begründen. Für eine abschließende
-          rechtliche Einordnung sind insbesondere die konkrete
-          Einwilligungs- und Preisgestaltung sowie die anwendbaren
-          Vorschriften zu zusätzlichen Zahlungen zu prüfen.
-
-      - condition: >
-          "price_delta_ratio > 0
-           and mandatory_price_delta > 0
-           and additional_mandatory_cost_first_display_after_product_page == true"
-        result: "SUSPICIOUS"
-        severity: "MEDIUM"
-        reason: >
-          Ein verpflichtender Preisbestandteil erscheint erst im späteren
-          Bestellverlauf. Entscheidend ist, ob die Information nach den
-          einschlägigen Vorschriften bereits früher hätte bereitgestellt
-          werden müssen.
+      # GESTRICHEN 20.08. - jede mit Begruendung:
+      #
+      # "mandatory_total_price_at_checkout == false and
+      #  required_total_price_can_be_calculated == true"
+      #   Der zweite Name ist in _SIGNALE.md als Rechtsbegriff abgelehnt.
+      #
+      # "shipping_cost_amount > 0 and shipping_cost_disclosed == false and
+      #  shipping_cost_can_be_calculated_in_advance == true"
+      #   In sich unmoeglich: shipping_cost_amount ist laut _SIGNALE.md der
+      #   "Betrag der AUF DER PRODUKTSEITE GENANNTEN Versandkosten" - ein Wert
+      #   ueber 0 setzt voraus, dass sie genannt wurden. shipping_cost_disclosed
+      #   ist zudem umbenannt, der dritte Name abgelehnt.
+      #
+      # "gratis_claim_present == true and costs_present_despite_gratis_claim
+      #  == true and costs_are_unavoidable_delivery_or_offer_costs == false"
+      #   Beide Zusatzsignale sind abgelehnt: das eine als Wertung, das andere
+      #   als Schlussfolgerung, die in die Bedingung gehoert. Diese Bedingung
+      #   stand ueber der korrigierten Gratis-Bedingung und haette sie, sobald
+      #   jemand die Werte von Hand einträgt, stillschweigend verdraengt.
+      #
+      # "shipping_cost_disclosed == false and
+      #  shipping_cost_can_be_calculated_in_advance == false"
+      #   Loeste genau im Ausnahmefall aus: § 6 Abs. 2 PAngV verlangt die
+      #   Hoehe nur, "soweit diese Kosten vernuenftigerweise im Voraus
+      #   berechnet werden koennen". Was bleibt, ist die Pflicht nach
+      #   § 6 Abs. 1 Nr. 2 PAngV, das ANFALLEN zusaetzlicher Kosten zu nennen -
+      #   dafuer fehlt uns ein Signal, siehe offene_fragen.
+      #
+      # "price_delta > 0 and mandatory_price_delta > 0 and
+      #  additional_mandatory_cost_disclosed == true and
+      #  additional_mandatory_cost_disclosed_before_order == true"
+      #   Beschreibt einen rechtstreuen Shop: der Preis stieg, und der
+      #   verpflichtende Bestandteil wurde offengelegt, und zwar rechtzeitig.
+      #   Widerspricht dem eigenen tatbestand_de dieser Regel.
+      #
+      # "price_delta_ratio > 0" als erstes Glied
+      #   price_delta_ratio ist laut _SIGNALE.md Endpreis / Listenpreis, also
+      #   auf jeder Seite mit Preis groesser 0 und bei unveraendertem Preis
+      #   genau 1,0. Die Bedingung trug nichts bei, machte die Regel aber von
+      #   einem weiteren 🟡-Signal abhaengig.
 
   menschliche_pruefung:
+    - >
+      Fällt das Angebot unter § 6 Abs. 3 PAngV? Die Absätze 1 und 2 gelten
+      nicht für die in § 312 Abs. 2 Nr. 2, 3, 6, 9 und 10 sowie Abs. 4 BGB
+      genannten Verträge — darunter Grundstücksverträge, Verbraucherbau-
+      verträge, Teilzeit-Wohnrechte und langfristige Urlaubsprodukte,
+      Warenautomaten und Versicherungsverträge. Für die Branche Reise ist das
+      zu prüfen; ein Signal dafür gibt es nicht.
+    - >
+      Handelt es sich um eine Versteigerung? Dann ist die PAngV nach
+      § 1 Abs. 2 PAngV nicht anzuwenden — für Ticketzweitmärkte relevant.
+    - >
+      Bezieht sich das Gratis-Versprechen auf dieselbe Ware, für die die
+      Versandkosten anfallen?
     - "Sind die ausgewiesenen Versandkosten unvermeidbar im Sinne des zweiten Halbsatzes von Anhang Nr. 20 zu § 3 Abs. 3 UWG - wird insbesondere keine kostenlose Abholung angeboten?"
     - "Ist die Beeintraechtigung im Sinne des § 3a UWG spuerbar?"
 
@@ -346,6 +388,15 @@
     rechtzeitig, klar und verständlich offengelegt wurde.
 
   offene_fragen:
+    - >
+      Für § 6 Abs. 1 Nr. 2 PAngV fehlt ein Signal, das nur das ANFALLEN
+      zusätzlicher Kosten erfasst, ohne deren Höhe. Vorschlag an das
+      Entwicklungsteam: `additional_costs_mentioned_on_product_page`, bool.
+    - >
+      DP-005b: Ein `false` bei `additional_mandatory_cost_disclosed_before_order`
+      darf nur gesetzt werden, wenn der Schritt `bestelluebersicht`
+      tatsächlich erreicht wurde. Sonst gehört das Signal nach
+      `signal_errors`.
     - >
       Die Prüfung sollte perspektivisch um eine eigenständige Regel
       für Preisermäßigungen nach § 11 PAngV ergänzt werden. Bei der
