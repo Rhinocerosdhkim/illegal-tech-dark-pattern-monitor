@@ -117,4 +117,25 @@ assert assess(RULES["DP-004"], table(has_kuendigungsbutton=False, **single)).lev
     == "nicht_anwendbar"
 print("  ok  one-off purchase, no recurring signals -> rule does not apply")
 
+print("\nDP-001 — a site with no banner at all no longer disappears")
+# "banner_detected == true" used to gate the whole rule, so the gravest case
+# — no consent mechanism at all, yet third-party cookies — dropped out.
+no_banner = assess(RULES["DP-001"],
+                   table(banner_detected=False, third_party_cookies_before_consent=7))
+assert no_banner.level == "eindeutig", no_banner.level
+print("  ok  no banner + tracking -> eindeutig (§ 25 Abs. 1 TDDDG)")
+
+quiet = assess(RULES["DP-001"],
+               table(banner_detected=False, third_party_cookies_before_consent=0))
+assert quiet.level == "nicht_anwendbar", quiet.level
+print("  ok  no banner and no tracking -> rule does not apply")
+
+# And the button conditions must not fire on a page that has no banner.
+assert assess(RULES["DP-001"], table(
+    banner_detected=False, third_party_cookies_before_consent=1,
+    reject_button_present=False, more_info_leads_to_reject=False)
+).condition.startswith("banner_detected == false"), \
+    "a button condition fired on a page without a banner"
+print("  ok  button conditions stay bound to an existing banner")
+
 print("\nAll rule-defect guards passed.")

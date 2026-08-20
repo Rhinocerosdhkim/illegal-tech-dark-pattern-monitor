@@ -72,6 +72,21 @@ applicability_derived: true
 
 **Ergebnis:** Ein Abo-Shop ohne Kündigungsschaltfläche liefert jetzt `verdaechtig` statt `unklar`. Ein redaktionelles Portal ohne Bestellvorgang fällt sauber als `nicht anwendbar` heraus.
 
+## 7a. DP-001 — die Voraussetzung war invertiert (dieselbe Fehlerart)
+
+**Befund.** `applies_when: banner_detected == true`. Damit fiel **der schwerste Fall aus dem Bericht**: eine Seite, die **gar kein** Einwilligungsbanner zeigt und trotzdem Drittanbieter-Cookies setzt. Sie galt als `nicht anwendbar` und verschwand — obwohl dort schon keine Einwilligung im Sinne des § 25 Abs. 1 TDDDG vorliegt. Gefunden beim Nachgehen der Frage, was `banner_detected == false` bedeuten soll.
+
+**Korrektur.**
+
+```yaml
+applies_when:
+  any:
+    - "banner_detected == true"
+    - "third_party_cookies_before_consent > 0"
+```
+
+Neue `eindeutig`-Bedingung: `banner_detected == false and third_party_cookies_before_consent > 0`. Die Bedingungen zur Gestaltung der Schaltflächen sind jetzt ausdrücklich an `banner_detected == true` gebunden, damit sie auf einer bannerlosen Seite nicht ins Leere greifen. Ohne Banner **und** ohne Drittanbieter-Cookies greift die Regel weiterhin nicht — dann ist nichts zu beanstanden.
+
 ## 8. DP-006 — die Voraussetzung war invertiert
 
 **Befund.** `applies_when: required_info_found == true`. Damit fiel **der schlimmste Fall, den diese Regel überhaupt erfassen soll, stillschweigend heraus**: Eine Seite ohne Widerrufsbelehrung — oder mit einer so gründlich verborgenen, dass die Stichwortsuche sie nicht findet — galt als `nicht anwendbar` und verschwand aus dem Bericht.
@@ -106,5 +121,5 @@ Beide Signale sind ✅. Damit deckt DP-005 den Anhang Nr. 20 zu § 3 Abs. 3 UWG 
 |---|---|
 | **DP-001 bleibt auf realen Seiten `unklar`** | Die Bedingungen zu *nagging* (`banner_reappears_*`) und zum „Mehr Informationen"-Weg brauchen Signale, die als 🟡 neu in `_SIGNALE.md` stehen. Bis sie erhoben werden, ist DP-001 auf einer sauberen Seite `unklar` — inhaltlich richtig, aber es kostet uns die Aussage „unauffällig" |
 | **`applicability_derived` bestätigen** | Neues Feld, siehe 7 |
-| **`banner_detected == false`** | `_SIGNALE.md` sagt „Regel wird auf `unklar` gesetzt", die Engine setzt `nicht anwendbar`. Beides ist vertretbar — bitte entscheiden |
+| **`banner_detected == false`** | Erledigt durch 7a. `_SIGNALE.md` sagt bisher „Regel wird auf `unklar` gesetzt"; richtig ist `nicht anwendbar` — aber **nur**, wenn zugleich keine Drittanbieter-Cookies gesetzt werden. Genau so steht es jetzt in der Regel. Bitte den Satz in `_SIGNALE.md` entsprechend berichtigen |
 | **DP-005b** | Bleibt zurückgestellt |

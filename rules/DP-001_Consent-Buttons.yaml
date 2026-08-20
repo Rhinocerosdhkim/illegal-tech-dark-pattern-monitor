@@ -14,8 +14,19 @@
   status: REVIEW
   bearbeiter: "Jura-Team"
 
+  # Umgestellt 20.08. Vorher stand hier nur "banner_detected == true".
+  # Damit fiel der schwerste Fall aus dem Bericht: eine Seite, die GAR KEIN
+  # Einwilligungsbanner zeigt und trotzdem Drittanbieter-Cookies setzt. Sie
+  # galt als "nicht anwendbar" und verschwand - obwohl dort schon keine
+  # Einwilligung im Sinne des § 25 Abs. 1 TDDDG vorliegt. Dieselbe Art
+  # Fehler wie in DP-006 (Voraussetzung invertiert).
+  #
+  # Ohne Banner UND ohne Drittanbieter-Cookies greift die Regel weiterhin
+  # nicht - dann ist nichts zu beanstanden.
   applies_when:
-    - "banner_detected == true"
+    any:
+      - "banner_detected == true"
+      - "third_party_cookies_before_consent > 0"
 
   legal_basis:
     - "§ 25 Abs. 1 TDDDG (Einwilligung für Zugriff auf Endeinrichtungen)"
@@ -70,12 +81,17 @@
       # dort nicht die staerkste Stufe behaupten. Der Einzelfall steht jetzt
       # eine Stufe tiefer.
       - "third_party_cookies_before_consent > 1"
+      # Kein Banner, aber Zugriff auf die Endeinrichtung: Es gibt schon
+      # keinen Mechanismus, ueber den eine Einwilligung haette erteilt
+      # werden koennen. § 25 Abs. 1 TDDDG; die Ausnahme fuer technisch
+      # notwendige Speicherung (Abs. 2) bleibt im Einzelfall zu pruefen.
+      - "banner_detected == false and third_party_cookies_before_consent > 0"
       # Keine Ablehnmoeglichkeit ueberhaupt = keine echte Wahl.
       # Nach legal_note_on_more_info ist ein Banner mit nur "Zustimmen" und
       # "Mehr Informationen" unzulaessig, WENN der zweite Weg nicht zu einer
       # unmittelbaren Ablehnung fuehrt. Genau das steht jetzt hier; der
       # Fall, dass er dorthin fuehrt, steht als Verdachtsmoment unten.
-      - "reject_button_present == false and more_info_leads_to_reject == false"
+      - "banner_detected == true and reject_button_present == false and more_info_leads_to_reject == false"
       # Wiederholtes sofortiges Wiedererscheinen innerhalb 24h in Kombination mit
       # fehlender klarer Ablehnungsoption ist ein starker Indikator.
       - "banner_reappears_count_24h >= 2"
@@ -86,7 +102,7 @@
       - "third_party_cookies_before_consent == 1"
       # Ablehnung nur ueber die zweite Ebene ("Mehr Informationen").
       # Moeglich, aber spuerbar erschwert - Art. 7 Abs. 4 DSGVO.
-      - "reject_button_present == false and more_info_leads_to_reject == true"
+      - "banner_detected == true and reject_button_present == false and more_info_leads_to_reject == true"
       # Ablehnung erfordert zusätzliche Schritte, Zustimmung nicht.
       - "reject_click_depth > 1"
       # Deutlicher Größenunterschied.

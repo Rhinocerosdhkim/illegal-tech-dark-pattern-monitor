@@ -73,6 +73,11 @@
       "value": 0,
       "step": "startseite",
       "evidence": "S-01.png"
+    },
+    "third_party_cookies_before_consent": {
+      "value": 0,
+      "step": "startseite",
+      "evidence": "S-01.png"
     }
   },
   "signal_errors": {

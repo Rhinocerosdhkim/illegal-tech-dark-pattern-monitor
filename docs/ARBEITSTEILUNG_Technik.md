@@ -13,7 +13,7 @@ Read this before we next talk. Section 8 is the list of things I need an answer 
 
 The only real argument for Node was that `extractors.js` could be reused unchanged as a Chrome extension content script. **We can keep that anyway** — and we should:
 
-> Signal measurement lives in **`src/signals/extractors.js`, a real `.js` file with no Python in it.**
+> Signal measurement lives in **`dpm/signals/extractors.js`, a real `.js` file with no Python in it.**
 > Python reads that file and injects it via `page.evaluate()`.
 
 Do **not** embed measurement JS as Python string literals. If it is a separate file, we keep editor support, we keep the extension option alive at the cost of a manifest and a popup, and the measurement code stays honest about where it actually runs. This is a hard requirement on your side, not a preference.
@@ -42,11 +42,22 @@ So the thing I owe you is not a feature, it is a contract — section 4.
 ## 2. Karthik — capture layer
 
 ```
-src/capture/     driver.py · path.py · targets.py
-src/signals/     extractors.js (pure browser JS) · collect.py
-src/ai/          client.py · text_signals.py · navigator.py
+dpm/capture/     driver.py · path.py · targets.py
+dpm/signals/     extractors.js (pure browser JS) · collect.py
+dpm/ai/          client.py · text_signals.py · navigator.py
 data/targets/    <name>.yaml
 ```
+
+> **Layout changed from `src/` to `dpm/`.** A `src/` layout needs
+> `pip install -e .`; that is one more step on the Monday handover, which is
+> the one failure mode we named. From the repo root, `python -m dpm` works
+> with no install at all. Your directories are `dpm/capture/` and
+> `dpm/signals/`.
+
+**Schema is English.** `capture.json` and `data/targets/*.yaml` use
+`steps` / `step` / `value` / `evidence` / `target` / `industry` / `path` /
+`action` / `selector` / `confirmed_by_human`. The older German spellings are
+still read, but produce a warning. See `data/fixtures/README.md`.
 
 | | Task | Done means |
 |---|---|---|
@@ -54,7 +65,7 @@ data/targets/    <name>.yaml
 | 2 | Path execution, six verbs: `navigate` · `suche` · `klick` · `klick_erstes_ergebnis` · `scroll` · `warte` | **Every selector lives in `data/targets/*.yaml`. Zero selectors in Python.** When viagogo changes its markup, you edit YAML, not code — that is what makes Tue/Wed maintenance possible |
 | 3 | Per-step screenshot, `dom_hash`, timestamp | Hash is computed on a **normalised** DOM (strip nonces, ad IDs, timestamps). Otherwise every capture differs and the timeline diff is worthless |
 | 4 | `extractors.js` — the measurements | **No Python in this file.** Injected via `page.evaluate()`. Would run unchanged as a content script |
-| 5 | Write `capture.json` | Every signal is `{ wert, schritt, nachweis }`. Never a bare value — see the box below |
+| 5 | Write `capture.json` | Every signal is `{ value, step, evidence }`. Never a bare value — see the box below |
 | 6 | Partial capture on failure | Step 3 dies → steps 1–2 are kept, the rest goes to `signal_errors` **with the step name and a reason**. A partial capture is still useful, and it is exactly how `unklar` should arise |
 | 7 | Countdown proof: two captures | Clean browser state, revisit, same start value. This is the single most convincing thing in the demo |
 | 8 | **AI ① — wording interpretation** + the shared LLM wrapper `ai/client.py` | Output is **value + confidence**. Below the threshold the signal goes to `signal_errors`, not into `signals` |
@@ -75,10 +86,10 @@ data/targets/    <name>.yaml
 ## 3. Donghyun — engine, report, UI
 
 ```
-src/engine/      rules.py · conditions.py · verdict.py
-src/report/      beweisakte.py · uebersicht.py · diff.py · templates/
-src/ui/          app.py
-src/ai/          doc_import.py · narrative.py
+dpm/engine/      rules.py · conditions.py · verdict.py · run.py · derivations.py
+dpm/report/      case_file.py · overview.py · diff.py · templates/
+dpm/ui/          app.py
+dpm/ai/          doc_import.py · narrative.py
 ```
 
 | | Task | Needs a rule file? |
@@ -128,7 +139,7 @@ If this command does not exist on Monday, the product dies the moment I leave. I
 
 ## 6. The one thing we do together, before splitting
 
-**A hand-written fixture: `data/fixtures/viagogo.capture.json` plus a few screenshots.**
+**Hand-written fixtures: `data/fixtures/<target>/capture.json` plus a few screenshots.** Three exist already — `viagogo`, `sauberer-shop`, `ratgeber-portal`. They are the schema you have to produce; read one before you start.
 
 - Fill it with exactly the signals DP-001 needs, and put **one entry in `signal_errors` on purpose** so the `unklar` path is exercised from day one.
 - **I write it** — the consumer writes the contract, because I am the one who finds out at 2am what the engine actually needs.
