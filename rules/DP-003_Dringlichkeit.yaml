@@ -61,15 +61,15 @@
 
   verdict_rules:
     eindeutig:
-      # personalisierter Countdown # s. false positive 1
-      # -"countdown_element_present == true and countdown_resets_on_revisit == true and session_cookies_unchanged == true"
+      # personalized countdown # s. false positive 1
+      # new rule: -"countdown_element_present == true and countdown_resets_on_revisit == true and session_cookies_unchanged == true"
       
     verdaechtig:
-      # allgemeiner Countdown
-      - "countdown_element_present == true and countdown_resets_on_revisit == true" 
-      #change to "countdown_element_present == true and countdown_resets_on_revisit == true and countdown_unchanged_scans >= 3" # s. offene Frage 1
+      # general countdown
+      # current rule: - "countdown_element_present == true and countdown_resets_on_revisit == true" 
+      # change to: - "countdown_element_present == true and countdown_resets_on_revisit == true and countdown_unchanged_scans >= 3" # s. offene Frage 1
       
-      # Knappheit
+      # scarcity
       - "scarcity_text_present == true and scarcity_value > 0 and scarcity_value_unchanged_scans >= 3"
       # Ist keine Zahl vorhanden, gehoert scarcity_value nach signal_errors (siehe _SIGNALE.md).
       
@@ -97,7 +97,7 @@
       die sich für jeden Nutzer korrekt zurücksetzen: Messungen müssen im
       nicht angemeldeten Zustand erfolgen oder nur auf nicht‑personalisierten
       Werbeaussagen angewendet werden.
-      => Test ohne Löschung von Session-Cookies?
+      # Test ohne Löschung von Session-Cookies?
     - > 
       Legitimer betrieblicher Countdown (z. B. Ablauf einer Sitzung, Checkout‑Token)
       oder technische Hinweise (z. B. verbleibende Zeit zur Zahlung): solche
@@ -108,7 +108,7 @@
       Echtes, sich häufig änderndes Inventar (z. B. Lagerbestände, dynamische
       Restmengen): Kurzfristige Veränderungen sind plausibel. Gegenmaßnahme:
       mehrere Messungen über einen längeren Zeitraum / andere Indikatoren prüfen.
-      => scarcity_value_unchanged_scans erhöhen
+      # scarcity_value_unchanged_scans erhöhen
     - > 
       Gezielte Angebote nach Geolocation oder A/B‑Testing: Tests müssen die
       richtige Geokonfiguration und ggf. Varianten beachten.
