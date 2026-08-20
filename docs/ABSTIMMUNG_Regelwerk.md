@@ -70,10 +70,10 @@ Aus diesen Tatsachen die Qualifikation abzuleiten, ist dann Aufgabe der **Regel*
 | `costs_are_unavoidable_delivery_or_offer_costs` | ⚠️ teilweise | Existiert eine kostenlose Abholoption, sind die Lieferkosten vermeidbar — das ist beobachtbar |
 | `shipping_cost_can_be_calculated_in_advance` | ⚠️ teuer | erfordert Navigation bis zur Adresseingabe → gemeinsam mit DP-005b zurückstellen |
 | `kuendigungsbutton_label_is_not_clearly_equivalent` | ⚠️ dreiteilig | Positivliste → unauffällig · Negativliste → auffällig · Rest → menschliche Prüfung |
+| `required_total_price_can_be_calculated` | ⚠️ teuer | „vernünftigerweise im Voraus berechenbar" ist ein Rechtsbegriff. Beobachtbarer Anhaltspunkt: Wird vor der Adresseingabe ein fester Betrag angezeigt? |
 | `stricter_form_required` | ❌ | erfordert Kenntnis des konkreten Vertragstyps |
-| „spürbare Beeinträchtigung" (§ 3a UWG) | ❌ | reine Wertung |
 
-**Zwei von zwölf** bleiben also tatsächlich beim Menschen, nicht zwölf von zwölf.
+**Nur eines von zwölf** bleibt also tatsächlich vollständig beim Menschen, nicht zwölf von zwölf.
 
 ### Die Einschränkung, die dabei zwingend gilt
 
@@ -83,12 +83,21 @@ Alle diese Merkmale stehen in `applies_when` — sie entscheiden, **ob eine Rege
 
 Für `eindeutig` muss die Anwendbarkeit **festgestellt**, nicht **abgeleitet** sein — und das heißt bis auf Weiteres: von einem Menschen bestätigt. Das ist keine Schwäche des Systems, sondern der Grund, warum unsere Befunde tragen.
 
-### Und für die verbleibenden zwei: das Feld `menschliche_pruefung`
+### Für den Rest: das Feld `menschliche_pruefung`
+
+In dieses Feld gehört zweierlei: das eine verbliebene Merkmal aus der Tabelle — und die Tatbestandsmerkmale, die **gar nicht erst als Signal auftauchen**, weil sie reine Wertungen sind. Das wichtigste davon ist die Spürbarkeit nach § 3a UWG.
+
+Sebastian hat das in DP-005 selbst festgehalten:
+
+> *„Das Merkmal der ‚spürbaren Beeinträchtigung' aus § 3a UWG ist davon getrennt zu beurteilen. Es soll nicht durch einen technisch erfundenen Preis-Schwellenwert ersetzt werden."*
+
+Genau richtig — und genau deshalb braucht es einen eigenen Platz in der Regel, statt stillschweigend zu verschwinden.
 
 ```yaml
   menschliche_pruefung:
     - "Ist für diesen Vertragstyp eine strengere Form vorgeschrieben?"
     - "Ist die Beeinträchtigung im Sinne des § 3a UWG spürbar?"
+    - "Handelt es sich bei der gefundenen Textstelle tatsächlich um die Pflichtinformation?"
 ```
 
 Die Beweisakte druckt diese Punkte als **Prüfliste für die Juristin** unter den Befund: „Technisch festgestellt: A, B, C. Rechtlich noch zu prüfen: X, Y." Aufwand rund zwei Stunden.
