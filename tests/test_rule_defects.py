@@ -138,4 +138,20 @@ assert assess(RULES["DP-001"], table(
     "a button condition fired on a page without a banner"
 print("  ok  button conditions stay bound to an existing banner")
 
+print("\nDP-005 — shipping costs fall under the statutory exception")
+# Anhang Nr. 20 to § 3 (3) UWG, second half-sentence: costs that are
+# unavoidable for collection or delivery of the goods are exempt. Shipping
+# costs are exactly that. Asserting "eindeutig" where the statute carves out
+# an exception is a false alarm.
+gratis = assess(RULES["DP-005"], table(
+    confirmed=["is_b2c_offer"], is_b2c_offer=True, has_price_display=True,
+    has_checkout_flow=True, is_financial_services=False,
+    gratis_claim_present=True, shipping_cost_amount=4.95))
+assert gratis.level == "verdaechtig", gratis.level
+assert "unvermeidbar" in (gratis.reason or ""), gratis.reason
+print("  ok  gratis claim + shipping costs -> verdaechtig, exception named")
+assert any("Abholung" in q for q in RULES["DP-005"].human_review), \
+    "the unavoidability question must go to a human"
+print("  ok  unavoidability is put to a human, not guessed")
+
 print("\nAll rule-defect guards passed.")

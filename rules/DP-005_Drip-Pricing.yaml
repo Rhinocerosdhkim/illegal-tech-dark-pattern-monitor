@@ -140,21 +140,6 @@
 
     eindeutig:
 
-      # Ergaenzt 20.08. Die uebrigen eindeutig-Bedingungen dieser Regel
-      # beruhen saemtlich auf Signalen aus DP-005b (Navigation bis zur
-      # Kasse), die es noch nicht gibt. Diese hier laeuft mit zwei bereits
-      # zugesagten Signalen und deckt Anhang Nr. 20 zu § 3 Abs. 3 UWG ab:
-      # eine Bewerbung als "gratis" trotz anfallender Versandkosten.
-      # Vorschlag steht so in _SIGNALE.md.
-      - condition: "gratis_claim_present == true and shipping_cost_amount > 0"
-        reason: >
-          Die Seite bewirbt ein Angebot als gratis, kostenlos oder umsonst,
-          obwohl auf der Produktseite Versandkosten ausgewiesen sind.
-          Nach Anhang Nr. 20 zu § 3 Abs. 3 UWG ist eine solche Bewerbung
-          stets unzulaessig, soweit es sich nicht um unvermeidbare Kosten
-          des Eingehens auf das Angebot oder der Abholung bzw. Lieferung
-          handelt.
-
       - condition: >
           "mandatory_total_price_at_checkout == false
            and required_total_price_can_be_calculated == true"
@@ -182,6 +167,36 @@
         severity: "HIGH"
 
     verdaechtig:
+
+      # Ergaenzt 20.08., am selben Tag korrigiert. Die uebrigen Bedingungen
+      # dieser Regel beruhen saemtlich auf Signalen aus DP-005b (Navigation
+      # bis zur Kasse), die es noch nicht gibt; diese laeuft mit zwei bereits
+      # zugesagten Signalen.
+      #
+      # Zunaechst stand sie unter "eindeutig". Das war falsch. Der Wortlaut
+      # des Anhangs Nr. 20 lautet im zweiten Halbsatz:
+      #
+      #   "dies gilt nicht fuer Kosten, die im Zusammenhang mit dem Eingehen
+      #    auf das Waren- oder Dienstleistungsangebot oder fuer die Abholung
+      #    oder Lieferung der Ware ... unvermeidbar sind"
+      #
+      # Versandkosten sind genau "Kosten fuer die Lieferung der Ware". Sie
+      # fallen also in die gesetzliche Ausnahme, SOFERN sie unvermeidbar
+      # sind - etwa weil keine kostenlose Abholung angeboten wird. Genau das
+      # misst niemand (das Signal dafuer wurde als Rechtsbegriff abgelehnt).
+      # Eine Bedingung, die "eindeutig" behauptet, wo das Gesetz eine
+      # Ausnahme vorsieht, ist ein Fehlalarm - und widerspraeche dem eigenen
+      # tatbestand_de dieser Regel, der die Ausnahme ausdruecklich nennt.
+      - condition: "gratis_claim_present == true and shipping_cost_amount > 0"
+        reason: >
+          Die Seite bewirbt ein Angebot als gratis, kostenlos oder umsonst,
+          obwohl auf der Produktseite Versandkosten ausgewiesen sind. Nach
+          Anhang Nr. 20 zu § 3 Abs. 3 UWG ist eine solche Bewerbung stets
+          unzulaessig - ausgenommen sind jedoch Kosten, die fuer die Abholung
+          oder Lieferung der Ware unvermeidbar sind. Ob die hier
+          ausgewiesenen Versandkosten unvermeidbar sind, insbesondere ob eine
+          kostenlose Abholung angeboten wird, ist nicht maschinell
+          feststellbar und bleibt zu pruefen.
 
       - condition: >
           "price_delta > 0
@@ -229,6 +244,10 @@
           Bestellverlauf. Entscheidend ist, ob die Information nach den
           einschlägigen Vorschriften bereits früher hätte bereitgestellt
           werden müssen.
+
+  menschliche_pruefung:
+    - "Sind die ausgewiesenen Versandkosten unvermeidbar im Sinne des zweiten Halbsatzes von Anhang Nr. 20 zu § 3 Abs. 3 UWG - wird insbesondere keine kostenlose Abholung angeboten?"
+    - "Ist die Beeintraechtigung im Sinne des § 3a UWG spuerbar?"
 
   threshold_source: >
     Für versteckte Kosten besteht grundsätzlich kein prozentualer oder
