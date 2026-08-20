@@ -1,110 +1,129 @@
-# ============================================================
-# ENTWURF - bitte vervollstaendigen
-#
-# SCHWIERIGSTE REGEL. Bitte an die Person mit der groessten
-# Sicherheit im Lauterkeitsrecht.
-#
-# Wichtige Vorgabe: Diese Regel soll KEINE Stufe "eindeutig"
-# enthalten. Ob ein Text im Rechtssinne eine wesentliche
-# Information ist, kann eine Maschine nicht beurteilen - sie
-# erkennt nur Stichworte. Die Regel dient dazu, einer Juristin
-# oder einem Juristen Pruefkandidaten vorzulegen, nicht dazu,
-# selbst zu entscheiden.
-#
-# Genau diese Selbstbeschraenkung wollen wir in der Praesentation
-# als bewusste Entwurfsentscheidung darstellen.
-# ============================================================
-
 - id: DP-006
   name_de: "Verdeckung wesentlicher Pflichtinformationen"
 
-  # Kategorie nach dem Raster der Verbraucherzentrale (19.08.):
-  # Zeitdruck | Zwang | Hindernisse | Irrefuehrung
-  # -- Vorbelegung durch das Entwicklungsteam, bitte pruefen --
   kategorie: "Irrefuehrung"
 
-  status: ENTWURF
-  bearbeiter: ""
+  status: version 1.0
+  bearbeiter: "Jura-Team"
 
   applies_when:
     - "is_b2c_offer == true"
     - "required_info_found == true"
 
   legal_basis:
-    # VORSCHLAG - Nummerierung nach der UWG-Reform 2022 bitte pruefen
     - "§ 5a Abs. 1 UWG (Vorenthalten wesentlicher Informationen)"
-    - "§ 5a Abs. 2 UWG (Verheimlichen; unklare, unverstaendliche oder zweideutige Bereitstellung)"
-    - "§ 5b Abs. 1 UWG (Katalog wesentlicher Informationen bei Aufforderung zum Kauf)"
-    - "Art. 246a EGBGB i. V. m. § 312d BGB (Informationspflichten im Fernabsatz)"
+    - "§ 5a Abs. 2 UWG (Verheimlichen sowie unklare, unverständliche oder zweideutige Bereitstellung)"
+    - "§ 5a Abs. 3 UWG (Berücksichtigung räumlicher und zeitlicher Beschränkungen)"
+    - "§ 5b Abs. 1 UWG (wesentliche Informationen bei Aufforderung zum Kauf)"
+    - "§ 312d Abs. 1 BGB i. V. m. Art. 246a EGBGB (Informationspflichten im Fernabsatz)"
+    - "§ 3a UWG (Rechtsbruch)"
+    - "§ 8 Abs. 1, Abs. 3 Nr. 3 UWG (Beseitigungs- und Unterlassungsansprüche)"
 
   tatbestand_de: >
-    AUSFUELLEN.
-    Besonders wichtig ist der Absatz, der das Vorenthalten dem Verheimlichen
-    und der unklaren oder zweideutigen Bereitstellung gleichstellt. Das ist
-    die Bruecke zu unseren Signalen: Schriftgroesse, Kontrast und Position
-    sind genau die Gestaltungsmittel, mit denen eine Information formal
-    vorhanden, praktisch aber nicht wahrnehmbar ist.
-    Bitte diesen Gedanken ausformulieren - er traegt die ganze Regel.
+    Nach § 5a Abs. 1 UWG ist eine wesentliche Information vorenthalten,
+    wenn sie der Verbraucher für eine informierte geschäftliche
+    Entscheidung benötigt und das Vorenthalten geeignet ist, ihn zu
+    einer anderen geschäftlichen Entscheidung zu veranlassen. Nach
+    § 5a Abs. 2 UWG steht dem Vorenthalten insbesondere das Verheimlichen,
+    die unklare, unverständliche oder zweideutige Darstellung sowie die
+    nicht rechtzeitige Bereitstellung gleich. Eine Information kann daher
+    trotz technischer Existenz als vorenthalten in Betracht kommen, wenn
+    sie durch die konkrete Gestaltung faktisch nicht oder nur schwer
+    wahrnehmbar ist. Schriftgröße, Kontrast, Opazität, Position,
+    eingeklappte Inhalte und der Zeitpunkt der Bereitstellung können
+    hierfür technische Indizien sein. Die konkrete Wesentlichkeit und
+    rechtliche Bewertung bleibt der menschlichen Prüfung vorbehalten.
 
   anspruchskette: >
-    AUSFUELLEN.
+    § 5a UWG setzt voraus, dass eine wesentliche Information vorenthalten
+    wird und dies geeignet ist, die geschäftliche Entscheidung des
+    Verbrauchers zu beeinflussen. Bei Aufforderungen zum Kauf bestimmt
+    § 5b Abs. 1 UWG einen Katalog wesentlicher Informationen, insbesondere
+    wesentliche Merkmale, Identität und Anschrift des Unternehmers sowie
+    Gesamtpreis und gegebenenfalls zusätzliche Kosten. Bei Fernabsatz-
+    verträgen bestehen ergänzende Informationspflichten nach § 312d Abs. 1
+    BGB i. V. m. Art. 246a EGBGB. Ein Verstoß gegen eine entsprechende
+    Marktverhaltensregel kann nach § 3a UWG unlauter sein; daraus können
+    insbesondere Unterlassungs- und Beseitigungsansprüche nach § 8 Abs. 1
+    UWG folgen, die nach § 8 Abs. 3 Nr. 3 UWG auch von qualifizierten
+    Verbraucherverbänden geltend gemacht werden können.
 
   signals:
     - required_info_found
+    - required_info_type
     - font_size_min_px
     - text_contrast_min
     - hidden_by_opacity_count
     - scroll_depth_of_required_info_pct
-    - required_info_in_collapsed_element      # Status GELB
-    - aria_hidden_on_required_info            # Status GELB
+    - required_info_in_collapsed_element
+    - aria_hidden_on_required_info
+    - required_info_visible_before_purchase_decision
 
   verdict_rules:
-    # KEINE Stufe "eindeutig" - siehe Kopf der Datei.
+    # Bewusst KEINE Stufe "eindeutig".
     verdaechtig:
-      - "hidden_by_opacity_count > ?"
-      - "font_size_min_px < ?"
-      - "text_contrast_min < ?"
-      - "scroll_depth_of_required_info_pct > ?"
+      - "hidden_by_opacity_count > 0"
+      - "font_size_min_px < 12"
+      - "text_contrast_min < 4.5"
+      - "required_info_in_collapsed_element == true"
+      - "aria_hidden_on_required_info == true"
+      - "scroll_depth_of_required_info_pct > 75"
+      - "required_info_visible_before_purchase_decision == false"
 
   threshold_source: >
-    AUSFUELLEN.
-    Anregung: Fuer Kontrast und Schriftgroesse liesse sich auf die
-    Barrierefreiheitsrichtlinien (WCAG) verweisen, die einen Mindestkontrast
-    von 4,5:1 fuer normalen Text vorsehen. Das ist zwar keine lauterkeits-
-    rechtliche Norm, aber ein anerkannter technischer Massstab fuer
-    Wahrnehmbarkeit. Bitte einschaetzen, ob wir uns darauf berufen koennen,
-    ohne angreifbar zu werden.
+    Das Gesetz enthält keine festen Schwellenwerte für Schriftgröße,
+    Kontrast, Opazität oder Scrolltiefe. Die genannten Werte sind daher
+    ausschließlich technische Warnschwellen und keine rechtlichen
+    Grenzwerte. Für den Kontrast kann WCAG 2.2 AA als technischer
+    Referenzmaßstab herangezogen werden; dort gilt für normalen Text
+    grundsätzlich ein Kontrastverhältnis von 4,5:1. Die Unterschreitung
+    dieses Wertes begründet für sich allein keinen Verstoß gegen § 5a UWG.
+    Eine hohe Scrolltiefe oder ein eingeklappter Bereich ist ebenfalls
+    nicht automatisch unzulässig. Entscheidend bleibt die konkrete
+    Wahrnehmbarkeit, Verständlichkeit und Rechtzeitigkeit der Information.
 
   false_positive_risks:
     - >
-      Groesstes Risiko: Das System erkennt Pflichtinformationen nur ueber
-      Stichworte. Ein Text, der "Widerruf" enthaelt, muss keine
-      Widerrufsbelehrung sein.
+      Die Erkennung einer Information über Stichworte beweist nicht,
+      dass die gesuchte Pflichtinformation tatsächlich vollständig und
+      inhaltlich zutreffend vorhanden ist.
     - >
-      Eingeklappte Bereiche sind nicht per se unzulaessig - sie sind
-      teilweise sogar gute Gestaltungspraxis. Unzulaessig ist erst die
-      faktische Unauffindbarkeit.
+      Eingeklappte Bereiche sind nicht per se unzulässig. Entscheidend
+      ist, ob die Information dadurch im konkreten Fall unklar,
+      unverständlich oder faktisch schwer auffindbar wird.
     - >
-      Fusszeilen sind ueblich und werden von Verbrauchern dort erwartet.
-      Eine hohe Scrolltiefe allein duerfte kaum genuegen.
-    - AUSFUELLEN
+      Eine Platzierung in der Fußzeile oder außerhalb des initialen
+      Sichtbereichs ist nicht automatisch unzulässig.
+    - >
+      Niedriger Kontrast, geringe Schriftgröße oder hohe Scrolltiefe
+      sind keine eigenständigen lauterkeitsrechtlichen Verstöße.
+    - >
+      Eine Information kann unter Umständen auf anderem Wege
+      bereitgestellt worden sein; dies muss bei der menschlichen
+      Prüfung berücksichtigt werden.
 
   explanation_template_de: >
-    AUSFUELLEN.
-    Wichtig: Der Text muss deutlich machen, dass es sich um einen
-    Pruefkandidaten handelt und die Einordnung eine menschliche
-    Bewertung erfordert.
+    PatternWatch hat eine potentiell wesentliche Pflichtinformation
+    erkannt, deren Darstellung technisch auffällig erscheint. Festgestellte
+    Auffälligkeit: [BEFUND]. Die Information ist technisch vorhanden bzw.
+    wurde als solche erkannt. Ob sie im konkreten Fall wesentlich ist und
+    ob ihre konkrete Darstellung ein Vorenthalten im Sinne des § 5a UWG
+    darstellt, muss juristisch geprüft werden. Dieser Befund ist daher
+    ausschließlich als Prüfkandidat und nicht als abschließende
+    Rechtsbewertung zu verstehen.
 
   offene_fragen:
     - >
-      Welche Pflichtinformationen sollen wir ueberhaupt suchen? Bitte eine
-      Stichwortliste aus Art. 246a EGBGB ableiten - diese Liste ist das
-      eigentliche Arbeitsergebnis dieser Regel und wird vom Entwicklungsteam
-      unmittelbar umgesetzt.
+      Zu den zu erfassenden Pflichtinformationen gehören insbesondere
+      wesentliche Merkmale, Identität und Anschrift des Unternehmers,
+      Kontaktmöglichkeiten, Gesamtpreis und zusätzliche Kosten,
+      Zahlungs-, Liefer- und Leistungsbedingungen, Widerrufsinformationen
+      sowie gegebenenfalls Laufzeit, Kündigungsbedingungen und
+      Informationen zu digitalen Produkten nach Art. 246a EGBGB.
     - >
-      Ist der Verzicht auf die Stufe "eindeutig" juristisch begruendbar,
-      oder gibt es Konstellationen (etwa vollstaendig fehlende
-      Widerrufsbelehrung), in denen sie doch gerechtfertigt waere?
-    - AUSFUELLEN
+      Der Verzicht auf eine Stufe "eindeutig" ist bewusst gewählt, weil
+      die Wesentlichkeit einer Information und die rechtliche Bedeutung
+      ihrer konkreten Darstellung eine kontextabhängige juristische
+      Bewertung erfordern.
 
   disclaimer_required: true
