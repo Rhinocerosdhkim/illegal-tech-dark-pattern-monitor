@@ -11,8 +11,10 @@
   # -- Vorbelegung durch das Entwicklungsteam, bitte pruefen --
   kategorie: "Zwang"
 
-  status: FERTIG
+  status: REVIEW
   bearbeiter: "Jura-Team"
+  last_updated: "2026-08-20"
+  version: "0.1"
 
   applies_when:
     - "banner_detected == true"
@@ -48,6 +50,11 @@
     - reject_contrast_ratio
     - preselected_checkbox_count
     - third_party_cookies_before_consent
+    - banner_reappears_on_reject
+    - banner_reappears_count_24h
+    - more_info_present
+    - more_info_leads_to_reject
+    - more_info_click_depth
 
   verdict_rules:
     eindeutig:
@@ -59,6 +66,11 @@
       - "third_party_cookies_before_consent > 0"
       # Keine Ablehnmöglichkeit auf erster Ebene = keine echte Wahl.
       - "reject_button_present == false"
+      # Wiederholtes sofortiges Wiedererscheinen innerhalb 24h in Kombination mit
+      # fehlender klarer Ablehnungsoption ist ein starker Indikator.
+      - "banner_reappears_count_24h >= 2"
+      # 'Mehr Informationen' führt nicht zur Ablehnung (kein Opt-Out) -> eindeutig
+      - "reject_button_present == false and more_info_present == true and more_info_leads_to_reject == false"
 
     verdaechtig:
       # Ablehnung erfordert zusätzliche Schritte, Zustimmung nicht.
@@ -67,6 +79,10 @@
       - "accept_button_area_px2 / reject_button_area_px2 > 2.0"
       # Visuelle Zurücksetzung der Ablehnung.
       - "accept_contrast_ratio - reject_contrast_ratio > 3.0"
+      # Banner erscheint nach Ablehnung wieder (nagging) -> verdächtig
+      - "banner_reappears_on_reject == true"
+      # 'Mehr Informationen' führt zu Ablehnung, aber erst nach mehreren Schritten
+      - "more_info_present == true and more_info_leads_to_reject == true and more_info_click_depth > 1"
 
   threshold_source: >
     Zu "preselected_checkbox_count" und "third_party_cookies_before_consent":
@@ -111,17 +127,55 @@
     Diese Gestaltung wirft die Frage auf, ob die Einwilligung im Sinne des
     Art. 4 Nr. 11 i. V. m. Art. 7 Abs. 4 DSGVO freiwillig erteilt wurde.
 
-  offene_fragen:
-    - >
-      Ist § 25 TDDDG als Marktverhaltensregel i. S. d. § 3a UWG anerkannt?
-      Zum Meinungsstand bitte kurz recherchieren - das ist für die
-      Aktivlegitimation der Verbraucherzentrale entscheidend.
-    - >
-      Sollte "banner_reappears_on_reject" (nagging) als weitere Bedingung
-      aufgenommen werden, sobald das Signal verfügbar ist?
-    - >
-      Behandlung von Bannern, die ausschließlich "Akzeptieren" und
-      "Mehr Informationen" anbieten - eigener Fall oder von
-      reject_button_present erfasst?
+  offene_fragen_resolved:
+    - question: "Ist § 25 TDDDG als Marktverhaltensregel i. S. d. § 3a UWG anerkannt?"
+      answer: >
+        Ja. Während die Frage früher (u. a. im BGH-Verfahren ‚App‑Zentrum‘) dem EuGH zur Entscheidung vorgelegt
+        wurde, hat der EuGH in der Rechtssache (u. a. 'Lindenapotheke') die Möglichkeit einer wettbewerbsrechtlichen
+        Geltendmachung von Datenschutzverstößen bejaht; der BGH hat diese Sicht übernommen und damit für Deutschland
+        bestätigt, dass auch Datenschutzvorschriften (insb. informations‑ und zustimmungsrechtliche Pflichten)
+        als Marktverhaltensregeln i.S.d. Lauterkeitsrechts gelten können. OLG‑Entscheidungen (u. a. OLG Köln GRUR-RR 2024, 341)
+        sehen § 25 TDDDG ausdrücklich als Marktverhaltensregel. Insgesamt ist damit die Auffassung vorherrschend,
+        dass Verstöße gegen § 25 TDDDG wettbewerbsrechtlich verfolgt werden können.
+      implications: >
+        Folge: Qualifizierte Verbraucherschutz‑einrichtungen bzw. Wettbewerber können Verstöße nach § 25 TDDDG
+        unter Berufung auf das Lauterkeitsrecht geltend machen; Aktivlegitimation besteht insbesondere nach
+        § 8 Abs. 3 Nr. 3 UWG (und den einschlägigen UKlaG‑Vorschriften).
+      sources:
+        - "BGH: Verweis/Grundsatzdiskussion 'App-Zentrum' (vgl. BGH GRUR 2020, 896 Rn. 33 ff.)"
+        - "EuGH: 'Lindenapotheke' (EuGH GRUR-RS 2024, 26048) – wettbewerbsrechtliche Klagemöglichkeit bei DSGVO-Verstößen bestätigt"
+        - "BGH Folgeentscheidung zur Bestätigung (BGH GRUR-RS 2025, 5877)"
+        - "OLG Köln: §25 TDDDG als Marktverhaltensregel (GRUR-RR 2024, 341)"
+        - "Literatur/Kommentierung: BeckOK UWG/Niebel/Bauer/Kerl, §3a Rn.70a (Stand 1.5.2026)"
+    - question: "Soll 'banner_reappears_on_reject' (nagging) aufgenommen werden?"
+      answer: >
+        Ja. EDPB‑Guidelines zu Dark Patterns, nationale DPA‑Hinweise (z. B. CNIL/ICO) und die jüngere Rechtsprechung sehen
+        wiederholte oder drängende Nachfragen nach Ablehnung als Indiz für nicht 'freiwillig' erteilte Zustimmung.
+        Die Relevanz hängt von Frequenz und Kontext ab; wiederholtes unmittelbares Wiedererscheinen bzw. mehrfache
+        Aufforderungen innerhalb kurzer Zeit (z. B. >1 innerhalb 24h oder sofort nach Klick 'ablehnen') sind ernsthaft
+        verdächtig und sollten mindestens eine manuelle Prüfung auslösen; bei Kombination mit anderen Indikatoren
+        (kein Ablehnen auf erste Ebene, vorab gesetzte Drittanbieter-Cookies, voreingestellte Häkchen) kann dies
+        zum eindeutigen Befund führen.
+      sources:
+        - "EDPB Guidelines 03/2022 (Dark Patterns)"
+        - "CNIL / ICO guidance on cookies and nagging banners"
+        - "Rechtsprechung und Praxiskommentare (siehe Quellen oben)"
+    - question: "Wie mit Bannern verfahren, die nur 'Akzeptieren' und 'Mehr Informationen' anzeigen?"
+      answer: >
+        Nach den Entscheidungen und Kommentaren (insb. GRUR-RR 2024, 341 Rn.21 sowie LG‑Erwägungen) ist eine solche
+        Gestaltung regelmäßig problematisch: Wird auf der ersten Ebene keine klare Ablehnungsoption angeboten und
+        führt 'Mehr Informationen' nicht unmittelbar (one‑click) zu einer gleichwertigen Ablehnungswahl, so ist die
+        Einwilligung typischerweise nicht als freiwillig i.S.v. § 25 I TTDSG / Art. 4 Nr. 11 DSGVO anzusehen.
+        Praktische Regel: Wenn 'more_info_leads_to_reject' == false oder 'more_info_click_depth' > 1 → mindestens 'verdaechtig';
+        keine Ablehnungsoption auf erster Ebene oder unklare Beschriftung → tendenziell 'eindeutig'.
+      sources:
+        - "GRUR-RR 2024, 341 Rn.21 (OLG Köln – Ausführungen zur fehlenden Ablehnungsoption und zur Irreführung des Durchschnittsnutzers)"
+        - "BGH/EuGH‑Leitentscheidungen und Literatur (s.o.)"
+
+  legal_note_on_more_info: >
+    EDPB guidance and national DPAs require that refusal of non-essential processing
+    be at least as easy as acceptance. Banners offering only 'Accept' + 'More information'
+    are problematic unless the 'More information' path provides an immediate, single-click
+    way to refuse. Absent such a path, consent may be invalid (see EDPB Guidelines and CNIL/ICO guidance).
 
   disclaimer_required: true
