@@ -22,7 +22,8 @@ import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
-from jinja2 import Environment, FileSystemLoader, select_autoescape
+from jinja2 import (ChainableUndefined, Environment, FileSystemLoader,
+                    select_autoescape)
 
 from dpm import PRODUKTNAME
 from dpm.engine.conditions import MissingSignal, Signaltabelle
@@ -65,7 +66,8 @@ def erzeuge(lauf: Lauf, befunde: list, ausgabe: str | Path = "out",
     ordner.mkdir(parents=True, exist_ok=True)
 
     relevante = [b for b in befunde if b.berichtsrelevant]
-    schritte = {s["schritt"]: s for s in lauf.schritte}
+    schritte = {s["schritt"]: s for s in lauf.schritte
+                if isinstance(s, dict) and s.get("schritt")}
 
     for name in _screenshotnamen(relevante, lauf):
         quelle = lauf.screenshot(name)
@@ -79,8 +81,9 @@ def erzeuge(lauf: Lauf, befunde: list, ausgabe: str | Path = "out",
         schritte=lauf.schritte,
         hinweis=HINWEIS_VORLAEUFIG,
         zusammenfassung=_zusammenfassung(befunde),
-        eintraege=[_eintrag(nr, b, schritte, lauf)
+        eintraege=[_eintrag(nr, b, schritte, lauf, ordner)
                    for nr, b in enumerate(relevante, start=1)],
+        warnungen=lauf.warnungen,
         kategorie=KATEGORIE,
     )
 
@@ -93,7 +96,8 @@ def erzeuge(lauf: Lauf, befunde: list, ausgabe: str | Path = "out",
 
 # --- Aufbereitung --------------------------------------------------------
 
-def _eintrag(nr: int, befund: Befund, schritte: dict, lauf: Lauf) -> dict:
+def _eintrag(nr: int, befund: Befund, schritte: dict, lauf: Lauf,
+             ordner: Path) -> dict:
     nachweise = [_nachweis(n, schritte, lauf) for n in befund.nachweise]
     return {
         "nr": nr,
@@ -105,31 +109,45 @@ def _eintrag(nr: int, befund: Befund, schritte: dict, lauf: Lauf) -> dict:
         "herabgestuft": befund.herabgestuft,
         "hinweise": befund.hinweise,
         "unklar_wegen": befund.unklar_wegen,
+        "wuerde_stufe": ANZEIGE.get(befund.wuerde_stufe or ""),
         "nachweise": nachweise,
         "messwerte": ", ".join(f"{n['signal']} = {_kurz(n['wert'])}"
                                for n in nachweise) or "—",
-        "screenshots": _bilder(nachweise),
+        "screenshots": _bilder(nachweise, ordner),
         "erlaeuterung": _erlaeuterung(befund.regel, lauf.tabelle),
     }
 
 
 def _nachweis(roh: dict, schritte: dict, lauf: Lauf) -> dict:
-    schritt = schritte.get(roh.get("schritt")) or {}
+    bezeichnung = roh.get("schritt")
+    schritt = schritte.get(bezeichnung) or {}
     return {**roh,
             "anzeige": _kurz(roh.get("wert")),
             "url": schritt.get("url"),
-            "dom_hash": schritt.get("dom_hash"),
-            "zeitpunkt": lauf.meta.get("timestamp")}
+            # Fehlt der Schritt im Protokoll, ist die Reproduzierbarkeit
+            # nicht belegt. Das muss dastehen und darf kein Strich sein.
+            "dom_hash": schritt.get("dom_hash") or (
+                "—" if bezeichnung == "Zielprofil"
+                else "Schritt nicht im Erfassungsprotokoll")}
 
 
-def _bilder(nachweise: list) -> list:
+def _bilder(nachweise: list, ordner: Path) -> list:
+    """Nur Screenshots, die tatsaechlich neben der Akte liegen.
+
+    Eine Beweisakte, die auf ein Bild verweist, das es nicht gibt, behauptet
+    ein Beweismittel, das nicht existiert.
+    """
     gesehen, bilder = set(), []
     for n in nachweise:
         datei = n.get("nachweis")
-        if datei and datei.lower().endswith(".png") and datei not in gesehen:
-            gesehen.add(datei)
-            bilder.append({"datei": datei, "schritt": n.get("schritt"),
-                           "dom_hash": n.get("dom_hash")})
+        if not isinstance(datei, str) or not datei.lower().endswith(".png"):
+            continue
+        if datei in gesehen:
+            continue
+        gesehen.add(datei)
+        bilder.append({"datei": datei, "schritt": n.get("schritt"),
+                       "dom_hash": n.get("dom_hash"),
+                       "vorhanden": (ordner / datei).exists()})
     return bilder
 
 
@@ -167,10 +185,11 @@ def _zusammenfassung(befunde: list) -> list:
 
 
 def _screenshotnamen(befunde: list, lauf: Lauf) -> set:
-    namen = {s.get("screenshot") for s in lauf.schritte if s.get("screenshot")}
+    namen = {s.get("screenshot") for s in lauf.schritte
+             if isinstance(s, dict) and s.get("screenshot")}
     for b in befunde:
         namen.update(n.get("nachweis") for n in b.nachweise)
-    return {n for n in namen if n and n.lower().endswith(".png")}
+    return {n for n in namen if isinstance(n, str) and n.lower().endswith(".png")}
 
 
 def _kurz(wert) -> str:
@@ -182,7 +201,8 @@ def _kurz(wert) -> str:
 def _umgebung() -> Environment:
     umgebung = Environment(
         loader=FileSystemLoader(Path(__file__).parent / "templates"),
-        autoescape=select_autoescape(["html"]), trim_blocks=True, lstrip_blocks=True)
+        autoescape=select_autoescape(["html"]), trim_blocks=True,
+        lstrip_blocks=True, undefined=ChainableUndefined)
     umgebung.filters["absatz"] = lambda t: [a.strip() for a in (t or "").split("\n\n") if a.strip()]
     return umgebung
 

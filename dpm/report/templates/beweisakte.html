@@ -54,14 +54,17 @@
   <div class="marke">{{ produkt }} · Beweisakte</div>
   <h1>{{ meta.ziel }}</h1>
   <div class="unterzeile">
-    {{ meta.branche }} · {{ meta.start_url }}<br>
-    Erfassung {{ meta.timestamp }} · Vorgang <span class="mono">{{ meta.run_id }}</span>
+    {{ lauf.branche }} · {{ meta.start_url or "—" }}<br>
+    Erfassung {{ meta.timestamp or "—" }} · Vorgang <span class="mono">{{ lauf.run_id }}</span>
   </div>
 </div>
 
 <table>
   <tr><th colspan="2">Erfassungsbedingungen — für die Reproduzierbarkeit maßgeblich</th></tr>
-  <tr><td>Darstellungsfläche</td><td class="mono">{{ meta.viewport.width }} × {{ meta.viewport.height }} px</td></tr>
+  <tr><td>Darstellungsfläche</td><td class="mono">
+    {% if meta.viewport and meta.viewport.width %}{{ meta.viewport.width }} × {{ meta.viewport.height }} px
+    {% else %}nicht festgehalten — Pixelflächen sind ohne feste Fenstergröße nicht vergleichbar{% endif %}
+  </td></tr>
   <tr><td>Sprache / Zeitzone</td><td class="mono">{{ meta.locale }} · {{ meta.timezone }}</td></tr>
   <tr><td>Kennung des Abrufs</td><td class="mono">{{ meta.user_agent }}</td></tr>
   <tr><td>Erfassungsart</td><td class="mono">{{ meta.capture_mode }}</td></tr>
@@ -132,6 +135,14 @@
   </div>
   {% endif %}
 
+  {% if e.wuerde_stufe %}
+  <div class="kasten warnung">
+    <p style="margin:0">Die Regel würde anschlagen ({{ e.wuerde_stufe }}). Ob sie
+    auf diese Seite überhaupt anwendbar ist, ließ sich nicht prüfen — der Befund
+    bleibt deshalb <strong>unklar</strong>.</p>
+  </div>
+  {% endif %}
+
   {% if e.bedingung %}
   <div class="feld">
     <div class="label">Zutreffende Bedingung des Regelwerks</div>
@@ -192,8 +203,15 @@
 
   {% for b in e.screenshots %}
   <div class="bild">
+    {% if b.vorhanden %}
     <img src="{{ b.datei }}" alt="Screenshot {{ b.schritt }}">
-    <div class="bu">{{ b.datei }} · Schritt „{{ b.schritt }}" · <span class="mono">{{ b.dom_hash or "ohne Hash" }}</span></div>
+    <div class="bu">{{ b.datei }} · Schritt „{{ b.schritt }}" · <span class="mono">{{ b.dom_hash }}</span></div>
+    {% else %}
+    <div class="kasten warnung"><p style="margin:0">Der Screenshot
+      <span class="mono">{{ b.datei }}</span> zu Schritt „{{ b.schritt }}" liegt
+      dieser Akte <strong>nicht bei</strong>. Der Befund ist insoweit nicht
+      bildlich belegt.</p></div>
+    {% endif %}
   </div>
   {% endfor %}
 </div>
@@ -211,6 +229,13 @@
   </tr>
   {% endfor %}
 </table>
+
+{% if warnungen %}
+<div class="kasten warnung">
+  <div class="label">Anmerkungen zur Erfassung</div>
+  <ul>{% for w in warnungen %}<li>{{ w }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
 
 <div class="fuss">
   <strong>Hinweis.</strong> {{ hinweis }}

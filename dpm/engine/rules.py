@@ -16,6 +16,8 @@ from pathlib import Path
 
 import yaml
 
+WURZEL = Path(__file__).resolve().parents[2]
+
 STUFEN = ("eindeutig", "verdaechtig")
 
 
@@ -50,15 +52,27 @@ class Regel:
         return self.legal_basis[0] if self.legal_basis else "—"
 
 
-def lade_regelwerk(verzeichnis: str | Path = "rules") -> list:
+def lade_regelwerk(verzeichnis: str | Path | None = None) -> list:
+    """Laedt rules/*.yaml.
+
+    Der Standardpfad haengt bewusst nicht am Arbeitsverzeichnis: Wird das
+    Werkzeug von woanders aufgerufen, faende glob() nichts, es wuerden null
+    Regeln geladen und die Beweisakte meldete kommentarlos "0 Befunde" -
+    das gefaehrlichste denkbare Ergebnis.
+    """
+    verzeichnis = Path(verzeichnis) if verzeichnis else WURZEL / "rules"
     regeln = []
-    for datei in sorted(Path(verzeichnis).glob("*.yaml")):
+    for datei in sorted(verzeichnis.glob("*.yaml")):
         if datei.name.startswith("_"):        # _VORLAGE.yaml ist keine Regel
             continue
         inhalt = yaml.safe_load(datei.read_text(encoding="utf-8"))
         for roh in inhalt if isinstance(inhalt, list) else [inhalt]:
             if isinstance(roh, dict) and roh.get("id"):
                 regeln.append(_baue(roh, datei.name))
+    if not regeln:
+        raise FileNotFoundError(
+            f"In {verzeichnis} steht keine einzige Regel. Ohne Regelwerk kann "
+            f"nichts geprueft werden.")
     return regeln
 
 
