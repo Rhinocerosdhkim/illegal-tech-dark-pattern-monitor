@@ -12,7 +12,7 @@
   kategorie: "Zwang"
 
   status: FERTIG
-  bearbeiter: "Kickoff-Workshop"
+  bearbeiter: "Jura-Team"
 
   applies_when:
     - "banner_detected == true"
