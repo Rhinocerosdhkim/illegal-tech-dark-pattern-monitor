@@ -5,6 +5,42 @@ Grundlage: die juristische Ausarbeitung von Sebastian vom 20.08., 01:05–01:17 
 
 Die **rein mechanischen Fehler sind bereits behoben** (siehe Abschnitt 7). Was hier steht, kann das Entwicklungsteam **nicht allein entscheiden** — es braucht eine gemeinsame Festlegung, und zwar **heute vor 18:00**, weil danach Paket 1 abgeschlossen sein soll.
 
+## Entscheidungsliste — wer entscheidet was, bis wann
+
+### A · Technik-Team (Donghyun + Karthik) — **bis 12:00**, sonst kann Sebastian nachmittags nicht arbeiten
+
+| | Entscheidung | Warum blockierend |
+|---|---|---|
+| **A1** | Signalliste: für jeden Wunsch aus Korb A/B/C ein ✅ / 🟡 / ❌ | Ohne Zusage schreibt Sebastian Regeln auf Signale, die es nie geben wird |
+| **A2** | Eine Schreibweise für `verdict_rules` festlegen (Punkt 2) | Die Engine kann nicht zwei Formen parsen. Ohne Festlegung kein Engine-Start |
+| **A3** | `applies_when`: `all:` / `none:` / **`any:`** übernehmen (Punkt 3) | `any:` wird für die Zerlegung von `is_dauerschuldverhaeltnis` gebraucht und fehlt bisher |
+| **A4** | Feld `menschliche_pruefung` einführen — ja oder nein (Punkt 1) | Schemaentscheidung, betrifft Engine und Beweisakte |
+
+### B · Juristisches Team — **Zulieferung bis 14:00**
+
+| | Zulieferung | Wofür |
+|---|---|---|
+| **B1** | Positivliste zulässiger Kündigungsbutton-Beschriftungen, dazu eine Negativliste | Ohne Listen bleibt `kuendigungsbutton_label` unauswertbar |
+| **B2** | Klicktiefe: belastbarer Wert **oder** Entscheidung, die Bedingung zu streichen | Die alte Bedingung `> 0` ist deaktiviert (Abschnitt 7) |
+| **B3** | Fundstelle zum aktuellen Stand „Consent or Pay" / Pur-Abo, zwei Sätze | Sehr wahrscheinliche Jury-Frage, und wir wollen dafür keine Regel bauen |
+
+### C · Gemeinsam — kurz, aber verbindlich
+
+| | Entscheidung |
+|---|---|
+| **C1** | Produktname: „PatternWatch" oder „Das System"? Steht wörtlich in jeder Beweisakte (Punkt 4) |
+| **C2** | Platzhalter `{signalname}` statt `[BEFUND]` (Punkt 5) — betrifft alle Regeln |
+| **C3** | DP-005 in a und b aufteilen (Punkt 6) |
+| **C4** | Grundsatz bestätigen: **Beruht `applies_when` auf einer Ableitung, kann die Regel höchstens `verdaechtig` erreichen** |
+
+### D · Zuweisung — heute
+
+| | |
+|---|---|
+| **D1** | **DP-003 (Zeitdruck) hat noch niemanden.** Unser Kernmuster — die einzige Regel, bei der wir `eindeutig` guten Gewissens vergeben |
+
+---
+
 Vorweg, weil es untergehen könnte: Die juristische Arbeit ist gut. Der Tatbestand zu § 312k BGB folgt sauber der Absatzstruktur, die Anspruchskette über § 3a UWG stimmt, und die Fehlalarmlisten sind keine Pflichtübung, sondern enthalten echte Einwände. **DP-006 verzichtet bewusst auf die Stufe `eindeutig` und begründet das** — das ist genau die Zurückhaltung, die wir brauchen. Die Punkte unten betreffen die Schnittstelle, nicht die Rechtsanwendung.
 
 ---
@@ -48,11 +84,21 @@ Der letzte Punkt ist die gute Nachricht: Drei der aufwendigsten Wünsche sind du
 
 `is_dauerschuldverhaeltnis` verlangt vom System eine rechtliche Qualifikation. Die kann es nicht leisten. Die **Tatsachen**, auf die sich diese Qualifikation stützt, sind dagegen sämtlich beobachtbar:
 
-| beobachtbare Tatsache | Signal |
-|---|---|
-| Preis mit Periodenangabe („9,99 €/Monat") | `recurring_price_notation_present` |
-| „Mindestlaufzeit", „Vertragslaufzeit 12 Monate" | `min_contract_term_stated` |
-| „jederzeit kündbar", Kündigungsfrist genannt | `cancellation_terms_present` |
+| beobachtbare Tatsache | Signal | Aussagekraft |
+|---|---|---|
+| Preis mit Periodenangabe („9,99 €/Monat", „pro Monat", „/Jahr") | `recurring_price_notation_present` | **stark** |
+| „Mindestlaufzeit", „Vertragslaufzeit 24 Monate" | `min_contract_term_stated` | **stark** |
+| „verlängert sich automatisch" | `auto_renewal_text_present` | **stark** |
+| „Kündigungsfrist", „monatlich kündbar" | `cancellation_terms_present` | mittel |
+| „Abo", „Mitgliedschaft", „Tarif" | `subscription_keyword_present` *(= vorhandenes `has_recurring_contract_keywords`)* | **schwach** |
+
+Auswertung: **mindestens ein starkes Signal** → Regel greift, aber höchstens `verdaechtig`. **Nur schwache Signale** → `unklar`. **Keines** → Regel greift nicht.
+
+Das schwache Signal allein trägt nicht: Ein „Newsletter-Abo" ist unentgeltlich und begründet kein Dauerschuldverhältnis. Sebastian hat genau diesen Fall in den Fehlalarmrisiken zu DP-004 benannt — zu Recht.
+
+Gemessen wird auf der **Produktdetailseite**, nicht auf der Startseite: Ein Händler kann einmalige Käufe und Abonnements nebeneinander anbieten. Eine Kennzeichnung der ganzen Domain wäre falsch.
+
+Warum dieses Merkmal besonders zuverlässig erkennbar ist: Handelt es sich tatsächlich um ein Abonnement, **muss** der Unternehmer die Periodizität des Preises angeben (PAngV, § 312j BGB). Fehlt sie, liegt entweder kein Dauerschuldverhältnis vor — oder bereits ein Verstoß, den eine andere Regel erfasst.
 
 Aus diesen Tatsachen die Qualifikation abzuleiten, ist dann Aufgabe der **Regel** — also des juristischen Teams. Genau dafür ist das Regelwerk da: Das System misst, die Regel subsumiert.
 
@@ -158,7 +204,23 @@ Sebastian hat eingeführt:
 
 Die Vorlage kannte nur eine flache Liste ohne Verneinung.
 
-> **Empfehlung: übernehmen.** Die Verneinung wird gebraucht (Beispiel: § 312k gilt nicht bei Finanzdienstleistungen), und mit einer flachen Liste ließe sich das nicht ausdrücken. DP-006 nutzt noch die flache Form und müsste angeglichen werden. Aufwand in der Engine: gering.
+**Es fehlt jedoch eine dritte Form: `any:` — „mindestens eines trifft zu".**
+
+Sie wird unmittelbar gebraucht, sobald `is_dauerschuldverhaeltnis` in Tatsachensignale zerlegt wird:
+
+```yaml
+  applies_when:
+    all:
+      - "is_b2c_offer == true"
+    any:
+      - "recurring_price_notation_present == true"
+      - "min_contract_term_stated == true"
+      - "auto_renewal_text_present == true"
+    none:
+      - "is_financial_services == true"
+```
+
+> **Empfehlung: `all:` / `any:` / `none:` übernehmen.** Die Verneinung wird gebraucht (§ 312k gilt nicht bei Finanzdienstleistungen), die Oder-Verknüpfung ebenso. DP-006 nutzt noch die flache Form und müsste angeglichen werden. Aufwand in der Engine: gering.
 
 ---
 
