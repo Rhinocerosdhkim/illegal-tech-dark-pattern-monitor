@@ -1,0 +1,22 @@
+# Zielprofil. Selektoren gehoeren hierher, niemals in den Code.
+name: viagogo
+branche: Ticketing
+start: "https://www.viagogo.de"
+
+# --- C4 (ABSTIMMUNG_Regelwerk.md) ---------------------------------------
+# Site-weite Voraussetzungen, die ein Mensch bestaetigt hat. Damit ist die
+# Anwendbarkeit FESTGESTELLT statt ABGELEITET und "eindeutig" bleibt moeglich.
+# Produktabhaengige Voraussetzungen gehoeren NICHT hierher.
+bestaetigt_durch_mensch:
+  is_b2c_offer: true          # geprueft: DK, 20.08.2026
+
+pfad:
+  - schritt: startseite
+  - schritt: suchergebnis
+    aktion: suche
+    wert: "Konzert München"
+  - schritt: produktdetail
+    aktion: klick_erstes_ergebnis
+  - schritt: warenkorb
+    aktion: klick
+    selektor: "[data-testid=buy]"
