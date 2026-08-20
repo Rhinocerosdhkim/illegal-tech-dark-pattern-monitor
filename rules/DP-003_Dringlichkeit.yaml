@@ -38,7 +38,8 @@
     sich auf Grund von Informationen zu entscheiden;
 
   anspruchskette: >
-    §3 Abs. 3 UWG iVm Ablage zu § 3 Abs. 3 Nr. 7 => Unterlassungsanspruch § 8 Abs. 1 UWG: Aktivlegitimation der Verbraucherzentrale nach § 8 Abs. 3 Nr. 3 UWG.
+    §3 Abs. 3 UWG iVm Ablage zu § 3 Abs. 3 Nr. 7 => Unterlassungsanspruch § 8 Abs. 1 UWG;
+    Aktivlegitimation der Verbraucherzentrale nach § 8 Abs. 3 Nr. 3 UWG.
 
   signals:
     - countdown_element_present
