@@ -1,102 +1,119 @@
-# ============================================================
-# ENTWURF - bitte vervollstaendigen
-#
-# Guter Einstieg: Die technische Pruefung ist trivial (Element
-# vorhanden ja/nein). Die eigentliche juristische Arbeit liegt in
-# der Frage, WANN die Vorschrift ueberhaupt gilt - das Feld
-# applies_when ist hier wichtiger als die Bewertungsregeln.
-#
-# Dieses Muster ist die rechtliche Antwort auf das sogenannte
-# "Roach Motel": Anmeldung in zwei Klicks, Kuendigung nur per
-# Telefon oder Brief.
-# ============================================================
-
 - id: DP-004
-  name_de: "Fehlender oder nicht unmittelbar erreichbarer Kuendigungsbutton"
+  name_de: "Fehlender oder nicht unmittelbar und leicht erreichbarer Kündigungsbutton"
 
-  # Kategorie nach dem Raster der Verbraucherzentrale (19.08.):
-  # Zeitdruck | Zwang | Hindernisse | Irrefuehrung
-  # -- Vorbelegung durch das Entwicklungsteam, bitte pruefen --
   kategorie: "Hindernisse"
 
-  status: ENTWURF
-  bearbeiter: ""
+  status: version 1.0
+  bearbeiter: "Jura-Team"
 
   applies_when:
-    # ZENTRALE FRAGE dieser Regel - bitte praezisieren.
-    # Ein einfacher Onlineshop ohne Dauerschuldverhaeltnis darf hier
-    # keinesfalls auffaellig werden.
-    - "is_b2c_offer == true"
-    - "has_recurring_contract_keywords == true"
-    # Reicht das? Welche weiteren Voraussetzungen nennt § 312k BGB?
+    all:
+      - "is_consumer_contract == true"
+      - "contract_concludable_on_website == true"
+      - "is_electronic_business_transaction == true"
+      - "is_dauerschuldverhaeltnis == true"
+      - "entrepreneur_owes_paid_performance == true"
+    none:
+      - "stricter_form_required == true"
+      - "financial_services == true"
 
   legal_basis:
-    # VORSCHLAG - bitte pruefen und ergaenzen
-    - "§ 312k Abs. 2 BGB (Kuendigungsschaltflaeche)"
-    - "§ 312k Abs. 6 BGB (Rechtsfolge bei Verstoss)"
-    # - weitere Absaetze? Bestaetigungsseite, Bestaetigung in Textform?
+    - "§ 312k Abs. 1 BGB"
+    - "§ 312k Abs. 2 BGB"
+    - "§ 312k Abs. 6 BGB"
+    - "§ 3a UWG"
 
   tatbestand_de: >
-    AUSFUELLEN.
-    Bitte auch aufnehmen: Anforderungen an die Beschriftung, das Erfordernis
-    der staendigen Verfuegbarkeit sowie der unmittelbaren und leichten
-    Erreichbarkeit, und die Bestaetigungsseite.
+    Ist § 312k Abs. 1 BGB anwendbar, muss der Unternehmer auf der Website
+    eine Kündigungsschaltfläche bereitstellen, über die der Verbraucher
+    eine ordentliche oder außerordentliche Kündigung eines auf der Website
+    abschließbaren Vertrags erklären kann. Die Kündigungsschaltfläche muss
+    gut lesbar mit "Verträge hier kündigen" oder einer entsprechend
+    eindeutigen Formulierung beschriftet sein. Sie muss den Verbraucher
+    unmittelbar zu einer Bestätigungsseite führen. Die Bestätigungsseite
+    muss die in § 312k Abs. 2 S. 3 Nr. 1 BGB genannten Angaben ermöglichen
+    und eine Bestätigungsschaltfläche enthalten, die gut lesbar mit
+    "jetzt kündigen" oder einer entsprechend eindeutigen Formulierung
+    beschriftet ist. Die Kündigungsschaltfläche, die Bestätigungsschaltfläche
+    und die Bestätigungsseite müssen ständig verfügbar sowie unmittelbar
+    und leicht zugänglich sein.
 
   anspruchskette: >
-    AUSFUELLEN.
-    Ist § 312k BGB Marktverhaltensregel i. S. d. § 3a UWG? Bitte kurz belegen.
-    Zusaetzlich die individualvertragliche Ebene: Welche Rechtsfolge sieht
-    Abs. 6 fuer den einzelnen Verbraucher vor? Diese ist fuer die
-    Verbraucherberatung besonders praktisch verwertbar.
+    § 312k BGB ist eine Marktverhaltensregel im Sinne des § 3a UWG.
+    Ein Verstoß gegen § 312k kann daher bei Vorliegen der weiteren
+    Voraussetzungen einen Wettbewerbsverstoß nach § 3a UWG darstellen.
+    Nach § 312k Abs. 6 BGB kann der Verbraucher den Vertrag bei fehlender
+    ordnungsgemäßer Bereitstellung der nach Abs. 1 und 2 erforderlichen
+    Schaltflächen und der Bestätigungsseite jederzeit und ohne Einhaltung
+    einer Kündigungsfrist kündigen. Die außerordentliche Kündigung bleibt
+    unberührt.
 
   signals:
-    - has_kuendigungsbutton
-    - kuendigungsbutton_label
-    - kuendigungsbutton_click_depth        # Status GELB
-    - kuendigungsbutton_confirm_label      # Status GELB
-    - has_recurring_contract_keywords
+    - "has_kuendigungsbutton"
+    - "kuendigungsbutton_label"
+    - "kuendigungsbutton_click_depth"
+    - "kuendigungsbutton_requires_login"
+    - "kuendigungsbutton_hidden_in_menu"
+    - "additional_search_step_required"
+    - "confirmation_page_directly_reached"
+    - "has_confirmation_page"
+    - "regular_login_required_for_service"
+    - "button_is_clearly_legible"
 
   verdict_rules:
     eindeutig:
-      # VORSCHLAG:
       - "has_kuendigungsbutton == false"
+      - "kuendigungsbutton_requires_login == true AND regular_login_required_for_service == false"
+      - "kuendigungsbutton_hidden_in_menu == true AND additional_search_step_required == true"
+      - "confirmation_page_directly_reached == false AND intermediate_login_required == true"
+
     verdaechtig:
-      # Button vorhanden, aber schwer erreichbar. Ab welcher Klicktiefe
-      # ist "unmittelbar erreichbar" nicht mehr gewahrt?
-      - "kuendigungsbutton_click_depth > ?"
-      # Beschriftung unklar - welche Formulierungen genuegen?
-      - "kuendigungsbutton_label not_in_whitelist [ AUSFUELLEN ]"
+      - "button_is_clearly_legible == false"
+      - "kuendigungsbutton_label_is_not_clearly_equivalent == true"
+      - "kuendigungsbutton_click_depth > 0"
+      - "confirmation_page_directly_reached == false"
 
   threshold_source: >
-    AUSFUELLEN.
-    Insbesondere: Gibt es zur Klicktiefe Rechtsprechung oder Hinweise in der
-    Literatur? Falls nicht, bitte eigene Festlegung offenlegen und begruenden.
+    Es gibt keinen gesetzlichen festen Schwellenwert für die zulässige
+    Klicktiefe. Maßgeblich sind die gesetzlichen Anforderungen an die
+    ständige Verfügbarkeit sowie die unmittelbare und leichte
+    Zugänglichkeit nach § 312k Abs. 2 S. 4 BGB. Die Rechtsprechung stellt
+    auf den konkreten Such- und Zugangsaufwand ab. Ein zusätzlicher
+    Such- oder Navigationsschritt kann die leichte Zugänglichkeit
+    beeinträchtigen; ein vorgeschalteter Login kann die Anforderungen
+    verletzen. Die Klicktiefe darf deshalb nicht allein über die
+    Rechtswidrigkeit entscheiden.
 
   false_positive_risks:
     - >
-      Reine Kaufvertraege ohne Dauerschuldverhaeltnis. Groesstes Risiko
-      dieser Regel - die Stichworterkennung in applies_when kann fehlgehen
-      (z. B. Shop, der nebenbei einen Newsletter als "Abo" bezeichnet).
+      Einmalige Kaufverträge ohne Dauerschuldverhältnis fallen nicht unter
+      § 312k BGB.
     - >
-      Der Kuendigungsbutton befindet sich haeufig erst im eingeloggten Bereich.
-      Unsere Erfassung erfolgt ohne Anmeldung. Bitte einordnen: Genuegt es
-      nach § 312k BGB, den Button nur nach Anmeldung bereitzustellen?
-      Davon haengt ab, ob wir hier ueberhaupt "eindeutig" vergeben duerfen.
-    - AUSFUELLEN
+      Begriffe wie "Abo", "Mitgliedschaft" oder "Newsletter" reichen allein
+      nicht aus, um ein Dauerschuldverhältnis festzustellen.
+    - >
+      Ein Login ist nicht in jedem Fall unzulässig. Bei Diensten, deren
+      Nutzung ihrer Natur nach ein regelmäßiges Login voraussetzt, ist eine
+      gesonderte Bewertung erforderlich.
+    - >
+      Eine abweichende Beschriftung ist nicht automatisch unzulässig, wenn
+      sie im konkreten Kontext eindeutig als Kündigungsmöglichkeit
+      verständlich ist.
+    - >
+      Bloßes Scrollen oder eine große Anzahl von Seitenelementen begründet
+      nicht automatisch einen Verstoß. Entscheidend ist, ob die
+      Kündigungsschaltfläche tatsächlich leicht auffindbar und zugänglich ist.
 
   explanation_template_de: >
-    AUSFUELLEN.
+    Die untersuchte Website fällt voraussichtlich in den Anwendungsbereich
+    des § 312k BGB. PatternWatch hat festgestellt, dass die gesetzlich
+    erforderliche Kündigungsmöglichkeit fehlt oder nicht unmittelbar und
+    leicht zugänglich ist. Als technische Auffälligkeit wurde festgestellt:
+    [BEFUND]. Die Feststellung sollte anhand der dokumentierten
+    Websitegestaltung juristisch überprüft werden. Bei einem Verstoß gegen
+    § 312k Abs. 1 und 2 BGB kann der Verbraucher nach § 312k Abs. 6 BGB den
+    Vertrag jederzeit ohne Einhaltung einer Kündigungsfrist kündigen.
 
-  offene_fragen:
-    - >
-      WICHTIG: Muss der Kuendigungsbutton auch fuer nicht angemeldete Nutzer
-      sichtbar sein? Falls nein, muessen wir "eindeutig" streichen und auf
-      "verdaechtig" zuruecknehmen, weil unsere Erfassung ohne Anmeldung
-      erfolgt. Bitte vorrangig klaeren - das entscheidet ueber die
-      Verwertbarkeit der ganzen Regel.
-    - >
-      Gilt § 312k BGB auch fuer Vertraege, die vor dem 01.07.2022
-      geschlossen wurden?
-    - AUSFUELLEN
+  offene_fragen: []
 
   disclaimer_required: true
