@@ -8,6 +8,8 @@ Runnable without setup, no external services:
 .venv/bin/python tests/test_case_file.py      # Beweisakte
 .venv/bin/python tests/test_false_alarms.py   # can the system stay silent?
 .venv/bin/python tests/test_robustness.py     # broken capture.json — result, not crash
+.venv/bin/python tests/test_rule_defects.py   # guards for the rulebook repairs of 20.08.
+.venv/bin/python tests/test_overview.py       # Marktübersicht: aggregation, filters, CSV
 ```
 
 `tests/test_verdicts.py` checks the hand-written fixture

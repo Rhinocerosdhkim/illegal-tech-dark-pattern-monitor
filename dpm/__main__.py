@@ -2,6 +2,7 @@
 
     python -m dpm assess data/fixtures/viagogo     findings table
     python -m dpm report data/fixtures/viagogo     Beweisakte as HTML and PDF
+    python -m dpm overview data/fixtures/*         Marktuebersicht over many sites
 
 Design constraint from AGENDA_Technik.md §6: on Monday a person without a
 development background has to operate this alone.
@@ -21,6 +22,7 @@ from dpm.engine.run import load_run
 from dpm.engine.verdict import (CLEAR, NOT_APPLICABLE, NO_FINDING, SUSPECTED,
                                 UNRESOLVED, assess)
 from dpm.report.case_file import build as build_case_file
+from dpm.report.overview import build as build_overview, collect
 
 LABEL = {CLEAR: "eindeutig", SUSPECTED: "verdaechtig", UNRESOLVED: "unklar",
          NO_FINDING: "unauffaellig", NOT_APPLICABLE: "nicht anwendbar"}
@@ -91,6 +93,19 @@ def cmd_report(arguments) -> int:
     return 0
 
 
+def cmd_overview(arguments) -> int:
+    overview = collect(arguments.runs, load_rules(arguments.rules))
+    result = build_overview(overview, output=arguments.output)
+
+    print(f"\nMarktuebersicht — {result['sites']} sites, "
+          f"{result['findings']} findings")
+    for warning in overview.warnings:
+        print(f"  ! {warning}")
+    print(f"  {result['html']}")
+    print(f"  {result['csv']}\n")
+    return 0
+
+
 def _warnings(run) -> None:
     for warning in run.warnings:
         print(f"  ! {warning}")
@@ -111,6 +126,14 @@ def main(argv=None) -> int:
             sub.add_argument("--html-only", action="store_true",
                              dest="html_only", help="skip the PDF, for quick runs")
         sub.set_defaults(function=function)
+
+    over = commands.add_parser(
+        "overview", help="market overview over several capture runs")
+    over.add_argument("runs", type=Path, nargs="+",
+                      help="folders containing capture.json")
+    over.add_argument("--rules", type=Path, default=None)
+    over.add_argument("--output", type=Path, default=Path("out"))
+    over.set_defaults(function=cmd_overview)
 
     arguments = parser.parse_args(argv)
 
