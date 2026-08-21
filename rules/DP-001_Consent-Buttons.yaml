@@ -251,7 +251,7 @@
         wurde, hat der EuGH in der Rechtssache (u. a. 'Lindenapotheke') die Möglichkeit einer wettbewerbsrechtlichen
         Geltendmachung von Datenschutzverstößen bejaht; der BGH hat diese Sicht übernommen und damit für Deutschland
         bestätigt, dass auch Datenschutzvorschriften (insb. informations‑ und zustimmungsrechtliche Pflichten)
-        als Marktverhaltensregeln i.S.d. Lauterkeitsrechts gelten können. OLG‑Entscheidungen (u. a. OLG Köln GRUR-RR 2024, 341)
+        als Marktverhaltensregeln i.S.d. Lauterkeitsrechts gelten können. OLG‑Entscheidungen (u. a. OLG Köln, Urteil vom 19.1.2024 – 6 U 80/23)
         sehen § 25 TDDDG ausdrücklich als Marktverhaltensregel. Insgesamt ist damit die Auffassung vorherrschend,
         dass Verstöße gegen § 25 TDDDG wettbewerbsrechtlich verfolgt werden können.
       implications: >
@@ -259,11 +259,10 @@
         unter Berufung auf das Lauterkeitsrecht geltend machen; Aktivlegitimation besteht insbesondere nach
         § 8 Abs. 3 Nr. 3 UWG (und den einschlägigen UKlaG‑Vorschriften).
       sources:
-        - "BGH: Verweis/Grundsatzdiskussion 'App-Zentrum' (vgl. BGH GRUR 2020, 896 Rn. 33 ff.)"
-        - "EuGH: 'Lindenapotheke' (EuGH GRUR-RS 2024, 26048) – wettbewerbsrechtliche Klagemöglichkeit bei DSGVO-Verstößen bestätigt"
-        - "BGH Folgeentscheidung zur Bestätigung (BGH GRUR-RS 2025, 5877)"
-        - "OLG Köln: §25 TDDDG als Marktverhaltensregel (GRUR-RR 2024, 341)"
-        - "Literatur/Kommentierung: BeckOK UWG/Niebel/Bauer/Kerl, §3a Rn.70a (Stand 1.5.2026)"
+        - "BGH: Verweis/Grundsatzdiskussion 'App-Zentrum' (vgl. BGH, Beschl. v. 28.5.2020 – I ZR 186/17 (KG))"
+        - "EuGH: 'Lindenapotheke' (EuGH, Urteil vom 04.10.2024 – C-21/23) – wettbewerbsrechtliche Klagemöglichkeit bei DSGVO-Verstößen bestätigt"
+        - "BGH Folgeentscheidung zur Bestätigung (BGH, Urteil vom 27.03.2025 – I ZR 222/19)"
+        - "OLG Köln: §25 TDDDG als Marktverhaltensregel (OLG Köln, Urteil vom 19.1.2024 – 6 U 80/23)"
     - question: "Soll 'banner_reappears_on_reject' (nagging) aufgenommen werden?"
       answer: >
         Ja. EDPB‑Guidelines zu Dark Patterns, nationale DPA‑Hinweise (z. B. CNIL/ICO) und die jüngere Rechtsprechung sehen
@@ -276,18 +275,17 @@
       sources:
         - "EDPB Guidelines 03/2022 (Dark Patterns)"
         - "CNIL / ICO guidance on cookies and nagging banners"
-        - "Rechtsprechung und Praxiskommentare (siehe Quellen oben)"
+        - "Rechtsprechung (siehe Quellen oben)"
     - question: "Wie mit Bannern verfahren, die nur 'Akzeptieren' und 'Mehr Informationen' anzeigen?"
       answer: >
-        Nach den Entscheidungen und Kommentaren (insb. GRUR-RR 2024, 341 Rn.21 sowie LG‑Erwägungen) ist eine solche
+        Nach den Entscheidungen und Kommentaren (insb. OLG Köln, Urteil vom 19.1.2024 – 6 U 80/23) ist eine solche
         Gestaltung regelmäßig problematisch: Wird auf der ersten Ebene keine klare Ablehnungsoption angeboten und
         führt 'Mehr Informationen' nicht unmittelbar (one‑click) zu einer gleichwertigen Ablehnungswahl, so ist die
         Einwilligung typischerweise nicht als freiwillig i.S.v. § 25 I TTDSG / Art. 4 Nr. 11 DSGVO anzusehen.
         Praktische Regel: Wenn 'more_info_leads_to_reject' == false oder 'more_info_click_depth' > 1 → mindestens 'verdaechtig';
         keine Ablehnungsoption auf erster Ebene oder unklare Beschriftung → tendenziell 'eindeutig'.
       sources:
-        - "GRUR-RR 2024, 341 Rn.21 (OLG Köln – Ausführungen zur fehlenden Ablehnungsoption und zur Irreführung des Durchschnittsnutzers)"
-        - "BGH/EuGH‑Leitentscheidungen und Literatur (s.o.)"
+        - "OLG Köln, Urteil vom 19.1.2024 – 6 U 80/23"
 
   legal_note_on_more_info: >
     EDPB guidance and national DPAs require that refusal of non-essential processing
