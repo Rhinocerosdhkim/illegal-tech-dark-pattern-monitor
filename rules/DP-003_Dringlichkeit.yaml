@@ -122,7 +122,7 @@
     Befund: Auf der untersuchten Seite wurde eine Angabe zur zeitlichen Begrenzung
     „{countdown_text}" festgestellt.
     
-    allgmeiner Countdown:
+    allgemeiner Countdown:
     Nach Wiederholung der Messung in einer frischen Browser‑Session (Cookies/localStorage
     gelöscht) {countdown_personalized == false,  default: 'wurde festgestellt, dass der 
     Countdown auf denselben Startwert zurückspringt'}.
