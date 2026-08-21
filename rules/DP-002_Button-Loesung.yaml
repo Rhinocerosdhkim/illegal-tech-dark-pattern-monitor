@@ -77,15 +77,17 @@
     zulaessige_bestell_labels:
       - "zahlungspflichtig bestellen"
       - "jetzt zahlungspflichtig bestellen"
-      - "kostenpflichtig bestellen"
-      - "jetzt kostenpflichtig bestellen"
-      - "zahlungspflichtigen Vertrag schließen"
+      - "kostenpflichtig bestellen" # BT-Drs. 17/7745
+      - "jetzt kostenpflichtig bestellen" # vgl. BT-Drs. 17/7745
+      - "zahlungspflichtigen Vertrag schließen" # BT-Drs. 17/7745
       - "zahlungspflichtig buchen"
       - "kostenpflichtig buchen"
       - "zahlungspflichtig abonnieren"
       - "kostenpflichtig abonnieren"
-      - "kaufen"
-      - "jetzt kaufen"
+      - "kaufen" # BT-Drs. 17/7745
+      - "jetzt kaufen" # vgl. BT-Drs. 17/7745
+      - "Gebot abgeben" # BT-Drs. 17/7745
+      - "Gebot bestätigen" # BT-Drs. 17/7745
 
     # In Rechtsprechung und Literatur umstritten. Nicht als eindeutiger
     # Verstoss behandeln, aber zur Pruefung vorlegen.
@@ -109,14 +111,16 @@
     # Wer hier etwas ergaenzt: nur Formulierungen ohne jeden Zahlungsbezug.
     # Alles Uebrige gehoert in die Grauliste.
     unzulaessige_bestell_labels:
-      - "Weiter"
-      - "Weiter zur Bestellung"
+      - "Weiter" # BT-Drs. 17/7745
       - "Absenden"
       - "Abschicken"
-      - "Bestellung abschicken"
+      - "Bestellen" # BT-Drs. 17/7745
+      - "Bestellung abschicken" # LG Hamm, Urteil vom 19.11.2013 – 4 U 65/13
+      - "Bestellung abgeben" # BT-Drs. 17/7745
+      - "Weiter zur Bestellung"
       - "Bestätigen"
-      - "Jetzt anmelden"
-      - "Anmelden"
+      - "Jetzt anmelden" # LG Leipzig, Urteil vom 26.07.2013 – 8 O 3495/12
+      - "Anmelden" # BT-Drs. 17/7745
       - "Fertig"
       - "OK"
 
