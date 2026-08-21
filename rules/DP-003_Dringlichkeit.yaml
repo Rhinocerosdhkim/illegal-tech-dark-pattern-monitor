@@ -48,10 +48,11 @@
   signals:
     # Countdown-Muster
     - countdown_element_present
-    - countdown_resets_on_revisit # change signal to: countdown_unchanged_scans
+    # old signal - countdown_resets_on_revisit # changed to: 
+    - countdown_unchanged_scans
     - countdown_text
     - countdown_initial_value_seconds
-    # add signal: countdown_personalized
+    - countdown_personalized # new signal
 
     # Knappheits-Muster
     - scarcity_text_present
