@@ -159,19 +159,20 @@
     
 
   offene_fragen:
-    # - "Reicht aus Sicht der Rechtsabteilung ein einziger reproduzierbarer Reset des Countdowns (nach Löschen der Browserdaten) als gerichtsfester Nachweis der Unwahrheit, oder sollen wir 2–3 unabhängige Messungen (z. B. verschiedene IPs/Times) vorschreiben? (Vorschlag: 2–3 Messungen.)"
-    - "Sollen wir in die Regel aufgenommene Ausnahmen explizit benennen (z. B. Session/Checkout‑Timeouts, technisch begründete Countdowns)?"
-    - "Wie streng wollen wir mit Formulierungen wie 'X Personen sehen sich das gerade an' verfahren — Nr. 7 UWG oder § 5 UWG? (Vorschlag: 'viewer_count_present' zunächst unter § 5 UWG prüfen, bei manipulativer Reproduktion ggf. Nr.7.)"
-    - "Welche zusätzlichen Belege sind gewünscht, um ein gerichtsfestes Paket zu erzeugen (z. B. vollständige Set‑Cookie‑Listen, Server‑Response‑Headers, Zeitstempelscreenshots)?"
-
-  offene_fragen_resolved:
-    - question: "Soll die Mindestanzahl von Confirmations‑Scans (bei Knappheit) konfigurierbar bleiben oder fest in die Regel geschrieben werden?"
-      answer: "Konfigurierbar. — PV, 20.08."
-      # Technischer Hinweis: Die Antwort stand am 20.08. als "=> konfigurierbar"
-      # hinter dem schliessenden Anfuehrungszeichen der Frage. Damit war die
-      # Datei kein gueltiges YAML mehr und das gesamte Regelwerk liess sich
-      # nicht mehr laden - "assess" brach mit einem Parserfehler ab, fuer alle
-      # sechs Regeln. Antworten deshalb bitte immer in dieser Form, nie hinter
-      # den Text der Frage.
+    offene_fragen_resolved:
+  - question: "Soll die Mindestanzahl von Confirmations‑Scans (bei Knappheit) konfigurierbar bleiben oder fest in die Regel geschrieben werden?"
+    answer: "Konfigurierbar. — PV, 20.08."
+    
+  - question: "Reicht ein einziger reproduzierbarer Reset des Countdowns als gerichtsfest, oder mindestens 2–3?"
+    answer: "3+ bei allgemeinen Countdowns (Robustheit gegen Messfehler), bei personalisierten genügt einer"
+    
+  - question: "Sollen wir explizite Ausnahmen (Session/Checkout‑Timeouts) in die Regel aufnehmen?"
+    answer: #"[PENDING] Ja, über signal_filters in false_positive_exceptions"
+    
+  - question: "Viewer-Count ('X Personen sehen sich das an'): § 7 Nr. 7 UWG oder § 5 UWG?"
+    answer: #"[PENDING] Vorschlag: Beides prüfbar — viewer_count_present als separales Signal mit eigenem Verdict (zunächst nur § 5 UWG, ggf. später Nr. 7)"
+    
+  - question: "Welche Belege sind für ein gerichtsfestes Paket erforderlich?"
+    answer: "Screenshots (mit Zeitstempel), DOM-Hash, Set-Cookie-Liste, User-Agent, Geolocation"
 
   disclaimer_required: true
