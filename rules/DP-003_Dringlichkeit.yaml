@@ -81,8 +81,10 @@
     Technische Festlegung (Teamentscheidung): 
     Für den Countdown genügt ein reproduzierbarer Befund, dass die behauptete
     Begrenzung technisch nicht gegeben ist.
-    Bei einem personalisierten Countdown ist dies z.B. dann der Fall, wenn der Startwert beim späteren Wiederaufruf einen Reset erfährt.
-    Bei einem allgemeinem Countdown ist dies z. B. dann der Fall, wenn ein mehrmaliger Reset (3 mal) auf denselben Startwert nach Löschen von Cookies/localStorage vorliegt. 
+    Bei einem personalisierten Countdown ist dies z.B. dann der Fall, 
+    wenn der Startwert beim späteren Wiederaufruf einen Reset erfährt.
+    Bei einem allgemeinem Countdown ist dies z. B. dann der Fall, 
+    wenn ein mehrmaliger Reset (3 mal) auf denselben Startwert nach Löschen von Cookies/localStorage vorliegt. 
     
     Für Knappheitsangaben (angegebene Stückzahl) empfehlen wir als praktischen
     Schwellenwert mindestens 3 voneinander unabhängige Messungen, um legitime,
@@ -118,19 +120,43 @@
 
   explanation_template_de: >
     Befund: Auf der untersuchten Seite wurde eine Angabe zur zeitlichen Begrenzung
-    festgestellt („{countdown_text}" / {scarcity_value} falls vorhanden). 
+    „{countdown_text}" festgestellt.
+    
     allgmeiner Countdown:
     Nach Wiederholung der Messung in einer frischen Browser‑Session (Cookies/localStorage
-    gelöscht) {countdown_resets_on_revisit,  default: 'wurde festgestellt, dass der 
+    gelöscht) {countdown_personalized == false,  default: 'wurde festgestellt, dass der 
     Countdown auf denselben Startwert zurückspringt'}.
+    
+    personalisierter Countdown:
+    Nach Wiederholung der Messung innerhalb der gleichen Browser-Session 
+    (Cookies/localStorage unverändert) {countdown_personalized == true,  
+    default: 'wurde festgestellt, dass der Countdown auf denselben Startwert zurückspringt'}.
+    
     Dies legt nahe, dass die behauptete zeitliche Begrenzung nicht real besteht
     und vielmehr künstlicher Zeitdruck erzeugt wird.
-
+    
     Rechtsbewertung: Die unwahre Angabe einer zeitlichen Begrenzung ist in
     Anlage Nr. 7 zu § 3 Abs. 3 UWG als stets unzulässige geschäftliche Handlung
     genannt. Liegt eine solche unlautere Handlung vor, begründet dies in der Regel
     Unterlassungs‑ und Beseitigungsansprüche nach § 8 UWG. Detailbelege (Screenshots,
     DOM‑Hashes, Request/Response‑Header) sind diesem Bericht beigefügt.
+
+
+    
+    Befund: Auf der untersuchten Seite wurde eine Angabe zur beschränkten Stückzahl 
+    "{scarcity_value}" festgestellt.
+    Nach Wiederholung der Messung {scarcity_value_unchanged_scans,  default: 'wurde festgestellt, dass der 
+    die Stückzahl unverändert blieb'}.
+    Dies legt nahe, dass die behauptete begrenzte Stückzahl nicht real besteht
+    und vielmehr künstlicher Kaufdruck erzeugt wird.
+    
+    Rechtsbewertung: Die unwahre Angabe einer begremzten Stückzahl ist in
+    ... UWG als stets unzulässige geschäftliche Handlung
+    genannt. Liegt eine solche unlautere Handlung vor, begründet dies in der Regel
+    Unterlassungs‑ und Beseitigungsansprüche nach § 8 UWG. Detailbelege (Screenshots,
+    DOM‑Hashes, Request/Response‑Header) sind diesem Bericht beigefügt.
+
+    
 
   offene_fragen:
     # - "Reicht aus Sicht der Rechtsabteilung ein einziger reproduzierbarer Reset des Countdowns (nach Löschen der Browserdaten) als gerichtsfester Nachweis der Unwahrheit, oder sollen wir 2–3 unabhängige Messungen (z. B. verschiedene IPs/Times) vorschreiben? (Vorschlag: 2–3 Messungen.)"
