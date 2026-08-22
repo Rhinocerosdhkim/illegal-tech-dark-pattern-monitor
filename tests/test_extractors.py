@@ -161,4 +161,58 @@ assert values["order_button_found"] is False
 assert values["required_info_found"] is False
 print(f"  ok  banner_detected = false, {len(gaps)} Signale als nicht erhoben")
 
+print("\nA lawful footer is not a consent banner")
+# Every lawful German site carries Impressum, Datenschutz and AGB, and
+# usually in a fixed footer. On the consent WORDS alone that footer was
+# taken for a banner: banner_detected became true, no accept or reject
+# button was found inside it, and DP-001 certified "eindeutig" against a
+# site that had done nothing wrong -- citing OLG Koeln. A banner is
+# recognised by the choice it offers, not by the words it contains.
+FOOTER = FRAME.format("""
+<h1>Sauberer Shop</h1>
+<p>Kaffeemuehle, 49,00 EUR inkl. MwSt., zzgl. 4,90 EUR Versand.</p>
+<button>Zahlungspflichtig bestellen</button>
+<footer style="position:fixed;bottom:0;left:0;right:0;background:#eee;padding:12px">
+  <a href="/impressum">Impressum</a> ·
+  <a href="/datenschutz">Datenschutz</a> ·
+  <a href="/agb">AGB</a>
+</footer>""")
+
+values, gaps = asyncio.run(measure(FOOTER))
+assert values["banner_detected"] is False, \
+    "a Datenschutz link in a fixed footer was taken for a consent banner"
+assert "reject_button_present" not in values, \
+    "a footer produced a statement about a reject button"
+assert "accept_button_area_px2" in gaps
+print("  ok  banner_detected = false, keine Aussage ueber Schaltflaechen")
+
+with tempfile.TemporaryDirectory() as tmp:
+    folder = pathlib.Path(tmp)
+    (folder / "capture.json").write_text(json.dumps({
+        "meta": {"target": "sauber", "industry": "Test"},
+        "steps": [{"step": "startseite", "url": "x", "screenshot": "S-01.png"}],
+        "signals": {n: {"value": v, "step": "startseite", "evidence": "S-01.png"}
+                    for n, v in values.items()},
+        "signal_errors": gaps,
+    }, ensure_ascii=False), encoding="utf-8")
+    run = load_run(folder)
+    dp001 = next(assess(r, run.table) for r in load_rules() if r.id == "DP-001")
+    assert dp001.level != CLEAR, \
+        f"DP-001 accuses a lawful page at the highest level: {dp001.condition}"
+    print(f"  ok  DP-001 {dp001.level}, nicht eindeutig")
+
+print("\nA banner we cannot see into is a gap, not an absence")
+# Consent wording, but every control lives behind a closed shadow root, so
+# nothing clickable is readable. "We could not check" -- never false.
+SHADOW = FRAME.format("""
+<div id="cmp" style="position:fixed;bottom:0;left:0;right:0;padding:20px">
+  Wir verwenden Cookies und benoetigen Ihre Einwilligung.
+</div>
+<h1>Shop</h1>""")
+values, gaps = asyncio.run(measure(SHADOW))
+assert "banner_detected" not in values, \
+    "an unreadable banner was reported as measured"
+assert "banner_detected" in gaps, gaps
+print(f"  ok  banner_detected -> errors: {gaps['banner_detected'][:52]}")
+
 print("\nAll extractor tests passed.")

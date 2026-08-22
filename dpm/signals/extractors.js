@@ -183,10 +183,34 @@
   // The innermost floating element that still carries the consent words:
   // taking the outermost would drag half the page in and make the button
   // search meaningless.
-  const banner = bannerCandidates
-    .filter((element) => !bannerCandidates.some(
+  const controlsOf = (element) => Array.from(element.querySelectorAll("*"))
+    .filter((node) => clickable(node) && visible(node))
+    .map((node) => ({ element: node, label: lower(node) }))
+    .filter((entry) => entry.label.length > 0 && entry.label.length < 80);
+
+  const CONSENT_CHOICE = WORDS.accept.concat(WORDS.reject, WORDS.more);
+
+  // A consent banner is recognised by the choice it offers, not by the
+  // words it happens to contain. Every lawful German site carries a fixed
+  // footer with "Impressum · Datenschutz · AGB"; on the words alone that
+  // footer counts as a banner, reject_button_present comes out false, and
+  // DP-001 certifies "eindeutig" against a site that did nothing wrong.
+  // A candidate therefore has to hold a control that actually accepts,
+  // refuses, or opens the settings.
+  const withChoice = bannerCandidates.filter(
+    (element) => controlsOf(element).some(
+      (entry) => hasWord(entry.label, CONSENT_CHOICE)));
+
+  const banner = withChoice
+    .filter((element) => !withChoice.some(
       (other) => other !== element && element.contains(other)))
     .sort((a, b) => area(b) - area(a))[0] || null;
+
+  // Consent wording but nothing clickable we can read: that is a banner we
+  // cannot see into, not the absence of one. It belongs in errors -- "we
+  // could not check" -- and never as banner_detected = false.
+  const unreadableBanner = !banner && bannerCandidates.some(
+    (element) => controlsOf(element).length === 0);
 
   const consentIframe = Array.from(document.querySelectorAll("iframe"))
     .some((frame) => hasWord(
@@ -196,10 +220,7 @@
   if (banner) {
     set("banner_detected", true);
 
-    const controls = Array.from(banner.querySelectorAll("*"))
-      .filter((element) => clickable(element) && visible(element))
-      .map((element) => ({ element, label: lower(element) }))
-      .filter((entry) => entry.label.length > 0 && entry.label.length < 80);
+    const controls = controlsOf(banner);
 
     const pick = (list) => {
       // Longest match wins: "alle ablehnen" must not be taken for
@@ -249,7 +270,7 @@
     const boxes = Array.from(banner.querySelectorAll("input[type=checkbox]"));
     set("preselected_checkbox_count",
         boxes.filter((box) => box.checked && !box.disabled).length);
-  } else if (consentIframe || closedRootSeen) {
+  } else if (consentIframe || closedRootSeen || unreadableBanner) {
     gap("banner_detected",
         "moegliches Einwilligungsbanner in einem iframe oder geschlossenen "
         + "Shadow DOM — von hier nicht messbar");
