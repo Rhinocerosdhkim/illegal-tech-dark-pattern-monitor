@@ -157,6 +157,52 @@ with tempfile.TemporaryDirectory() as tmp:
     check(loaded.target == "testshop", "the engine reads the file")
     check(loaded.table.errors, "and sees the gaps as gaps")
 
+print("\noff the path — nothing measured there becomes a fact")
+# A capture on 22.08. read countdown_element_present=false off a login
+# screen and recorded it as a statement about viagogo. The navigator could
+# not say anything else: its schema offered only the five path steps, so a
+# login wall had to be labelled with one of them. Now it can say "abseits",
+# and nothing is attributed to such a page.
+from dpm.ai.navigator import _schema
+from dpm.capture.path import OFF_PATH, PATH_STEPS
+
+check(OFF_PATH in _schema(PATH_STEPS, OFF_PATH)["properties"]["step"]["enum"],
+      "the navigator can say the page is on none of the steps")
+
+
+class OffPath:
+    """A model standing on a login wall, answering honestly."""
+
+    name = backend = "stub"
+
+    async def ask(self, prompt, schema, screenshot=None):
+        if "goal_reached" in schema.get("properties", {}):
+            return {"step": OFF_PATH, "target_id": None, "goal_reached": True,
+                    "reason": "an Anmeldewand, kein Schritt des Trichters"}
+        return {"signals": [{"name": "countdown_element_present",
+                             "value": "false", "confidence": 0.97}],
+                "not_readable": []}
+
+
+wall = pathlib.Path(tempfile.mkdtemp()) / "login.html"
+wall.write_text('<html lang="de"><body><h1>Anmelden</h1>'
+                '<input type="password"><button>Anmelden</button></body></html>',
+                encoding="utf-8")
+
+with tempfile.TemporaryDirectory() as tmp:
+    run = asyncio.run(driver.capture(wall.as_uri(), {"name": "wall"},
+                                     model=OffPath(),
+                                     output_root=pathlib.Path(tmp)))
+    raw = json.loads(run.write().read_text())
+    check(raw["signals"] == {},
+          "a page off the funnel produces no signal at all")
+    check([s["step"] for s in raw["steps"]] == [OFF_PATH],
+          "the detour stays visible in the record")
+    check(any("not on the path" in n for n in raw["notes"]),
+          "and the file says why nothing was measured")
+    check("countdown_element_present" not in raw["signal_errors"],
+          "nor is it written off as a gap — a later step may still reach it")
+
 print()
 if failures:
     print(f"{len(failures)} failed:")

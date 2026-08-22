@@ -33,7 +33,7 @@ from zoneinfo import ZoneInfo
 
 from dpm.ai import navigator, text_signals
 from dpm.ai.client import Model, ModelError
-from dpm.capture.path import ABANDONED, PATH_STEPS
+from dpm.capture.path import ABANDONED, OFF_PATH, PATH_STEPS
 from dpm.signals import collect
 from dpm.capture.targets import slug
 
@@ -235,19 +235,31 @@ async def _walk(page, run: Capture, model, output: Path, max_steps: int) -> None
 
         try:
             decision = await navigator.decide(
-                model, (output / "nav" / name).read_bytes(), PATH_STEPS)
+                model, (output / "nav" / name).read_bytes(), PATH_STEPS,
+                off_path=OFF_PATH)
         except ModelError as error:
             run.notes.append(f"step {number}: navigator failed ({error})")
             return
 
         entry["step"] = step = decision.step
         entry["chosen_by"] = decision.reason      # 2.9: auditable by a human
-        await _read_signals(run, model, output / name, step)
-        # After the signals read off the screenshot, so that where both
-        # produce the same signal the measured value is the one that
-        # survives: it is deterministic and anybody can recompute it in the
-        # developer tools.
-        await collect.into(run, page, step=step, evidence=name)
+
+        if step == OFF_PATH:
+            # A login wall, a captcha, an error page. Whatever stands here
+            # says nothing about the shop, so nothing is attributed to it --
+            # not as a value and not as a gap either: a later step may still
+            # reach the intended page and measure it properly. The step
+            # itself stays in the record, so the detour is visible in the
+            # Beweisakte.
+            run.notes.append(f"step {number}: not on the path "
+                             f"({decision.reason}) — nothing measured here")
+        else:
+            await _read_signals(run, model, output / name, step)
+            # After the signals read off the screenshot, so that where both
+            # produce the same signal the measured value is the one that
+            # survives: it is deterministic and anybody can recompute it in
+            # the developer tools.
+            await collect.into(run, page, step=step, evidence=name)
 
         if decision.goal_reached:
             return

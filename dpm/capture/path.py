@@ -24,3 +24,16 @@ PATH_STEPS = ("startseite", "suchergebnis", "produktdetail",
 # Written instead of a step name when the path did not get through. It is
 # not a path step and no signal may be attributed to it.
 ABANDONED = "abgebrochen"
+
+# The page we are on is not on the funnel at all: a login wall, a captcha,
+# a 404, an interstitial. Distinct from ABANDONED, which says the walk
+# stopped -- this one says where we are standing.
+#
+# It exists because the navigator had no way to say it. Its schema offered
+# only the five path steps, so a login page had to be labelled with one of
+# them, and everything measured there became a fact about that step: a
+# capture of 22.08. recorded "no countdown, no scarcity note, no VAT
+# problem" for viagogo, all of it read off an Anmeldung screen. A silent
+# all-clear is the worst thing this tool can produce, so the navigator has
+# to be able to say "not here", and nothing may be attributed to it.
+OFF_PATH = "abseits"
