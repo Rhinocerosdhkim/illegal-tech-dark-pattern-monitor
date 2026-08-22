@@ -5,6 +5,7 @@
     python -m dpm report data/fixtures/viagogo     Beweisakte as HTML and PDF
     python -m dpm overview data/fixtures/*         Marktuebersicht over many sites
     python -m dpm timeline <earlier> <later>       Zeitachse: two captures compared
+    python -m dpm rebuild                          rebuild EVERY output, no arguments
 
 Both accept --pdf. The market overview additionally takes --branche,
 --kategorie, --stufe and --norm: the PDF is then printed with those filters
@@ -24,6 +25,7 @@ from pathlib import Path
 
 import yaml
 
+from dpm.engine.discovery import by_target, find_runs, pairs_to_compare
 from dpm.engine.rules import load_rules
 from dpm.engine.run import load_run
 from dpm.engine.verdict import (CLEAR, NOT_APPLICABLE, NO_FINDING, SUSPECTED,
@@ -194,6 +196,67 @@ def cmd_timeline(arguments) -> int:
     return 0
 
 
+def cmd_rebuild(arguments) -> int:
+    """Regenerate every output from the captures already on disk.
+
+    The handover command. No arguments, no configuration, no keys — on
+    Monday a person without a development background has to be able to run
+    this, and from Tuesday nobody from the dev team is available. Karthik
+    re-captures a site on Wednesday, runs this, and the presentation
+    material is current.
+
+    It also does what nobody should have to remember: if a target was
+    captured more than once, the timeline is built by itself.
+    """
+    rules = load_rules(arguments.rules)
+    runs = find_runs(*arguments.places) if arguments.places else find_runs()
+    if not runs:
+        print("\nKeine Erfassungen gefunden. Erwartet werden Ordner mit einer "
+              "capture.json darin, unter out/ oder data/fixtures/.\n",
+              file=sys.stderr)
+        return 1
+
+    groups = by_target(runs)
+    print(f"\n{len(runs)} Erfassungen, {len(groups)} Ziele\n")
+
+    print("Beweisakten")
+    built = 0
+    for path in runs:
+        run = load_run(path)
+        findings = [assess(rule, run.table) for rule in rules]
+        result = build_case_file(run, findings, output=arguments.output,
+                                 as_pdf=not arguments.html_only)
+        built += 1
+        print(f"  {run.target:22} {result.finding_count} Befunde   "
+              f"{result.pdf or result.html}")
+
+    print("\nMarktuebersicht")
+    overview = collect(runs, rules)
+    result = build_overview(overview, output=arguments.output,
+                            as_pdf=not arguments.html_only)
+    print(f"  {result['sites']} Seiten, {result['findings']} Befunde   "
+          f"{result['pdf'] or result['html']}")
+
+    print("\nZeitachsen")
+    pairs = pairs_to_compare(groups)
+    if not pairs:
+        print("  keine — kein Ziel wurde bisher zweimal erfasst")
+    for target, earlier, later, note in pairs:
+        if note:
+            print(f"  ! {note}")
+            continue
+        timeline = compare(earlier, later, rules)
+        result = build_timeline(timeline, output=arguments.output,
+                                as_pdf=not arguments.html_only)
+        wording = (f"{result['changes']} Veraenderung(en)" if result["changes"]
+                   else "keine Veraenderung")
+        print(f"  {target:22} {timeline.days_between}   {wording}   "
+              f"{result['pdf'] or result['html']}")
+
+    print(f"\nFertig. Alles liegt unter {Path(arguments.output).resolve()}\n")
+    return 0
+
+
 def _warnings(run) -> None:
     for warning in run.warnings:
         print(f"  ! {warning}")
@@ -249,6 +312,16 @@ def main(argv=None) -> int:
     tl.add_argument("--output", type=Path, default=Path("out"))
     tl.add_argument("--pdf", action="store_true", help="also print a PDF")
     tl.set_defaults(function=cmd_timeline)
+
+    rb = commands.add_parser(
+        "rebuild", help="rebuild every output from the captures on disk")
+    rb.add_argument("places", type=Path, nargs="*",
+                    help="where to look; default: out/ and data/fixtures/")
+    rb.add_argument("--rules", type=Path, default=None)
+    rb.add_argument("--output", type=Path, default=Path("out"))
+    rb.add_argument("--html-only", action="store_true", dest="html_only",
+                    help="skip the PDFs, for quick runs")
+    rb.set_defaults(function=cmd_rebuild)
 
     arguments = parser.parse_args(argv)
 
