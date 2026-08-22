@@ -39,6 +39,21 @@ ABANDONED = "abgebrochen"
 OFF_PATH = "abseits"
 
 
+# The consent banner is shown at first contact and is gone once it was
+# answered. Everything measured on it therefore belongs to the step where
+# we met it, and a later page that no longer shows it is not saying the
+# site never had one. Exactly the signals of the "Consent-Banner und
+# Bedienelemente" table in rules/_SIGNALE.md.
+FIRST_CONTACT = frozenset({
+    "banner_detected", "accept_button_area_px2", "reject_button_area_px2",
+    "accept_contrast_ratio", "reject_contrast_ratio", "reject_button_present",
+    "reject_click_depth", "preselected_checkbox_count",
+    "third_party_cookies_before_consent", "banner_reappears_on_reject",
+    "banner_reappears_count_24h", "more_info_present",
+    "more_info_leads_to_reject", "more_info_click_depth",
+})
+
+
 def depth(step: str) -> int:
     """How far along the funnel a step lies. Anything unknown ranks lowest."""
     try:
@@ -47,43 +62,28 @@ def depth(step: str) -> int:
         return -1
 
 
-def _says_nothing(value) -> bool:
-    """Did the measurement find anything? false, 0 and "" found nothing."""
-    return value is None or value is False or value == 0 or value == ""
-
-
-def supersedes(new_value, new_step: str, old_value, old_step: str) -> bool:
+def supersedes(name: str, new_step: str, old_step: str) -> bool:
     """May a fresh measurement replace one this capture already holds?
 
     Both producers -- the model reading a screenshot and extractors.js
-    reading the DOM -- used to assign unconditionally, so it was the loop
-    order that decided. That produced two wrong answers in opposite
-    directions:
+    reading the DOM -- used to assign unconditionally, so the loop order
+    decided. The consent banner then vanished from the record: measured
+    true on the start page, measured false on the product page because it
+    had been accepted, and DP-001 fell away.
 
-        banner_detected true on startseite, false on produktdetail. The
-        banner is gone because it was accepted, and the capture ends up
-        saying the shop never had one.
+    Which measurement is authoritative is a property of the signal, not of
+    its value. The first version of this function asked whether a value
+    "found something", treating false as a non-finding -- but false IS the
+    finding in four of the six rules: vat_disclosure_present == false is
+    the § 3 PAngV violation, reject_button_present == false is the one
+    condition in DP-001 that carries "eindeutig". Blocking those made real
+    violations unreachable.
 
-        has_price_display true and vat_disclosure_present false, both read
-        off a checkout page, overwrite the correct pair from the product
-        page -- which is exactly the DP-005 verdaechtig condition, fired
-        against a page nobody looked at.
-
-    So the rule is not simply "the deeper step wins". A later page that
-    shows nothing is not a denial of what an earlier page showed:
-
-        a measurement that found nothing never replaces one that found
-        something, in either direction along the path;
-
-        a measurement that found something always beats one that found
-        nothing, however shallow it is;
-
-        and between two findings of the same kind the deeper step wins,
-        because the seminar of 19.08. put the interesting patterns on the
-        product page, not on the start page.
+    So: the banner signals belong to the first contact and keep it, and
+    everything else is authoritative at the deepest step it was seen at,
+    because the consumer agency pointed out in the seminar of 19.08. that
+    the interesting patterns are on the product page.
     """
-    if _says_nothing(new_value) and not _says_nothing(old_value):
+    if name in FIRST_CONTACT:
         return False
-    if not _says_nothing(new_value) and _says_nothing(old_value):
-        return True
     return depth(new_step) >= depth(old_step)

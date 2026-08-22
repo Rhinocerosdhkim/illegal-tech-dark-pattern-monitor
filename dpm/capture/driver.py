@@ -295,7 +295,7 @@ async def _read_signals(run: Capture, model, screenshot: Path, step: str) -> Non
 
     for name, value in values.items():
         held = run.signals.get(name)
-        if held and not supersedes(value, step, held["value"], held["step"]):
+        if held and not supersedes(name, step, held["step"]):
             continue
         run.signals[name] = {"value": value, "step": step,
                              "evidence": screenshot.name}

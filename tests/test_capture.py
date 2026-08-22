@@ -203,27 +203,29 @@ with tempfile.TemporaryDirectory() as tmp:
     check("countdown_element_present" not in raw["signal_errors"],
           "nor is it written off as a gap — a later step may still reach it")
 
-print("\na later page that shows nothing does not erase what an earlier one showed")
+print("\nwhich step is authoritative is a property of the signal")
 from dpm.capture.path import supersedes
 
-for new, new_step, old, old_step, erwartet, was in [
-    (False, "produktdetail", True, "startseite", False,
-     "the banner is gone once accepted — that is no denial of it"),
-    (False, "warenkorb", True, "produktdetail", False,
-     "no VAT line at checkout does not unsay the one on the product page"),
-    (True, "produktdetail", False, "startseite", True,
+for name, new_step, old_step, erwartet, was in [
+    ("banner_detected", "produktdetail", "startseite", False,
+     "the banner is gone once accepted — the first contact keeps it"),
+    ("preselected_checkbox_count", "warenkorb", "startseite", False,
+     "so does everything else measured on that banner"),
+    ("vat_disclosure_present", "produktdetail", "startseite", True,
+     "a missing VAT line on the product page IS the § 3 PAngV finding"),
+    ("countdown_element_present", "produktdetail", "startseite", True,
      "a countdown first seen on the product page is taken"),
-    (149, "warenkorb", 89, "produktdetail", True,
-     "the deeper price wins — that is what drip pricing is"),
-    (49, "startseite", 89, "produktdetail", False,
+    ("price_listed", "warenkorb", "produktdetail", True,
+     "the price at the till wins — that is what drip pricing is"),
+    ("price_listed", "startseite", "produktdetail", False,
      "but a shallower step does not overwrite a deeper one"),
-    (2, "produktdetail", 0, "startseite", True,
-     "a finding beats a non-finding however shallow"),
+    ("order_button_label", "produktdetail", "produktdetail", True,
+     "same step: the DOM measurement runs second and wins"),
 ]:
-    check(supersedes(new, new_step, old, old_step) is erwartet, was)
+    check(supersedes(name, new_step, old_step) is erwartet, was)
 
 # End to end through the real driver: start page carries the banner and the
-# VAT line, the product page carries neither.
+# VAT line, product page carries neither.
 pages = pathlib.Path(tempfile.mkdtemp())
 (pages / "start.html").write_text(
     '<html lang="de"><body>'
@@ -274,8 +276,11 @@ check(got.get("banner_detected", {}).get("value") is True,
       "the banner survives the product page")
 check(got.get("banner_detected", {}).get("step") == "startseite",
       "and keeps the step it was actually measured on")
-check(got.get("vat_disclosure_present", {}).get("value") is True,
-      "so does the VAT line — the DP-005 false accusation is gone")
+check(got.get("vat_disclosure_present", {}).get("value") is False,
+      "while the product page without a VAT line does overwrite — that is "
+      "the finding, not a loss of one")
+check(got.get("vat_disclosure_present", {}).get("step") == "produktdetail",
+      "attributed to the page it was measured on")
 
 print()
 if failures:

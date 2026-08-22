@@ -61,7 +61,7 @@ async def into(run, page, step: str, evidence: str) -> None:
 
     for name, value in values.items():
         held = run.signals.get(name)
-        if held and not supersedes(value, step, held["value"], held["step"]):
+        if held and not supersedes(name, step, held["step"]):
             # The banner on the start page is gone once it was accepted;
             # measuring "no banner" on the product page is not a denial of
             # it. See path.supersedes for the whole rule.
