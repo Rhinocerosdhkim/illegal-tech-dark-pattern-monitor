@@ -20,6 +20,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from dpm.capture.path import supersedes
+
 SOURCE = Path(__file__).parent / "extractors.js"
 
 
@@ -58,6 +60,12 @@ async def into(run, page, step: str, evidence: str) -> None:
     values, gaps = await measure(page)
 
     for name, value in values.items():
+        held = run.signals.get(name)
+        if held and not supersedes(value, step, held["value"], held["step"]):
+            # The banner on the start page is gone once it was accepted;
+            # measuring "no banner" on the product page is not a denial of
+            # it. See path.supersedes for the whole rule.
+            continue
         run.signals[name] = {"value": value, "step": step,
                              "evidence": evidence}
         run.errors.pop(name, None)

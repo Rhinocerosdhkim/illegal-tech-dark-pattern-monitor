@@ -203,6 +203,80 @@ with tempfile.TemporaryDirectory() as tmp:
     check("countdown_element_present" not in raw["signal_errors"],
           "nor is it written off as a gap — a later step may still reach it")
 
+print("\na later page that shows nothing does not erase what an earlier one showed")
+from dpm.capture.path import supersedes
+
+for new, new_step, old, old_step, erwartet, was in [
+    (False, "produktdetail", True, "startseite", False,
+     "the banner is gone once accepted — that is no denial of it"),
+    (False, "warenkorb", True, "produktdetail", False,
+     "no VAT line at checkout does not unsay the one on the product page"),
+    (True, "produktdetail", False, "startseite", True,
+     "a countdown first seen on the product page is taken"),
+    (149, "warenkorb", 89, "produktdetail", True,
+     "the deeper price wins — that is what drip pricing is"),
+    (49, "startseite", 89, "produktdetail", False,
+     "but a shallower step does not overwrite a deeper one"),
+    (2, "produktdetail", 0, "startseite", True,
+     "a finding beats a non-finding however shallow"),
+]:
+    check(supersedes(new, new_step, old, old_step) is erwartet, was)
+
+# End to end through the real driver: start page carries the banner and the
+# VAT line, the product page carries neither.
+pages = pathlib.Path(tempfile.mkdtemp())
+(pages / "start.html").write_text(
+    '<html lang="de"><body>'
+    '<div style="position:fixed;bottom:0;left:0;right:0;padding:20px">'
+    '<p>Cookies und Einwilligung</p>'
+    '<button>Alle akzeptieren</button>'
+    '<label><input type="checkbox" checked> Marketing</label></div>'
+    '<h1>Start</h1><p>129,00 EUR inkl. MwSt.</p></body></html>', encoding="utf-8")
+(pages / "produkt.html").write_text(
+    '<html lang="de"><body><h1>Ticket</h1><p>149,00 EUR</p>'
+    '<button>Jetzt kaufen</button></body></html>', encoding="utf-8")
+
+
+class TwoSteps:
+    name = backend = "stub"
+
+    def __init__(self):
+        self.seen = 0
+
+    async def ask(self, prompt, schema, screenshot=None):
+        if "goal_reached" in schema.get("properties", {}):
+            self.seen += 1
+            return {"step": "startseite" if self.seen == 1 else "produktdetail",
+                    "target_id": None if self.seen > 1 else 0,
+                    "goal_reached": self.seen > 1, "reason": "weiter"}
+        return {"signals": [], "not_readable": []}
+
+
+original_click = driver._human_click
+
+
+async def _hop(page, x, y):
+    await page.goto((pages / "produkt.html").as_uri())
+
+
+driver._human_click = _hop
+try:
+    with tempfile.TemporaryDirectory() as tmp:
+        run = asyncio.run(driver.capture((pages / "start.html").as_uri(),
+                                         {"name": "zweischritt"},
+                                         model=TwoSteps(),
+                                         output_root=pathlib.Path(tmp)))
+        got = json.loads(run.write().read_text())["signals"]
+finally:
+    driver._human_click = original_click
+
+check(got.get("banner_detected", {}).get("value") is True,
+      "the banner survives the product page")
+check(got.get("banner_detected", {}).get("step") == "startseite",
+      "and keeps the step it was actually measured on")
+check(got.get("vat_disclosure_present", {}).get("value") is True,
+      "so does the VAT line — the DP-005 false accusation is gone")
+
 print()
 if failures:
     print(f"{len(failures)} failed:")

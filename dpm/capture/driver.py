@@ -33,7 +33,8 @@ from zoneinfo import ZoneInfo
 
 from dpm.ai import navigator, text_signals
 from dpm.ai.client import Model, ModelError
-from dpm.capture.path import ABANDONED, OFF_PATH, PATH_STEPS
+from dpm.capture.path import (ABANDONED, OFF_PATH, PATH_STEPS,
+                              supersedes)
 from dpm.signals import collect
 from dpm.capture.targets import slug
 
@@ -293,6 +294,9 @@ async def _read_signals(run: Capture, model, screenshot: Path, step: str) -> Non
         return
 
     for name, value in values.items():
+        held = run.signals.get(name)
+        if held and not supersedes(value, step, held["value"], held["step"]):
+            continue
         run.signals[name] = {"value": value, "step": step,
                              "evidence": screenshot.name}
         run.errors.pop(name, None)
