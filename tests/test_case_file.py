@@ -3,7 +3,7 @@ factual error in it is more expensive than a crash. So the focus here is:
 does it contain only what was actually measured?
 """
 
-import sys, pathlib, tempfile
+import shutil, sys, pathlib, tempfile
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 from dpm.engine.run import load_run
@@ -52,5 +52,19 @@ with tempfile.TemporaryDirectory() as tmp:
     for name in ("S-01.png", "S-03.png"):
         assert (case.html.parent / name).exists(), f"{name} not copied along"
     print("  ok  output folder is self-contained")
+
+print("\nBuilt into the capture's own folder")
+# A live capture writes out/<run_id>/ and the Beweisakte is built into the
+# same folder. Before this was handled, "python -m dpm report out/<run_id>"
+# died on copying a screenshot onto itself.
+with tempfile.TemporaryDirectory() as tmp:
+    folder = pathlib.Path(tmp) / run.run_id
+    shutil.copytree("data/fixtures/viagogo", folder)
+    same = load_run(folder)
+    result = build(same, [assess(rule, same.table) for rule in load_rules()],
+                   output=tmp, as_pdf=False)
+    assert result.html.exists()
+    assert (folder / "S-01.png").exists(), "the evidence was lost"
+    print("  ok  no SameFileError, screenshots still there")
 
 print("\nAll case-file tests passed.")

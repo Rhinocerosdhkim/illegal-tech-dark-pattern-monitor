@@ -8,6 +8,7 @@
     python -m dpm zielliste <datei>                document with links -> target list
     python -m dpm gold                             accuracy against the gold standard
     python -m dpm rebuild                          rebuild EVERY output, no arguments
+    python -m dpm ui                               local web app on 127.0.0.1:8000
 
 Both accept --pdf. The market overview additionally takes --branche,
 --kategorie, --stufe and --norm: the PDF is then printed with those filters
@@ -327,6 +328,17 @@ def cmd_rebuild(arguments) -> int:
     return 0
 
 
+def cmd_ui(arguments) -> int:
+    """Serve the three views and, unlike the files, allow starting a run.
+
+    An addition, never the delivery path: everything it shows also exists
+    as a file under out/ and opens without any server.
+    """
+    from dpm.ui.app import serve
+    return serve(host=arguments.host, port=arguments.port,
+                 output=arguments.output)
+
+
 def cmd_zielliste(arguments) -> int:
     """AI (2): a document with links becomes a target list.
 
@@ -487,6 +499,13 @@ def main(argv=None) -> int:
     tl.add_argument("--output", type=Path, default=Path("out"))
     tl.add_argument("--pdf", action="store_true", help="also print a PDF")
     tl.set_defaults(function=cmd_timeline)
+
+    ui = commands.add_parser(
+        "ui", help="local web app: archive, live run, results")
+    ui.add_argument("--host", default="127.0.0.1")
+    ui.add_argument("--port", type=int, default=8000)
+    ui.add_argument("--output", type=Path, default=Path("out"))
+    ui.set_defaults(function=cmd_ui)
 
     zl = commands.add_parser(
         "zielliste", help="read a document with links into a target list (AI 2)")

@@ -87,7 +87,10 @@ def build(run: Run, findings: list, output: str | Path = "out",
 
     for name in _screenshot_names(reportable, run):
         source = run.screenshot(name)
-        if source:
+        # A live capture writes into out/<run_id>/ and the Beweisakte is
+        # built into the same folder, so source and target are then one
+        # file. Copying it onto itself raises; there is also nothing to do.
+        if source and not source.resolve() == (folder / name).resolve():
             shutil.copyfile(source, folder / name)
 
     eintraege = [_entry(nr, f, steps, run, folder, summaries or {})

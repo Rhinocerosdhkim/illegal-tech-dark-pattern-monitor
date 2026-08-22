@@ -2,13 +2,10 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<title>{{ produkt }} — Archiv</title>
+<title>{{ produkt }} — Auftrag</title>
 <style>
 {% include "_design.css" %}
-
 {% include "_auftrag.css" %}
-
-{% include "_print.css" %}
 </style>
 </head>
 <body>
@@ -68,39 +65,12 @@
       </tbody>
     </table>
     {% else %}
-    <p class="einleitung">
-      Das Archiv ist leer — 0 Akten. Erzeugt werden sie mit
-      <span class="mono">python -m dpm rebuild</span>.
-    </p>
-    {% endif %}
-
-    <div class="weitere">
-      <div class="label">Über alle Ziele</div>
-      <ul>
-        {% if uebersicht.html %}
-        <li>
-          <span>Marktübersicht — {{ uebersicht.sites }} Ziele, {{ uebersicht.findings }} Befunde</span>
-          <span class="wege">
-            <a href="{{ uebersicht.html }}">HTML</a>
-            {% if uebersicht.csv %} · <a href="{{ uebersicht.csv }}">CSV</a>{% endif %}
-            {% if uebersicht.pdf %} · <a href="{{ uebersicht.pdf }}">PDF</a>{% endif %}
-          </span>
-        </li>
-        {% endif %}
-        {% for z in zeitachsen %}
-        <li>
-          <span>Zeitachse {{ z.target }} — {{ z.spanne }}, {{ z.changes }} Veränderung(en)</span>
-          <span class="wege">
-            <a href="{{ z.html }}">HTML</a>
-            {% if z.pdf %} · <a href="{{ z.pdf }}">PDF</a>{% endif %}
-          </span>
-        </li>
-        {% endfor %}
-        {% if not uebersicht.html and not zeitachsen %}
-        <li><span class="fehlt">noch nichts erzeugt</span></li>
-        {% endif %}
-      </ul>
+    <div class="angebot">
+      Archiv ist leer — 0 Akten. Ein Prüflauf rechts erzeugt die erste;
+      ohne Netzzugriff steht <span class="mono">python -m dpm rebuild</span>
+      mit den mitgelieferten Beispielakten bereit.
     </div>
+    {% endif %}
   </div>
 
   <div class="tafel rechts">
@@ -110,26 +80,45 @@
     </div>
     <p class="einleitung">
       Ein echter Browser wird gestartet und wie ein Kunde durch den Shop
-      geführt. Ergebnis ist eine neue Akte mit Zeitstempeln. Die Erfassung
-      läuft über die Kommandozeile im Projektordner — diese Seite ist eine
-      Ablage, kein Steuerpult.
+      geführt. Ergebnis ist eine neue Akte mit Zeitstempeln.
     </p>
 
-    <div class="label" style="margin-bottom:6px">Ein Ziel erfassen</div>
-    <div class="befehl">python -m dpm capture viagogo
-<span class="was">Zielprofil aus data/targets/viagogo.yaml</span></div>
-    <div class="befehl">python -m dpm capture --url https://beispiel.de
-<span class="was">ohne Profil, nur die Startseite</span></div>
+    {% if modell %}
+    <div class="angebot">
+      Kein Modell verfügbar — {{ modell }}<br>
+      Ein Lauf erfasst dann nur die Startseite; alle Signale bleiben
+      <span class="mono">unklar</span>. Das ist eine gültige Teilerfassung,
+      kein Fehlschlag.
+    </div>
+    {% endif %}
 
-    <div class="label" style="margin:20px 0 6px">Alles neu erzeugen</div>
-    <div class="befehl">python -m dpm rebuild
-<span class="was">Akten, Marktübersicht, Zeitachsen und diese Seite —
-ohne Argumente, ohne Schlüssel</span></div>
+    <form method="post" action="/prueflauf">
+      <div class="label" style="margin-bottom:6px">Einzelne URL</div>
+      <div class="eingabe">
+        <input type="text" name="url" placeholder="https://" required
+               autocomplete="off" spellcheck="false">
+        <select name="branche">
+          <option value="">Branche wählen</option>
+          {% for b in branchen %}<option>{{ b }}</option>{% endfor %}
+        </select>
+      </div>
 
-    <p class="einleitung" style="margin-top:20px">
+      <div class="knopfzeile">
+        <button type="submit" {{ "disabled" if laeuft }}>Prüflauf starten</button>
+        {% if laeuft %}
+        <span class="dazu">Es läuft bereits eine Erfassung —
+          <a href="/prueflauf/{{ letzter.token }}">ansehen</a></span>
+        {% else %}
+        <span class="dazu">Geschätzt 60–90 s</span>
+        {% endif %}
+      </div>
+    </form>
+
+    <p class="einleitung" style="margin-top:22px">
       Schlägt ein Schritt fehl, wird der Lauf nicht verworfen: die bereits
       erfassten Schritte bleiben, die übrigen Signale werden als
       <span class="mono">unklar</span> geführt und in der Akte begründet.
+      Es wird immer nur ein Ziel gleichzeitig abgerufen.
     </p>
   </div>
 
@@ -138,7 +127,9 @@ ohne Argumente, ohne Schlüssel</span></div>
 <div class="fuss">
   <strong>Hinweis.</strong> {{ produkt }} stellt technisch messbare Tatsachen fest
   und ordnet sie einem Regelwerk zu. Es trifft keine rechtliche Feststellung eines
-  Verstoßes. Alles auf dieser Seite liegt lokal; es wird nichts an Dritte übertragen.
+  Verstoßes. Alles hier liegt lokal; es wird nichts an Dritte übertragen.
+  Dieselben Dateien liegen im Ordner <span class="mono">out/</span> und lassen
+  sich ohne diesen Server öffnen.
 </div>
 
 </body>

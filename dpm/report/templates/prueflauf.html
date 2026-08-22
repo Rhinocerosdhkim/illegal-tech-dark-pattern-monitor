@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>{{ produkt }} — Prüflauf {{ lauf.target }}</title>
+<style>
+{% include "_design.css" %}
+
+/* ------------------------------------------------- live run, view #1b
+   The only dark screen in the program: this is machine time, not reading
+   time. Status is carried by marker shape, not by colour — the same rule
+   as the verdict chips. */
+body { background: var(--ink); color: var(--ink-inverse); }
+.titlebar { background: var(--ink-deep); border-bottom: 1px solid rgba(255,255,255,.1); }
+.titlebar .tab.active { background: var(--ink); color: var(--paper); border-top: 2px solid var(--accent-live); }
+
+.kopf {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  gap: 24px; padding: 20px 24px 16px; flex-wrap: wrap;
+}
+.kopf .augenbraue {
+  font: 400 10px var(--mono); letter-spacing: .1em; text-transform: uppercase;
+  color: rgba(233,231,225,.45);
+}
+.kopf h1 { margin: 6px 0 0; font: 500 22px var(--mono); color: var(--paper); }
+.kopf h1 .branche {
+  font: 400 13px var(--sans); color: rgba(233,231,225,.5); margin-left: 12px;
+}
+.messwerte { display: flex; gap: 34px; align-items: flex-end; flex-wrap: wrap; }
+.messwerte .label { color: rgba(233,231,225,.4); }
+.messwerte .wert {
+  font: 400 20px var(--mono); font-variant-numeric: tabular-nums;
+  color: var(--paper); margin-top: 4px;
+}
+.gleis { height: 2px; background: rgba(255,255,255,.1); overflow: hidden; }
+.gleis .balken {
+  width: 33%; height: 2px; background: var(--accent-live);
+  animation: dpmBar 2.4s linear infinite;
+}
+.gleis.still .balken { animation: none; width: 100%; opacity: .4; }
+@keyframes dpmBar {
+  0% { transform: translateX(-100%); } 100% { transform: translateX(300%); }
+}
+@keyframes dpmPulse { 0%,100% { opacity: .25 } 50% { opacity: 1 } }
+
+.spalten3 {
+  display: grid; grid-template-columns: 320px 1fr; gap: 1px;
+  background: rgba(255,255,255,.1); min-height: 60vh;
+}
+.spalten3 > section { background: var(--ink); padding: 20px 22px; }
+.spalten3 .label { color: rgba(233,231,225,.45); margin-bottom: 16px; }
+
+.pfad .schritt {
+  position: relative; border-left: 1px solid rgba(255,255,255,.14);
+  margin-left: 5px; padding-left: 17px; padding-bottom: 18px;
+}
+.pfad .schritt:last-child { border-left-color: transparent; }
+.pfad .marke {
+  position: absolute; left: -6px; top: 2px; width: 11px; height: 11px;
+}
+.pfad .fertig .marke { background: var(--ink-inverse); }
+.pfad .laeuft .marke {
+  border: 2px solid var(--accent-live); animation: dpmPulse 1.6s ease-in-out infinite;
+}
+.pfad .offen .marke { border: 1px dashed rgba(233,231,225,.6); }
+.pfad .titel { font: 500 13px var(--sans); color: var(--paper); }
+.pfad .offen .titel { color: rgba(233,231,225,.75); }
+.pfad .meta {
+  font: 400 11px var(--mono); color: rgba(233,231,225,.5); margin-top: 3px;
+  word-break: break-all;
+}
+.pfad .abzeichen {
+  font: 400 10px var(--mono); letter-spacing: .08em; margin-left: 8px;
+  color: var(--accent-live); text-transform: uppercase;
+}
+.grundkasten {
+  border: 1px solid rgba(233,231,225,.28); padding: 8px 10px; margin-top: 8px;
+  font: 400 11px/1.45 var(--sans); color: rgba(233,231,225,.8);
+}
+.grundkasten .folge {
+  font: 400 10.5px var(--mono); color: rgba(233,231,225,.45); margin-top: 4px;
+}
+
+.aufnahmen { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.aufnahmen figure { margin: 0; border: 1px solid rgba(255,255,255,.16); }
+.aufnahmen img { display: block; width: 100%; }
+.aufnahmen .hatch {
+  height: 132px;
+  background: repeating-linear-gradient(135deg, rgba(255,255,255,.07) 0 6px,
+                                        rgba(255,255,255,.02) 6px 12px);
+}
+.aufnahmen figcaption {
+  padding: 7px 9px; font: 400 10px var(--mono); color: rgba(233,231,225,.5);
+}
+.kopfzeile {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+}
+.kopfzeile .zaehler {
+  font: 400 10px var(--mono); color: rgba(233,231,225,.35);
+  text-transform: uppercase; letter-spacing: .06em;
+}
+
+.abschluss { padding: 20px 24px 30px; border-top: 1px solid rgba(255,255,255,.1); }
+.abschluss a {
+  color: var(--paper); border-bottom: 1px solid rgba(255,255,255,.4);
+}
+.abschluss .hinweis {
+  font: 400 12px/1.6 var(--serif); color: rgba(233,231,225,.7); max-width: 88ch;
+  margin-top: 10px;
+}
+</style>
+</head>
+<body>
+
+<div class="titlebar">
+  <div class="left">
+    <span class="wordmark">DPM</span>
+    <span class="tabs">
+      <a class="tab" href="/" style="color:rgba(233,231,225,.5)">Auftrag</a>
+      <span class="tab active">Prüflauf</span>
+      <span class="tab" style="color:rgba(233,231,225,.28)">Ergebnis</span>
+    </span>
+  </div>
+  <span class="status">Chromium · headless · de-DE · 1440×900</span>
+</div>
+
+<div class="kopf">
+  <div>
+    <div class="augenbraue">Lauf · Ziel</div>
+    <h1>{{ lauf.target }}{% if lauf.industry %}<span class="branche">{{ lauf.industry }}</span>{% endif %}</h1>
+  </div>
+  <div class="messwerte">
+    <div>
+      <div class="label">Aufnahmen</div>
+      <div class="wert" id="m-aufnahmen">{{ lauf.screenshots | length }}</div>
+    </div>
+    <div>
+      <div class="label">Laufzeit</div>
+      <div class="wert" id="m-zeit">00:{{ "%02d" | format(lauf.seconds) }}</div>
+    </div>
+    <div>
+      <div class="label">Zustand</div>
+      <div class="wert" id="m-zustand">{{ lauf.state }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="gleis" id="gleis"><div class="balken"></div></div>
+
+<div class="spalten3">
+  <section class="pfad">
+    <div class="label">Gelaufener Pfad</div>
+    <div id="pfad"></div>
+  </section>
+
+  <section>
+    <div class="kopfzeile">
+      <div class="label">Eingehende Aufnahmen</div>
+      <span class="zaehler" id="z-aufnahmen"></span>
+    </div>
+    <div class="aufnahmen" id="aufnahmen"></div>
+  </section>
+</div>
+
+<div class="abschluss" id="abschluss" hidden>
+  <div id="ergebnis"></div>
+  <p class="hinweis">
+    Die Akte liegt zugleich als Datei im Ordner <span class="mono">out/</span>
+    und lässt sich ohne diesen Server öffnen.
+  </p>
+</div>
+
+<script>
+(function () {
+  var token = {{ lauf.token | tojson }};
+  var laufend = {{ (lauf.state == "laeuft") | tojson }};
+
+  function zeit(s) {
+    var m = Math.floor(s / 60), r = s % 60;
+    return (m < 10 ? "0" : "") + m + ":" + (r < 10 ? "0" : "") + r;
+  }
+
+  function pfad(daten) {
+    var ziel = document.getElementById("pfad");
+    var schritte = daten.steps.length ? daten.steps
+      : daten.screenshots.map(function (name, i) {
+          return { step: "Schritt " + (i + 1), screenshot: name, url: "" };
+        });
+    var html = schritte.map(function (s) {
+      return '<div class="schritt fertig"><span class="marke"></span>' +
+        '<div class="titel">' + (s.step || "") + "</div>" +
+        '<div class="meta">' + (s.url || "") + "</div></div>";
+    });
+    if (daten.state === "laeuft") {
+      html.push('<div class="schritt laeuft"><span class="marke"></span>' +
+        '<div class="titel">Nächster Schritt<span class="abzeichen">läuft</span></div>' +
+        '<div class="meta">Seite wird geladen und vermessen</div></div>');
+    } else if (daten.note) {
+      // Why the run stopped where it stopped. A capture that quietly ends
+      // looks the same as one that found nothing, and those are different
+      // statements — this box is the point of the screen.
+      html.push('<div class="schritt offen"><span class="marke"></span>' +
+        '<div class="titel">Nicht weiter erfasst</div>' +
+        '<div class="grundkasten">Grund: ' + daten.note +
+        '<div class="folge">→ Signale der nicht erreichten Schritte ' +
+        'bleiben „unklar"</div></div></div>');
+    }
+    ziel.innerHTML = html.join("");
+  }
+
+  function aufnahmen(daten) {
+    var ziel = document.getElementById("aufnahmen");
+    document.getElementById("z-aufnahmen").textContent =
+      daten.screenshots.length + " erfasst";
+    ziel.innerHTML = daten.screenshots.map(function (name) {
+      var src = daten.run_id ? "/akte/" + daten.run_id + "/" + name : "";
+      return "<figure>" + (src ? '<img src="' + src + '" alt="' + name + '">'
+                               : '<div class="hatch"></div>') +
+        "<figcaption>" + name + "</figcaption></figure>";
+    }).join("") || '<figure><div class="hatch"></div>' +
+                   "<figcaption>noch keine</figcaption></figure>";
+  }
+
+  function abschluss(daten) {
+    if (daten.state === "laeuft") return;
+    document.getElementById("gleis").classList.add("still");
+    var box = document.getElementById("abschluss");
+    var text;
+    if (daten.state === "fertig" && daten.run_id) {
+      text = '<a href="/akte/' + daten.run_id + '/beweisakte.html">Beweisakte öffnen</a>' +
+             ' · <a href="/akte/' + daten.run_id + '/beweisakte.pdf">PDF</a>' +
+             ' · <a href="/">zurück zum Auftrag</a>';
+    } else {
+      text = "Der Lauf ist nicht durchgelaufen. " + (daten.note || "") +
+             ' · <a href="/">zurück zum Auftrag</a>';
+    }
+    document.getElementById("ergebnis").innerHTML = text;
+    box.hidden = false;
+  }
+
+  function zeichnen(daten) {
+    document.getElementById("m-aufnahmen").textContent = daten.screenshots.length;
+    document.getElementById("m-zeit").textContent = zeit(daten.seconds);
+    document.getElementById("m-zustand").textContent = daten.state;
+    pfad(daten);
+    aufnahmen(daten);
+    abschluss(daten);
+    return daten.state === "laeuft";
+  }
+
+  function abfragen() {
+    fetch("/prueflauf/" + token + "/status")
+      .then(function (r) { return r.json(); })
+      .then(function (d) { if (zeichnen(d)) setTimeout(abfragen, 1500); })
+      .catch(function () { setTimeout(abfragen, 3000); });
+  }
+
+  abfragen();
+})();
+</script>
+</body>
+</html>

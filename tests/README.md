@@ -17,6 +17,7 @@ Runnable without setup, no external services:
 .venv/bin/python tests/test_design.py         # greyscale proof, nothing fetched
 .venv/bin/python tests/test_gold.py           # accuracy figures and their denominators
 .venv/bin/python tests/test_ai_guards.py      # what AI 2 and AI 4 may put in a document
+.venv/bin/python tests/test_ui.py             # the web app, and that nothing needs it
 ```
 
 `tests/test_verdicts.py` checks the hand-written fixture
