@@ -281,6 +281,15 @@
 
   offene_fragen:
     - >
+      FEINSCHLIFF (SW, 21.08.): Nach BGH, 22.05.2025, I ZR 161/24 ist eine
+      Kuendigungsschaltflaeche auch bei einmaligem Entgelt und automatisch
+      endendem Vertrag bereitzustellen. Umgekehrt braucht aber NICHT jeder
+      befristete Einmalzahlungsvertrag eine solche Schaltflaeche. Fuer diesen
+      Ausnahmefall fehlt uns ein Signal, und er laesst sich schwer definieren.
+      Bis dahin bilden die drei Tatsachensignale unter "any:" den
+      Anwendungsbereich eher zu eng ab - das liegt in der vorsichtigen
+      Richtung, ist aber bei der Auswertung mitzudenken.
+    - >
       Ab welcher Klicktiefe ist die "unmittelbare und leichte
       Zugaenglichkeit" nach § 312k Abs. 2 S. 4 BGB nicht mehr gewahrt?
       Die urspruengliche Bedingung "> 0" wurde deaktiviert, weil sie auf

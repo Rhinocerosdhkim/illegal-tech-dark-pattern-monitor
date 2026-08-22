@@ -57,6 +57,8 @@ Stand: 19.08.2026 · Änderungen bitte über das Entwicklungsteam
 |---|---|---|---|
 | `countdown_element_present` | bool | ✅ | Ist ein Countdown auf der Seite? |
 | `countdown_initial_value_sec` | Zahl | ✅ | Startwert in Sekunden beim ersten Aufruf |
+| `countdown_unchanged_scans` | Zahl | 🟡 | **Über wie viele aufeinanderfolgende Erfassungen ist der ANGEZEIGTE Wert unverändert?** Ein Zähler, der nicht läuft, zählt nichts herunter — stärkerer Nachweis als der Reset. Angefordert von PV, 20.08. |
+| `countdown_personalized` | bool | 🟡 | Wird die Frist als individuell begrenzt dargestellt (Muster: 24 Std. ab Registrierung)? Bei personalisierten Fristen genügt eine einzige unveränderte Messung, bei allgemeinen sind drei nötig (PV, 21.08.) |
 | `countdown_resets_on_revisit` | bool | ✅ | **Springt der Countdown nach Löschen aller Browserdaten und erneutem Aufruf auf denselben Startwert zurück?** |
 | `countdown_text` | Text | ✅ | umgebender Text im Wortlaut |
 | `scarcity_text_present` | bool | ✅ | Knappheitshinweis vorhanden (z. B. „nur noch 2 verfügbar") |
@@ -172,6 +174,7 @@ Stand: 19.08.2026 · Änderungen bitte über das Entwicklungsteam
 
 | Signal | Typ | Status | Bedeutung |
 |---|---|---|---|
+| `additional_costs_mentioned_on_product_page` | bool | 🟡 | Wird auf der Produktseite überhaupt erwähnt, **ob** zusätzliche Fracht-, Liefer- oder Versandkosten anfallen — unabhängig von der Höhe? § 6 Abs. 1 Nr. 2 PAngV verlangt diese Angabe auch dann, wenn die Höhe nicht im Voraus berechenbar ist. Angefordert von DK, 20.08.; von SW bestätigt |
 | `shipping_cost_amount` | Zahl | ✅ | Betrag der auf der Produktseite genannten Versandkosten |
 | `listed_price_components` | Liste | ✅ | die auf der Produktseite ausgewiesenen Preisbestandteile mit Bezeichnung und Betrag (Grundpreis, Versand, Gebühren …) — Grundlage für § 3 PAngV |
 | `gratis_claim_scope` | Text | ✅ | Text im Umfeld des Gratis-Versprechens |

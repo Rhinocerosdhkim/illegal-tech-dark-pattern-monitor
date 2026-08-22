@@ -200,6 +200,16 @@
       "value": false,
       "step": "produktdetail",
       "evidence": "S-03.png"
+    },
+    "countdown_personalized": {
+      "value": false,
+      "step": "produktdetail",
+      "evidence": "S-03.png"
+    },
+    "countdown_unchanged_scans": {
+      "value": 0,
+      "step": "produktdetail",
+      "evidence": "S-03.png"
     }
   },
   "signal_errors": {

@@ -23,12 +23,12 @@ EXPECTED = {
     # eindeutig-Zweig nicht.
     "DP-001": "verdaechtig",
     "DP-002": "verdaechtig",   # "Jetzt bestellen" is disputed, not clear-cut
-    # PV hat den eindeutig-Zweig am 20.08. abgeraeumt: ein zuruecksetzender
-    # Countdown belegt nur, dass der Zaehler sitzungsbezogen erzeugt wird -
-    # nicht, dass die Angabe unwahr ist. Ersatz steht als Vorschlag in der
-    # Datei und braucht countdown_unchanged_scans + countdown_personalized.
-    # Bis dahin: die Knappheitsbedingung ist nicht auswertbar -> unklar.
-    "DP-003": "unklar",
+    # PV hat den eindeutig-Zweig abgeraeumt (ein zuruecksetzender Countdown
+    # belegt nur, dass der Zaehler sitzungsbezogen ist) und ihn durch den
+    # staerkeren Nachweis ersetzt: ein Zaehler, der ueber drei Erfassungen
+    # STILLSTEHT, zaehlt nichts herunter. Der Wortlaut wird zusaetzlich
+    # gegen Sitzungs- und Reservierungs-Timer gefiltert.
+    "DP-003": "verdaechtig",
     # Die drei Tatsachensignale zum Dauerschuldverhaeltnis stehen jetzt auf
     # false: viagogo verkauft Tickets, kein Abonnement. Die Regel greift also
     # gar nicht - richtiger als das frueher Ausgewiesene "unklar".
@@ -61,9 +61,9 @@ assert "is_b2c_offer" in run.table.confirmed, \
 print("  ok  facts do not cap, and neither do confirmed derivations")
 
 print("\n'unklar' arises on its own")
-gaps = {g["signal"]: g["reason"] for g in findings["DP-003"].unresolved}
-assert "scarcity_value_unchanged_scans" in gaps, gaps
-assert "Vergleichswert" in gaps["scarcity_value_unchanged_scans"]
+gaps = {g["signal"]: g["reason"] for g in findings["DP-006"].unresolved}
+assert "required_info_found" in gaps, gaps
+assert "warenkorb" in gaps["required_info_found"]
 print("  ok  measurement gap is passed through with its reason")
 
 print("\n'unklar' can also be declared by the rule itself")

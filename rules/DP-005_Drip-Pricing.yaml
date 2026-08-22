@@ -230,6 +230,24 @@
           Für Zusatzentgelte verlangt § 312a Abs. 3 BGB eine ausdrückliche
           Vereinbarung; eine Voreinstellung genügt dafür nicht.
 
+      # VORBEREITET 21.08. nach Antwort B6a ("Ja ich brauche die Bedingung,
+      # sobald es das Signal gibt"). § 6 Abs. 1 Nr. 2 PAngV verlangt die
+      # Angabe, OB zusaetzliche Fracht-, Liefer- oder Versandkosten anfallen -
+      # unabhaengig davon, ob die Hoehe im Voraus berechenbar ist. Genau das
+      # bleibt uebrig, nachdem die Bedingung zur HOEHE gestrichen wurde
+      # (§ 6 Abs. 2 PAngV verlangt sie nur, soweit vernuenftigerweise im
+      # Voraus berechenbar).
+      #
+      # Das Signal ist bei der Erfassungsschicht angemeldet. Sobald es da ist,
+      # nur die Kommentarzeichen entfernen.
+      #
+      # - condition: "additional_costs_mentioned_on_product_page == false"
+      #   reason: >
+      #     Auf der Produktseite fehlt jeder Hinweis darauf, ob zusaetzliche
+      #     Fracht-, Liefer- oder Versandkosten anfallen. § 6 Abs. 1 Nr. 2
+      #     PAngV verlangt diese Angabe auch dann, wenn die Hoehe nicht
+      #     vernuenftigerweise im Voraus berechnet werden kann.
+
       # --- DP-005b: AUSKOMMENTIERT bis die Signale existieren ------------
       # Zunaechst am 20.08. von "eindeutig" auf "verdaechtig" gestuft (T3:
       # ein "false" bei "..._disclosed_before_order" bedeutet nur dann "nicht

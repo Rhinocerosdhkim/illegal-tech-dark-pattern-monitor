@@ -122,6 +122,12 @@
   #
   # Operatoren:  >  <  >=  <=  ==  !=  and  or
   #              in / not in   (Zugehoerigkeit zu einer Liste aus "listen:")
+  #              contains_any / not_contains_any
+  #                            (kommt eines der Woerter aus einer Liste IM
+  #                             Text vor? Fuer Freitext-Signale wie
+  #                             countdown_text - dort waere ein Vergleich
+  #                             auf Gleichheit sinnlos, weil der Text nie
+  #                             exakt einem Listeneintrag entspricht.)
   #
   # FEHLENDE SIGNALE: Jede Bedingung wird EINZELN ausgewertet. Kann eine
   # Bedingung nicht ausgewertet werden, weil ein Signal fehlt, wird nur

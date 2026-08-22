@@ -154,6 +154,12 @@
           Bereitstellung zu berücksichtigen, und die sieht die Erfassung
           nicht. Bitte manuell nachprüfen.
 
+          Anmerkung (SW, 21.08.): Dass dieser Fall bei uns auf "unklar"
+          landet, ist zugleich ein Hinweis auf eine technische Grenze
+          unseres Werkzeugs — nicht auf eine rechtliche Unsicherheit. Ein
+          vollständiger Erfassungspfad und eine breitere Stichwortliste
+          würden die Frage in vielen Fällen beantworten.
+
   threshold_source: >
     Zu den Werten 10 px und 3,0: eigene Festlegung des Teams, bewusst
     unterhalb jeder Stufe der WCAG 2.2. Erfolgskriterium 1.4.3 verlangt fuer

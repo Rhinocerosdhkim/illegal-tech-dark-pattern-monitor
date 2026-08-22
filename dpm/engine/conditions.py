@@ -8,6 +8,8 @@ Supports exactly what rules/_VORLAGE.yaml promises the legal team:
                  accept_contrast_ratio - reject_contrast_ratio > 3.0
     lists        kuendigungsbutton_label not in zulaessige_labels
                  order_button_label not_in_whitelist ["a", "b"]
+    free text    countdown_text contains_any sitzungs_woerter
+                 countdown_text not_contains_any sitzungs_woerter
 
 Why no eval(): a file written by the legal team must never be executed as
 program code. And a typo should produce a readable message, not a crash.
@@ -33,6 +35,12 @@ _COMPARISON = re.compile(r"(>=|<=|==|!=|>|<)")
 _LIST_OP_INLINE = re.compile(r"\b(not_in_[a-z_]+|in_[a-z_]+)\b")
 _LIST_OP_NAMED = re.compile(
     r"^([a-zA-Z_][a-zA-Z0-9_]*)\s+(not\s+in|in)\s+([a-zA-Z_][a-zA-Z0-9_]*)$")
+# Free-text signals cannot be compared for equality: countdown_text reads
+# "Angebot endet in 14:59", never exactly one of our list entries. These two
+# ask whether ANY listed word occurs IN the text.
+_CONTAINS_NAMED = re.compile(
+    r"^([a-zA-Z_][a-zA-Z0-9_]*)\s+(not_contains_any|contains_any)"
+    r"\s+([a-zA-Z_][a-zA-Z0-9_]*)$")
 _NUMBER = re.compile(r"^-?\d+(\.\d+)?$")
 _IDENTIFIER = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
 
@@ -171,6 +179,13 @@ def _split(text: str, keyword: str) -> list:
 # --- single condition ----------------------------------------------------
 
 def _atom(text: str, table, lists, used) -> bool:
+    contains = _CONTAINS_NAMED.match(text)
+    if contains:
+        return _contains(contains.group(1),
+                         contains.group(2).startswith("not_"),
+                         _named_list(contains.group(3), lists, text),
+                         table, used)
+
     named = _LIST_OP_NAMED.match(text)
     if named:
         return _membership(named.group(1), named.group(2).startswith("not"),
@@ -237,6 +252,21 @@ def _membership(signal_name: str, negated: bool, entries: list,
 
 # Trailing punctuation and decoration are not part of the wording.
 _DECORATION = " \t\n.,;:!?…\"'»«*→>-"
+
+
+def _contains(signal_name: str, negated: bool, entries: list,
+              table, used) -> bool:
+    """Does any listed word occur in the free text of the signal?
+
+    Substring, case-insensitive, whitespace collapsed. Needed because a
+    countdown caption is free text — matching it for equality against a
+    list would never hit. Whether the caption claims a limited AVAILABILITY
+    or merely announces a session timeout is exactly the distinction
+    Anhang Nr. 7 turns on, and it cannot be made without reading the words.
+    """
+    text = _fold(_operand(signal_name, table, {}, used))
+    hit = any(_fold(e) in text for e in entries if str(e).strip())
+    return not hit if negated else hit
 
 
 def _fold(value) -> str:

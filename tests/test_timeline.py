@@ -24,17 +24,11 @@ assert not timeline.warnings, timeline.warnings
 print("  ok  same target, correct order, same viewport — no objections")
 
 print("\nA finding disappears")
-c = changes["DP-002"]
-assert (c.kind, c.before_level, c.after_level) == (RESOLVED, "verdaechtig", "unauffaellig"), c
-assert c.before_condition and not c.after_condition
-print("  ok  DP-002 verdaechtig -> unauffaellig, earlier condition recorded")
-
-# DP-003 no longer carries a finding at all (PV removed the eindeutig branch),
-# so the countdown disappearing now shows up as a change in what could be
-# measured, not as a finding that was resolved. That is the honest reading.
-c = changes["DP-003"]
-assert (c.before_level, c.after_level) == ("unklar", "unauffaellig"), c
-print("  ok  DP-003 unklar -> unauffaellig (Messlage, kein Befund)")
+for rule_id in ("DP-002", "DP-003"):
+    c = changes[rule_id]
+    assert (c.kind, c.before_level, c.after_level) == (RESOLVED, "verdaechtig", "unauffaellig"), c
+    assert c.before_condition and not c.after_condition
+    print(f"  ok  {rule_id} verdaechtig -> unauffaellig, earlier condition recorded")
 
 print("\nSame level, different facts — what a naive diff would miss")
 c = changes["DP-001"]
@@ -48,10 +42,9 @@ print(f"      {c.before_condition}  ->  {c.after_condition}")
 
 print("\nUnchanged rules are not reported as changes")
 assert all(changes[r].kind == UNCHANGED for r in ("DP-004", "DP-005", "DP-006"))
-# DP-003 is a "messlage" change, not a finding — deliberately not noteworthy.
-assert [c.rule_id for c in timeline.noteworthy] == ["DP-001", "DP-002"], \
+assert [c.rule_id for c in timeline.noteworthy] == ["DP-001", "DP-002", "DP-003"], \
     [c.rule_id for c in timeline.noteworthy]
-print("  ok  2 of 6 rules noteworthy")
+print("  ok  3 of 6 rules noteworthy")
 
 print("\nSignal level")
 changed = {s.signal: s for s in timeline.signal_changes if s.kind == "geaendert"}
@@ -83,7 +76,7 @@ print("\nHTML")
 with tempfile.TemporaryDirectory() as tmp:
     result = build(timeline, output=tmp)
     html = result["html"].read_text(encoding="utf-8")
-    assert result["changes"] == 2
+    assert result["changes"] == 3
     for needle, name in [("Zeitachse", "title"),
                          ("Stufe gleich, Grund anders", "the important case"),
                          ("Geänderte Messwerte", "signal table"),

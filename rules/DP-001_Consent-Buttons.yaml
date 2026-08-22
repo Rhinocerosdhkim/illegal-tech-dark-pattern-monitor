@@ -95,7 +95,25 @@
       # "Mehr Informationen" unzulaessig, WENN der zweite Weg nicht zu einer
       # unmittelbaren Ablehnung fuehrt. Genau das steht jetzt hier; der
       # Fall, dass er dorthin fuehrt, steht als Verdachtsmoment unten.
-      - "banner_detected == true and reject_button_present == false and more_info_leads_to_reject == false"
+      # ZUSAMMENGEFASST 21.08. nach Antwort A1. Vorher standen hier zwei
+      # Bedingungen: "kein Ablehnen-Button und der Mehr-Informationen-Weg
+      # fuehrt NICHT zur Ablehnung" (eindeutig) und dieselbe mit "fuehrt
+      # dorthin" (verdaechtig). PV: beide sind eindeutig, "das ist noch eines
+      # unserer eindeutigsten Kriterien" - und alles wird ohnehin menschlich
+      # nachgeprueft. Damit faellt die Unterscheidung weg.
+      #
+      # Zwei Gewinne nebenbei: die Bedingung deckt sich jetzt woertlich mit
+      # dem, was das OLG Koeln entschieden hat (keine Ablehnoption auf der
+      # ERSTEN Ebene), und sie haengt nur noch an zwei zugesagten Signalen
+      # statt an einem, das die Erfassung noch nicht liefert.
+      - condition: "banner_detected == true and reject_button_present == false"
+        reason: >
+          Das Einwilligungsbanner bietet auf der ersten Ebene keine
+          Moeglichkeit zur Ablehnung. Nach OLG Koeln, Urteil vom 19.01.2024,
+          6 U 80/23, fuehrt eine solche Gestaltung nicht zu einer
+          freiwilligen und hinreichend informierten Einwilligung; Zustimmung
+          und Ablehnung muessen auf derselben Ebene angeboten werden, und die
+          Ablehnung muss ohne Umweg ueber Untermenues waehlbar sein.
       # HERUNTERGESTUFT 20.08. nach BEFUNDSTUFEN T1. Der Kommentar beschreibt
       # eine KOMBINATION ("in Kombination mit fehlender klarer
       # Ablehnungsoption"), die Bedingung stand ohne sie da. Die Regel
@@ -124,9 +142,8 @@
           notwendige Speicherung handelt, ist zu pruefen.
 
       - "banner_reappears_count_24h >= 2"
-      # Ablehnung nur ueber die zweite Ebene ("Mehr Informationen").
-      # Moeglich, aber spuerbar erschwert - Art. 7 Abs. 4 DSGVO.
-      - "banner_detected == true and reject_button_present == false and more_info_leads_to_reject == true"
+      # Die frueher hier stehende Bedingung "Ablehnung nur ueber die zweite
+      # Ebene" ist am 21.08. nach oben zu "eindeutig" gewandert (Antwort A1).
       # --- Gestaltung des Banners --------------------------------------
       # Ausdruecklich an ein vorhandenes Banner gebunden (20.08.). Ohne
       # Banner ist die Regel nur ueber den Cookie-Zweig anwendbar; ein

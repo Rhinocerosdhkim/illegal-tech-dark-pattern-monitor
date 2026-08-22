@@ -84,20 +84,30 @@ assert level("DP-001", **{**banner, "third_party_cookies_before_consent": 0,
                           "preselected_checkbox_count": 2}) == "verdaechtig"
 print("  ok  the locked 'Notwendig' toggle of every CMP stays verdaechtig")
 
-print("DP-003 — a countdown alone is no finding at any level")
-# Two deletions on 20.08. plus PV's removal of the eindeutig branch the same
-# evening. A resetting countdown only shows the timer is session-scoped;
-# session and checkout timers reset identically, and the rule's own
-# false_positive_risks want those excluded. Nothing in Anhang Nr. 7 is
-# established by a reset alone.
+print("DP-003 — a running countdown is no finding, a stopped one is")
+# The reset test was dropped: session and checkout timers reset identically,
+# and the rule's own false_positive_risks want those excluded. What replaced
+# it is stronger — a counter that does not move over three captures is not
+# counting down at all. Plus a wording filter against session timers (A6b).
 clean = dict(confirmed=["is_b2c_offer"], is_b2c_offer=True,
              scarcity_text_present=False, scarcity_value=0,
-             scarcity_value_unchanged_scans=1)
-for resets in (False, True):
-    got = level("DP-003", countdown_element_present=True,
-                countdown_resets_on_revisit=resets, **clean)
-    assert got == "unauffaellig", f"countdown resets={resets} -> {got}"
-    print(f"  ok  countdown, resets={resets} -> no finding")
+             scarcity_value_unchanged_scans=1, countdown_element_present=True,
+             countdown_personalized=False)
+assert level("DP-003", countdown_unchanged_scans=0,
+             countdown_text="Angebot endet in 14:59", **clean) == "unauffaellig"
+print("  ok  countdown that actually runs -> no finding")
+assert level("DP-003", countdown_unchanged_scans=3,
+             countdown_text="Angebot endet in 14:59", **clean) == "verdaechtig"
+print("  ok  countdown stopped over three captures -> verdaechtig")
+
+# A6b: the caption decides whether a limited AVAILABILITY is claimed at all.
+for text in ("Ihre Reservierung läuft ab in 14:59",
+             "Warenkorb wird in 05:00 geleert",
+             "Sitzung endet in 02:00"):
+    got = level("DP-003", countdown_unchanged_scans=5, countdown_text=text, **clean)
+    assert got == "unauffaellig", f"{text!r} -> {got}"
+    print(f"  ok  {text!r} recognised as a session timer")
+
 assert not RULES["DP-003"].verdict_rules["eindeutig"], \
     "DP-003 hat wieder einen eindeutig-Zweig — bitte gegen BEFUNDSTUFEN T1 pruefen"
 print("  ok  DP-003 carries no eindeutig branch")

@@ -58,20 +58,78 @@
     - scarcity_value
     - scarcity_value_unchanged_scans
 
+  # NEU 21.08. nach Antwort A6b ("countdown_text soll in eine Bedingung -
+  # wie machen wir das?"). Der Countdown-Text ist Freitext ("Angebot endet
+  # in 14:59"), er kann also nie mit einem Listeneintrag identisch sein.
+  # Dafuer gibt es jetzt den Operator "contains_any" bzw.
+  # "not_contains_any": er prueft, ob eines der Woerter IM Text vorkommt.
+  #
+  # Wozu: Anhang Nr. 7 verlangt eine Angabe ueber die VERFUEGBARKEIT. Ein
+  # Reservierungs- oder Sitzungs-Timer sagt nichts ueber Verfuegbarkeit -
+  # er ist genau der Fall, den die Fehlalarmrisiken dieser Regel ausnehmen
+  # wollen, und er setzt sich beim Wiederaufruf identisch zurueck. Ohne
+  # diesen Filter faellt er in dieselbe Bedingung wie ein echter
+  # Knappheits-Countdown.
+  #
+  # Pflege: Woerter hier ergaenzen, keine Bedingung anfassen.
+  listen:
+    sitzungs_timer_woerter:
+      - "Reservierung"
+      - "reserviert"
+      - "Sitzung"
+      - "Session"
+      - "Warenkorb"
+      - "Zahlung"
+      - "Bezahlung"
+      - "Buchungsvorgang"
+      - "Timeout"
+
   verdict_rules:
     # eindeutig:
     verdaechtig:
       # general countdown
       # old rule: - "countdown_element_present == true and countdown_resets_on_revisit == true" # changed to:
-      - "countdown_element_present == true and countdown_personalized == false and countdown_unchanged_scans >= 3" # s. offene Frage 1
+      - condition: >
+          countdown_element_present == true and
+          countdown_personalized == false and
+          countdown_unchanged_scans >= 3 and
+          countdown_text not_contains_any sitzungs_timer_woerter
+        reason: >
+          Der angezeigte Countdown ist ueber mindestens drei unabhaengige
+          Erfassungen unveraendert geblieben. Ein Zaehler, der nicht laeuft,
+          zaehlt nichts herunter; die angezeigte Frist entspricht dann keiner
+          tatsaechlichen Begrenzung. Der Wortlaut deutet nicht auf einen
+          Sitzungs- oder Reservierungs-Timer hin.
 
       # personalized countdown # s. false positive 1
-      - "countdown_element_present == true and countdown_personalized == true and countdown_unchanged_scans > 0"
-      
+      - condition: >
+          countdown_element_present == true and
+          countdown_personalized == true and
+          countdown_unchanged_scans > 0 and
+          countdown_text not_contains_any sitzungs_timer_woerter
+        reason: >
+          Der Countdown wird als individuell begrenztes Angebot dargestellt,
+          steht aber schon zwischen zwei Erfassungen still. Bei einer
+          personalisierten Frist genuegt eine einzige unveraenderte Messung,
+          weil sie fuer diesen Nutzer laufen muesste.
+
       # scarcity
-      - "scarcity_text_present == true and scarcity_value > 0 and scarcity_value_unchanged_scans >= 3"
+      # Eigene Begruendung ergaenzt 21.08. nach Antwort A6c. Anhang Nr. 7
+      # erfasst nur die ZEITLICHE Begrenzung; eine reine Mengenangabe faellt
+      # dem Wortlaut nach nicht darunter. Da in der Befundtabelle immer die
+      # erste Fundstelle aus legal_basis erscheint, benennt die Begruendung
+      # die einschlaegige Norm ausdruecklich.
+      - condition: "scarcity_text_present == true and scarcity_value > 0 and scarcity_value_unchanged_scans >= 3"
+        reason: >
+          Die angegebene Stueckzahl ist ueber mindestens drei unabhaengige
+          Erfassungen unveraendert. Das ist ein Anhaltspunkt fuer eine nicht
+          bestandsgefuehrte Anzeige, kein Nachweis der Unwahrheit - traeges
+          Inventar erklaert denselben Befund. Rechtlich einschlaegig ist
+          hier § 5 Abs. 1, Abs. 2 Nr. 1 UWG (Angabe ueber die Verfuegbarkeit),
+          nicht der Anhang zu § 3 Abs. 3 UWG Nr. 7, der nur die zeitliche
+          Begrenzung erfasst.
       # Ist keine Zahl vorhanden, gehoert scarcity_value nach signal_errors (siehe _SIGNALE.md).
-      
+
   threshold_source: >
     Wortlaut Anhage Nr. 7 zu § 3 Abs. 3 UWG: die unwahre Angabe einer zeitlichen
     Begrenzung ist als unlautere geschäftliche Handlung ausdrücklich genannt.
@@ -158,21 +216,35 @@
 
     
 
+  # STRUKTUR REPARIERT 21.08. (zweites Mal in zwei Tagen, deshalb hier
+  # ausfuehrlich). Drei Dinge waren zusammengekommen:
+  #   1. "offene_fragen_resolved:" stand EINGERUECKT unter "offene_fragen:",
+  #      war also dessen Inhalt statt ein eigener Schluessel.
+  #   2. Die Listenpunkte standen auf zwei statt vier Leerzeichen.
+  #   3. Bei zwei Antworten stand hinter "answer:" ein "#", der Text war
+  #      also auskommentiert und der Wert leer.
+  # Ergebnis: die Datei war kein gueltiges YAML mehr - und weil die Engine
+  # alle sechs Regeln zusammen laedt, war das GANZE Regelwerk unbenutzbar.
+  #
+  # Merkhilfe: Schluessel auf zwei Leerzeichen, Listenpunkte auf vier,
+  # "answer:" braucht immer einen Wert. Offene Antworten so:
+  #   answer: "[PENDING] …"
+
+  offene_fragen_resolved:
+    - question: "Soll die Mindestanzahl von Confirmations‑Scans (bei Knappheit) konfigurierbar bleiben oder fest in die Regel geschrieben werden?"
+      answer: "Konfigurierbar. — PV, 20.08."
+
+    - question: "Reicht ein einziger reproduzierbarer Reset des Countdowns als gerichtsfest, oder mindestens 2–3?"
+      answer: "3+ bei allgemeinen Countdowns (Robustheit gegen Messfehler), bei personalisierten genügt einer. — PV, 21.08."
+
+    - question: "Welche Belege sind für ein gerichtsfestes Paket erforderlich?"
+      answer: "Screenshots (mit Zeitstempel), DOM-Hash, Set-Cookie-Liste, User-Agent, Geolocation. — PV, 21.08."
+
   offene_fragen:
-    offene_fragen_resolved:
-  - question: "Soll die Mindestanzahl von Confirmations‑Scans (bei Knappheit) konfigurierbar bleiben oder fest in die Regel geschrieben werden?"
-    answer: "Konfigurierbar. — PV, 20.08."
-    
-  - question: "Reicht ein einziger reproduzierbarer Reset des Countdowns als gerichtsfest, oder mindestens 2–3?"
-    answer: "3+ bei allgemeinen Countdowns (Robustheit gegen Messfehler), bei personalisierten genügt einer"
-    
-  - question: "Sollen wir explizite Ausnahmen (Session/Checkout‑Timeouts) in die Regel aufnehmen?"
-    answer: #"[PENDING] Ja, über signal_filters in false_positive_exceptions"
-    
-  - question: "Viewer-Count ('X Personen sehen sich das an'): § 7 Nr. 7 UWG oder § 5 UWG?"
-    answer: #"[PENDING] Vorschlag: Beides prüfbar — viewer_count_present als separales Signal mit eigenem Verdict (zunächst nur § 5 UWG, ggf. später Nr. 7)"
-    
-  - question: "Welche Belege sind für ein gerichtsfestes Paket erforderlich?"
-    answer: "Screenshots (mit Zeitstempel), DOM-Hash, Set-Cookie-Liste, User-Agent, Geolocation"
+    - question: "Sollen wir explizite Ausnahmen (Session/Checkout‑Timeouts) in die Regel aufnehmen?"
+      answer: "[PENDING] Ja, über signal_filters in false_positive_exceptions"
+
+    - question: "Viewer-Count ('X Personen sehen sich das an'): § 7 Nr. 7 UWG oder § 5 UWG?"
+      answer: "[PENDING] Vorschlag: Beides prüfbar — viewer_count_present als separates Signal mit eigenem Verdict (zunächst nur § 5 UWG, ggf. später Nr. 7)"
 
   disclaimer_required: true
