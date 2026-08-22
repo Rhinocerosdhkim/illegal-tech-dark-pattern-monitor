@@ -14,14 +14,30 @@ would always show the unfiltered table — and the agency asked for a
 
 from __future__ import annotations
 
+from html import escape
 from pathlib import Path
 
 A4 = {"format": "A4", "print_background": True,
       "margin": {"top": "16mm", "bottom": "16mm", "left": "14mm", "right": "14mm"}}
 
 
+def footer(left: str) -> str:
+    """A running footer for the printed page.
+
+    The Beweisakte is filed on paper. A page that gets separated from the
+    file has to say which procedure it belongs to and whether it is
+    complete — hence the page count on every sheet.
+    """
+    return (
+        '<div style="width:100%;margin:0 12mm;font:9px \'IBM Plex Mono\','
+        'monospace;color:#8a8884;display:flex;justify-content:space-between">'
+        f'<span>{escape(left)}</span>'
+        '<span>Seite <span class="pageNumber"></span> von '
+        '<span class="totalPages"></span></span></div>')
+
+
 def render(html: Path, target: Path | None = None, before: str | None = None,
-           landscape: bool = False) -> Path | None:
+           landscape: bool = False, running_footer: str | None = None) -> Path | None:
     """Write `html` to PDF. Returns None if Playwright is not installed.
 
     A missing browser is not a failure: the HTML is already on disk and
@@ -43,7 +59,12 @@ def render(html: Path, target: Path | None = None, before: str | None = None,
         if before:
             page.evaluate(before)
             page.wait_for_timeout(120)      # let the page finish reacting
-        page.pdf(path=str(target), landscape=landscape, **A4)
+        options = dict(A4)
+        if running_footer:
+            options |= {"display_header_footer": True,
+                        "header_template": "<div></div>",
+                        "footer_template": running_footer}
+        page.pdf(path=str(target), landscape=landscape, **options)
         browser.close()
     return target
 

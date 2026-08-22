@@ -55,7 +55,7 @@ with tempfile.TemporaryDirectory() as tmp:
         print("  ok  an unknown filter value is ignored, not applied blindly")
 
         page.emulate_media(media="print"); page.wait_for_timeout(150)
-        assert page.eval_on_selector(".filter", "e => getComputedStyle(e).display") \
+        assert page.eval_on_selector(".filterleiste", "e => getComputedStyle(e).display") \
             == "none"
         assert page.eval_on_selector("#filter-hinweis",
                                      "e => getComputedStyle(e).display") != "none"

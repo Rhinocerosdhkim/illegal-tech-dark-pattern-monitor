@@ -9,7 +9,7 @@ only notices a quietly reintroduced design when somebody thinks to look is
 not a monitor.
 """
 
-import json, sys, pathlib, shutil, tempfile
+import json, re, sys, pathlib, shutil, tempfile
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 from dpm.__main__ import main
@@ -61,6 +61,18 @@ with tempfile.TemporaryDirectory() as tmp:
     assert len(zeitachsen) == 1, zeitachsen
     print(f"  ok  {len(akten)} Beweisakten, 1 Marktübersicht, "
           f"{len(zeitachsen)} Zeitachse — from no arguments")
+
+    # From Tuesday somebody without a development background opens this
+    # folder. Without the index page they see run-id directories and have
+    # to guess; and every link on it must point at a file that exists.
+    index = out / "index.html"
+    assert index.exists(), "no index.html — the folder is unnavigable"
+    page = index.read_text(encoding="utf-8")
+    links = re.findall(r'href="([^"]+)"', page)
+    assert links, "index without a single link"
+    missing = [l for l in links if not (out / l).exists()]
+    assert not missing, f"index links to files that do not exist: {missing}"
+    print(f"  ok  index.html, {len(links)} links, all resolvable")
 
     # Running it again must not multiply anything: the outputs it writes
     # carry no capture.json, so they are not mistaken for new runs.

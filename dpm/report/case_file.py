@@ -34,13 +34,18 @@ from dpm.engine.conditions import MissingSignal, SignalTable
 from dpm.engine.run import Run
 from dpm.engine.rules import Rule
 from dpm.engine.verdict import CLEAR, SUSPECTED, UNRESOLVED, Finding
-from dpm.report.pdf import render as render_pdf
+from dpm.report.design import fonts
+from dpm.report.pdf import footer, render as render_pdf
 
 LEVEL_LABEL = {CLEAR: "eindeutig", SUSPECTED: "verdächtig",
                UNRESOLVED: "unklar", "unauffaellig": "unauffällig",
                "nicht_anwendbar": "nicht anwendbar"}
 
 _PLACEHOLDER = re.compile(r"\{([a-zA-Z_][a-zA-Z0-9_]*)\}")
+
+# Order in which the levels are counted out wherever a run is summarised.
+LEVEL_CLASS_ORDER = [(CLEAR, "eindeutig"), (SUSPECTED, "verdaechtig"),
+                     (UNRESOLVED, "unklar")]
 
 # The rulebook writes the categories without umlauts. In a document that
 # accompanies a warning letter, the correct spelling belongs.
@@ -79,6 +84,9 @@ def build(run: Run, findings: list, output: str | Path = "out",
         if source:
             shutil.copyfile(source, folder / name)
 
+    eintraege = [_entry(nr, f, steps, run, folder)
+                 for nr, f in enumerate(reportable, start=1)]
+
     html = _environment().get_template("beweisakte.html").render(
         produkt=PRODUCT_NAME,
         lauf=run,
@@ -86,16 +94,20 @@ def build(run: Run, findings: list, output: str | Path = "out",
         schritte=run.steps,
         hinweis=PROVISIONAL_NOTICE,
         zusammenfassung=_summary(findings),
-        eintraege=[_entry(nr, f, steps, run, folder)
-                   for nr, f in enumerate(reportable, start=1)],
+        eintraege=eintraege,
         kategorie=CATEGORY_LABEL,
         warnungen=run.warnings,
+        kennzahlen=_key_figures(run, findings, eintraege),
+        regelanzahl=len(findings),
+        nachweise=_all_evidence(eintraege),
     )
 
     target_html = folder / "beweisakte.html"
     target_html.write_text(html, encoding="utf-8")
 
-    pdf = render_pdf(target_html) if as_pdf else None
+    running = footer(f"{PRODUCT_NAME} · {len(findings)} Regeln · "
+                     f"{run.run_id} · lokal erzeugt")
+    pdf = render_pdf(target_html, running_footer=running) if as_pdf else None
     return CaseFile(html=target_html, pdf=pdf, finding_count=len(reportable))
 
 
@@ -201,6 +213,44 @@ def _summary(findings: list) -> list:
             for level in order if counts.get(level)]
 
 
+def _key_figures(run: Run, findings: list, eintraege: list) -> list:
+    """The four numbers across the top of the document.
+
+    "Geprüfte Schritte" is written as "3 von 4" only when the target
+    profile says how many steps were planned. Without a profile there is
+    no denominator, and inventing one would misstate what was skipped.
+    """
+    planned = run.target_profile.get("path") or run.target_profile.get("pfad")
+    steps = f"{len(run.steps)}"
+    if isinstance(planned, list) and len(planned) >= len(run.steps):
+        steps = f"{len(run.steps)} von {len(planned)}"
+
+    images = {b["datei"] for e in eintraege for b in e["screenshots"]
+              if b["vorhanden"]}
+    clear = sum(1 for f in findings if f.level == CLEAR)
+    return [("Geprüfte Schritte", steps),
+            ("Befunde", str(len(eintraege))),
+            ("Nachweise", f"{len(images)} Dateien"),
+            ("Eindeutig", str(clear))]
+
+
+def _all_evidence(eintraege: list) -> list:
+    """Every screenshot once, for the full-size appendix.
+
+    The detail blocks show thumbnails; a thumbnail does not prove
+    anything you cannot read. The appendix carries the readable image,
+    and both point at the same file name and hash.
+    """
+    seen, images = set(), []
+    for entry in eintraege:
+        for image in entry["screenshots"]:
+            if image["datei"] in seen:
+                continue
+            seen.add(image["datei"])
+            images.append({**image, "befund": entry["regel"].id})
+    return images
+
+
 def _screenshot_names(findings: list, run: Run) -> set:
     names = {s.get("screenshot") for s in run.steps
              if isinstance(s, dict) and s.get("screenshot")}
@@ -222,4 +272,7 @@ def _environment() -> Environment:
         lstrip_blocks=True, undefined=ChainableUndefined)
     environment.filters["absatz"] = lambda t: [
         p.strip() for p in (t or "").split("\n\n") if p.strip()]
+    # The shared stylesheet is included as a template, so the embedded
+    # fonts are available to all three views through one environment.
+    environment.globals["fonts"] = fonts
     return environment

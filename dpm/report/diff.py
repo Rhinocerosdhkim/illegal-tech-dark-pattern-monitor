@@ -25,7 +25,9 @@ still "eindeutig" — and reporting "unverändert" would be wrong.
 
 from __future__ import annotations
 
+import shutil
 from dataclasses import dataclass, field
+from datetime import date
 from pathlib import Path
 
 from dpm import PRODUCT_NAME
@@ -111,6 +113,22 @@ class Timeline:
     def days_between(self) -> str:
         return f"{self.earlier.meta.get('timestamp', '?')[:10]} → " \
                f"{self.later.meta.get('timestamp', '?')[:10]}"
+
+    @property
+    def days(self) -> int | None:
+        """Days between the two captures, or None if a date is unusable.
+
+        The gap is what makes a timeline readable — "the countdown came
+        back after 104 days" says more than two dates do.
+        """
+        try:
+            earlier = date.fromisoformat(
+                str(self.earlier.meta.get("timestamp"))[:10])
+            later = date.fromisoformat(
+                str(self.later.meta.get("timestamp"))[:10])
+        except (TypeError, ValueError):
+            return None
+        return (later - earlier).days
 
 
 def compare(earlier_path, later_path, rules=None) -> Timeline:
@@ -225,10 +243,43 @@ def _show(value) -> str:
     return f"„{value}“" if isinstance(value, str) else str(value)
 
 
+def _evidence_pairs(timeline: Timeline, folder: Path) -> list:
+    """Both captures of the same step, side by side.
+
+    Copied under prefixed names because the two runs use the same file
+    names. Only steps present in both runs are shown — a step that exists
+    on one side only is not a comparison.
+    """
+    later_steps = {s.get("step"): s for s in timeline.later.steps
+                   if isinstance(s, dict)}
+    changed = {c.step: c.changed for c in timeline.step_changes}
+    pairs = []
+    for step in timeline.earlier.steps:
+        name = step.get("step") if isinstance(step, dict) else None
+        other = later_steps.get(name)
+        if not other:
+            continue
+        pair = {"step": name, "changed": changed.get(name, False),
+                "frueher": None, "spaeter": None,
+                "frueher_hash": step.get("dom_hash"),
+                "spaeter_hash": other.get("dom_hash")}
+        for key, run, source in (("frueher", timeline.earlier, step),
+                                 ("spaeter", timeline.later, other)):
+            image = run.screenshot(source.get("screenshot"))
+            if image:
+                target = folder / f"{key}_{image.name}"
+                shutil.copyfile(image, target)
+                pair[key] = target.name
+        pairs.append(pair)
+    return pairs
+
+
 def build(timeline: Timeline, output: str | Path = "out",
           as_pdf: bool = False) -> dict:
     folder = Path(output) / f"zeitachse_{timeline.later.run_id}"
     folder.mkdir(parents=True, exist_ok=True)
+
+    paare = _evidence_pairs(timeline, folder)
 
     html = _environment().get_template("zeitachse.html").render(
         produkt=PRODUCT_NAME,
@@ -237,6 +288,7 @@ def build(timeline: Timeline, output: str | Path = "out",
         bemerkenswert=timeline.noteworthy,
         signale=timeline.signal_changes,
         schritte=timeline.step_changes,
+        paare=paare,
         art_label=KIND_LABEL,
         stufe_label=LEVEL_LABEL,
         warnungen=timeline.warnings + timeline.earlier.warnings

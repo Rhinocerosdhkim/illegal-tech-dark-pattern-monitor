@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>{{ produkt }} — Archiv</title>
+<style>
+{% include "_design.css" %}
+
+/* ------------------------------------------ archive / Auftrag, view #1a */
+.zweispalt {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1px;
+  background: var(--b-14);
+}
+.tafel { padding: 26px 28px 28px; background: var(--paper); }
+.tafel.rechts { background: var(--paper-alt); }
+.tafelkopf {
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.tafelkopf h2 { margin: 0; font: 600 15px var(--sans); }
+.tafelkopf .augenbraue {
+  font: 400 10px var(--mono); letter-spacing: .06em; text-transform: uppercase;
+  color: var(--t-45);
+}
+.tafel p.einleitung {
+  max-width: 430px; font: 400 12px/1.55 var(--sans); color: var(--t-60);
+  margin: 0 0 20px;
+}
+
+table.akten {
+  width: 100%; border-collapse: collapse;
+  border: 1px solid var(--b-16); background: #fff;
+}
+table.akten th {
+  text-align: left; padding: 8px 12px; background: var(--paper-alt);
+  font: 500 9.5px var(--mono); letter-spacing: .08em; text-transform: uppercase;
+  color: var(--t-55); border-bottom: 1px solid var(--b-14);
+}
+table.akten td {
+  padding: 11px 12px; border-bottom: 1px solid var(--b-07);
+  font: 400 11.5px var(--sans); vertical-align: top;
+}
+table.akten tr:last-child td { border-bottom: none; }
+table.akten .ziel { font: 500 12px var(--mono); }
+table.akten .zahl {
+  font-family: var(--mono); font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+table.akten .wege { font: 400 11px var(--mono); white-space: nowrap; }
+table.akten .fehlt { color: var(--t-45); }
+
+.stufenzeile { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 5px; }
+
+.befehl {
+  border: 1px solid var(--b-20); background: var(--paper-rule);
+  padding: 11px 13px; font: 400 11.5px/1.7 var(--mono);
+  margin-bottom: 6px; overflow-wrap: anywhere;
+}
+.befehl .was { display: block; color: var(--t-60); }
+.weitere { margin-top: 26px; }
+.weitere .label { margin-bottom: 8px; }
+.weitere ul { margin: 0; padding: 0; list-style: none; }
+.weitere li {
+  padding: 9px 0; border-bottom: 1px solid var(--b-07);
+  font: 400 11.5px var(--sans);
+  display: flex; justify-content: space-between; gap: 16px; align-items: baseline;
+}
+.weitere li:last-child { border-bottom: none; }
+.weitere .wege { font: 400 11px var(--mono); white-space: nowrap; }
+
+.fuss {
+  padding: 20px 28px 30px; border-top: 1px solid var(--b-14);
+  font: 400 12px/1.65 var(--serif); color: var(--t-75); max-width: 88ch;
+}
+{% include "_print.css" %}
+</style>
+</head>
+<body>
+
+<div class="titlebar">
+  <div class="left">
+    <span class="wordmark">DPM</span>
+    <span class="tabs">
+      <span class="tab active">Auftrag</span>
+      <span class="tab" style="color:rgba(233,231,225,.28)">Prüflauf</span>
+      <span class="tab" style="color:rgba(233,231,225,.28)">Ergebnis</span>
+    </span>
+  </div>
+  <span class="status">Lokale Instanz · keine Übertragung an Dritte</span>
+</div>
+
+<div class="zweispalt">
+
+  <div class="tafel">
+    <div class="tafelkopf">
+      <h2>Referenzfälle</h2>
+      <span class="augenbraue">Bereits erfasst</span>
+    </div>
+    <p class="einleitung">
+      Öffnet sofort aus dem lokalen Archiv. Kein Netzzugriff, kann nicht
+      fehlschlagen. Für Vorführung, Vergleich und Wiedervorlage.
+    </p>
+
+    {% if akten %}
+    <table class="akten">
+      <thead>
+        <tr><th>Ziel</th><th>Branche</th><th>Befunde</th><th>Erfasst</th><th>Akte</th></tr>
+      </thead>
+      <tbody>
+        {% for a in akten %}
+        <tr>
+          <td>
+            <span class="ziel">{{ a.target or "—" }}</span>
+            <div class="stufenzeile">
+              {% for code, klasse in stufen %}
+              {% if a.counts.get(code) %}
+              <span class="stufe stufe-sm {{ klasse }}">{{ a.counts[code] }}</span>
+              {% endif %}
+              {% endfor %}
+            </div>
+          </td>
+          <td>{{ a.industry }}</td>
+          <td class="zahl">{{ a.findings }}</td>
+          <td class="zahl">{{ (a.timestamp or "")[:10] or "—" }}</td>
+          <td class="wege">
+            {% if a.html %}<a href="{{ a.html }}">HTML</a>{% else %}<span class="fehlt">HTML</span>{% endif %}
+            ·
+            {% if a.pdf %}<a href="{{ a.pdf }}">PDF</a>{% else %}<span class="fehlt">PDF</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="einleitung">
+      Das Archiv ist leer — 0 Akten. Erzeugt werden sie mit
+      <span class="mono">python -m dpm rebuild</span>.
+    </p>
+    {% endif %}
+
+    <div class="weitere">
+      <div class="label">Über alle Ziele</div>
+      <ul>
+        {% if uebersicht.html %}
+        <li>
+          <span>Marktübersicht — {{ uebersicht.sites }} Ziele, {{ uebersicht.findings }} Befunde</span>
+          <span class="wege">
+            <a href="{{ uebersicht.html }}">HTML</a>
+            {% if uebersicht.csv %} · <a href="{{ uebersicht.csv }}">CSV</a>{% endif %}
+            {% if uebersicht.pdf %} · <a href="{{ uebersicht.pdf }}">PDF</a>{% endif %}
+          </span>
+        </li>
+        {% endif %}
+        {% for z in zeitachsen %}
+        <li>
+          <span>Zeitachse {{ z.target }} — {{ z.spanne }}, {{ z.changes }} Veränderung(en)</span>
+          <span class="wege">
+            <a href="{{ z.html }}">HTML</a>
+            {% if z.pdf %} · <a href="{{ z.pdf }}">PDF</a>{% endif %}
+          </span>
+        </li>
+        {% endfor %}
+        {% if not uebersicht.html and not zeitachsen %}
+        <li><span class="fehlt">noch nichts erzeugt</span></li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="tafel rechts">
+    <div class="tafelkopf">
+      <h2>Neue Prüfung</h2>
+      <span class="augenbraue">Live-Erfassung · 60–90 s · kann fehlschlagen</span>
+    </div>
+    <p class="einleitung">
+      Ein echter Browser wird gestartet und wie ein Kunde durch den Shop
+      geführt. Ergebnis ist eine neue Akte mit Zeitstempeln. Die Erfassung
+      läuft über die Kommandozeile im Projektordner — diese Seite ist eine
+      Ablage, kein Steuerpult.
+    </p>
+
+    <div class="label" style="margin-bottom:6px">Ein Ziel erfassen</div>
+    <div class="befehl">python -m dpm capture viagogo
+<span class="was">Zielprofil aus data/targets/viagogo.yaml</span></div>
+    <div class="befehl">python -m dpm capture --url https://beispiel.de
+<span class="was">ohne Profil, nur die Startseite</span></div>
+
+    <div class="label" style="margin:20px 0 6px">Alles neu erzeugen</div>
+    <div class="befehl">python -m dpm rebuild
+<span class="was">Akten, Marktübersicht, Zeitachsen und diese Seite —
+ohne Argumente, ohne Schlüssel</span></div>
+
+    <p class="einleitung" style="margin-top:20px">
+      Schlägt ein Schritt fehl, wird der Lauf nicht verworfen: die bereits
+      erfassten Schritte bleiben, die übrigen Signale werden als
+      <span class="mono">unklar</span> geführt und in der Akte begründet.
+    </p>
+  </div>
+
+</div>
+
+<div class="fuss">
+  <strong>Hinweis.</strong> {{ produkt }} stellt technisch messbare Tatsachen fest
+  und ordnet sie einem Regelwerk zu. Es trifft keine rechtliche Feststellung eines
+  Verstoßes. Alles auf dieser Seite liegt lokal; es wird nichts an Dritte übertragen.
+</div>
+
+</body>
+</html>

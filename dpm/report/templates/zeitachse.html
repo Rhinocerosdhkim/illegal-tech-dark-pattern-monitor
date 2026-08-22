@@ -4,171 +4,274 @@
 <meta charset="utf-8">
 <title>{{ produkt }} — Zeitachse {{ zeitachse.later.target }}</title>
 <style>
-  * { box-sizing: border-box; }
-  body { font: 11pt/1.55 "Helvetica Neue", Arial, sans-serif; color: #16181d;
-         margin: 0; padding: 8mm 6mm 20mm; }
-  .wrap { max-width: 1060px; margin: 0 auto; }
-  h1 { font-size: 21pt; margin: 0 0 1mm; letter-spacing: -.3pt; }
-  h2 { font-size: 12pt; margin: 9mm 0 3mm; padding-bottom: 1.5mm;
-       border-bottom: 1.4pt solid #16181d; }
-  p { margin: 0 0 2.5mm; }
-  .marke { font-size: 8pt; letter-spacing: 1.6pt; text-transform: uppercase; color: #6b7280; }
-  .kopf { border-bottom: 2.4pt solid #16181d; padding-bottom: 4mm; margin-bottom: 4mm; }
-  .unterzeile { color: #4b5563; font-size: 9.5pt; }
-  table { width: 100%; border-collapse: collapse; margin-bottom: 4mm; }
-  th, td { text-align: left; vertical-align: top; padding: 2mm 2.5mm;
-           border-bottom: .5pt solid #d5d8de; font-size: 9pt; }
-  th { background: #f2f3f5; font-size: 7.6pt; text-transform: uppercase;
-       letter-spacing: .5pt; color: #4b5563; border-bottom: 1pt solid #b9bec7; }
-  .mono { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 8.4pt;
-          word-break: break-word; }
-  .marke2 { display: inline-block; padding: .5mm 2mm; border-radius: 1mm;
-            font-size: 7.6pt; font-weight: 700; text-transform: uppercase;
-            letter-spacing: .4pt; border: .8pt solid; white-space: nowrap; }
-  .neu               { color: #7f1d1d; border-color: #7f1d1d; background: #fdf0f0; }
-  .behoben           { color: #14532d; border-color: #14532d; background: #eff6ef; }
-  .verschaerft       { color: #7f1d1d; border-color: #7f1d1d; background: #fdf0f0; }
-  .entschaerft       { color: #14532d; border-color: #14532d; background: #eff6ef; }
-  .grund_geaendert   { color: #7c4a03; border-color: #7c4a03; background: #fdf6e8; }
-  .messlage          { color: #374151; border-color: #9ca3af; background: #f3f4f6; }
-  .unveraendert      { color: #6b7280; border-color: #d5d8de; background: #fafbfc; }
-  .pfeil { color: #6b7280; padding: 0 1.5mm; }
-  .aenderung { border: .8pt solid #b9bec7; padding: 3mm; margin-bottom: 3mm; }
-  .aenderung.wichtig { border-left: 3pt solid #7f1d1d; }
-  .aenderung.gut     { border-left: 3pt solid #14532d; }
-  .aenderung.achtung { border-left: 3pt solid #7c4a03; }
-  .aenderung h3 { font-size: 10.5pt; margin: 0 0 2mm;
-                  display: flex; justify-content: space-between; gap: 4mm; }
-  .label { font-size: 7.4pt; text-transform: uppercase; letter-spacing: .6pt;
-           color: #6b7280; margin: 2.5mm 0 .8mm; }
-  .kasten { border: .8pt solid #b45309; background: #fdf6e8; padding: 3mm; margin: 3mm 0; }
-  .ruhig { color: #4b5563; font-size: 9.5pt; }
-  .fuss { margin-top: 10mm; padding-top: 3mm; border-top: 1pt solid #b9bec7;
-          font-size: 8.5pt; color: #4b5563; }
-  del { color: #7f1d1d; text-decoration-thickness: 1pt; }
+{% include "_design.css" %}
 
-  @media print {
-    @page { size: A4; }
-    body { padding: 0; }
-    .aenderung, tr { page-break-inside: avoid; }
-    thead { display: table-header-group; }
-  }
-  ins { color: #14532d; text-decoration: none; font-weight: 600; }
+/* --------------------------------------------------------- timeline, #1e */
+.inhalt { padding: 24px 26px 30px; max-width: 1180px; }
+.titelzeile {
+  display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.titelzeile h1 { margin: 0; font: 500 19px var(--mono); }
+.titelzeile .spanne { font: 400 12px var(--mono); color: var(--t-60); }
+.vorgaenge { font: 400 11px var(--mono); color: var(--t-50); margin-bottom: 26px; }
+
+.karten {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px; margin-bottom: 26px;
+}
+.karte {
+  border: 1px solid var(--b-18); background: var(--paper-row); padding: 16px 18px;
+}
+.karte .art {
+  font: 500 9.5px var(--mono); letter-spacing: .1em; text-transform: uppercase;
+  color: var(--t-50);
+}
+.karte .id { font: 400 12.5px var(--mono); margin-top: 8px; }
+.karte .was {
+  font: 400 12px/1.5 var(--sans); color: var(--t-75); margin-top: 4px;
+}
+.karte .weg { font: 400 11px var(--mono); margin-top: 8px; }
+.karte .weg del { color: var(--t-50); }
+.karte .weg .neu { font-weight: 500; }
+.karte .weg .neu.eindeutig { color: var(--level-eindeutig-text); }
+.karte .weg .neu.verdaechtig { color: var(--level-verdaechtig-text); }
+.karte .weg .neu.unauffaellig { color: var(--level-unauffaellig-text); }
+
+/* The interesting case is not the worst one: same level, different facts.
+   It gets the weight. */
+.karte.betont {
+  border: 1.5px solid var(--ink); background: #efece5;
+}
+.karte.betont .art { color: var(--ink); }
+
+.deutung {
+  font: 400 12px/1.65 var(--serif); color: var(--t-75); max-width: 88ch;
+  margin: 14px 0 20px;
+}
+
+h2.abschnitt {
+  font: 500 10px var(--mono); letter-spacing: .12em; text-transform: uppercase;
+  color: var(--t-55); margin: 26px 0 10px;
+}
+table.vergleich {
+  width: 100%; border-collapse: collapse; border: 1px solid var(--b-18);
+  background: #fff;
+}
+table.vergleich th {
+  text-align: left; padding: 9px 0; background: var(--paper-alt);
+  font: 500 9.5px var(--mono); letter-spacing: .08em; text-transform: uppercase;
+  color: var(--t-65); border-bottom: 1px solid var(--b-14);
+}
+table.vergleich td {
+  padding: 11px 0; font: 400 12px var(--mono); font-variant-numeric: tabular-nums;
+  border-bottom: 1px solid var(--b-07); vertical-align: top;
+}
+table.vergleich tr:last-child td { border-bottom: none; }
+table.vergleich th:first-child, table.vergleich td:first-child { padding-left: 16px; }
+table.vergleich th:last-child, table.vergleich td:last-child { padding-right: 16px; }
+table.vergleich td + td, table.vergleich th + th { padding-left: 14px; }
+table.vergleich .alt { color: var(--t-50); text-decoration: line-through; }
+table.vergleich .neu { font-weight: 500; }
+table.vergleich .bewertung { font: 400 11.5px var(--sans); color: var(--t-70); }
+table.vergleich .bewertung.wichtig { color: var(--ink); }
+table.vergleich .leer { color: var(--t-45); font-style: normal; }
+
+.gegenueber {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px;
+}
+.gegenueber .seite { border: 1px solid var(--b-16); background: var(--paper-doc); }
+.gegenueber .seite.aktuell { border: 1px solid var(--ink); }
+.gegenueber img { display: block; width: 100%; }
+.gegenueber .hatch {
+  height: 150px;
+  background: repeating-linear-gradient(135deg,#e6e3dc 0 6px,#f1efe9 6px 12px);
+}
+.gegenueber .seite.aktuell .hatch {
+  background: repeating-linear-gradient(135deg,#e0ddd5 0 6px,#edeae3 6px 12px);
+}
+.gegenueber .bu {
+  padding: 8px 10px; font: 400 10px/1.5 var(--mono); color: var(--t-65);
+  word-break: break-all;
+}
+.gegenueber .seite.aktuell .bu { color: var(--ink); }
+.paar { margin-bottom: 20px; }
+.paar > .label { margin-bottom: 4px; }
+
+.ruhig { font: 400 12px/1.65 var(--serif); color: var(--t-70); max-width: 88ch; }
+.anmerkung {
+  border-left: 2px solid var(--ink); background: var(--paper-alt);
+  padding: 11px 13px; margin-bottom: 20px; font: 400 12px/1.6 var(--serif);
+}
+.anmerkung ul { margin: 6px 0 0; padding-left: 18px; }
+.hinweis {
+  margin-top: 26px; border-top: 1px solid var(--b-14); padding-top: 14px;
+  font: 400 12px/1.65 var(--serif); color: var(--t-75); max-width: 88ch;
+}
+{% include "_print.css" %}
 </style>
 </head>
 <body>
-<div class="wrap">
 
-<div class="kopf">
-  <div class="marke">{{ produkt }} · Zeitachse</div>
-  <h1>{{ zeitachse.later.target }}</h1>
-  <div class="unterzeile">
-    {{ zeitachse.later.industry }} · zwei Erfassungen im Vergleich<br>
-    <span class="mono">{{ zeitachse.days_between }}</span> ·
-    Vorgänge <span class="mono">{{ zeitachse.earlier.run_id }}</span> und
-    <span class="mono">{{ zeitachse.later.run_id }}</span>
+<div class="titlebar">
+  <div class="left">
+    <span class="wordmark">DPM</span>
+    <span class="tabs">
+      <span class="tab">Auftrag</span>
+      <span class="tab">Prüflauf</span>
+      <span class="tab active">Ergebnis</span>
+    </span>
   </div>
+  <span class="status">Vergleich zweier Läufe · gleiches Ziel</span>
 </div>
 
-{% if warnungen %}
-<div class="kasten">
-  <strong>Anmerkungen zum Vergleich</strong>
-  <ul>{% for w in warnungen %}<li>{{ w }}</li>{% endfor %}</ul>
+<div class="subtabs">
+  <span class="views">
+    <span class="view">Beweisakte</span>
+    <span class="view">Marktübersicht</span>
+    <span class="view active">Zeitachse</span>
+  </span>
+  <span class="aside">{{ zeitachse.later.industry }}</span>
 </div>
-{% endif %}
 
-<h2>Veränderungen</h2>
+<div class="inhalt">
 
-{% if bemerkenswert %}
-{% for a in bemerkenswert %}
-<div class="aenderung {{ {'neu':'wichtig','verschaerft':'wichtig','behoben':'gut','entschaerft':'gut','grund_geaendert':'achtung'}.get(a.kind,'') }}">
-  <h3>
-    <span>{{ a.rule_id }} · {{ a.rule_name }}</span>
-    <span class="marke2 {{ a.kind }}">{{ art_label[a.kind] }}</span>
-  </h3>
-  <div class="unterzeile">{{ a.category }} · {{ a.norm }}</div>
-
-  <div class="label">Befundstufe</div>
-  <div>
-    <span class="marke2 unveraendert">{{ stufe_label[a.before_level] }}</span>
-    <span class="pfeil">→</span>
-    <span class="marke2 {{ a.kind }}">{{ stufe_label[a.after_level] }}</span>
+  <div class="titelzeile">
+    <h1>{{ zeitachse.later.target }}</h1>
+    <span class="spanne">
+      {{ zeitachse.days_between }}{% if zeitachse.days is not none %} · {{ zeitachse.days }} Tage{% endif %}
+    </span>
+  </div>
+  <div class="vorgaenge">
+    {{ zeitachse.earlier.run_id }} → {{ zeitachse.later.run_id }}
   </div>
 
-  {% if a.before_condition or a.after_condition %}
-  <div class="label">Zutreffende Bedingung</div>
-  <div class="mono">
-    {% if a.before_condition %}<del>{{ a.before_condition }}</del><br>{% endif %}
-    {% if a.after_condition %}<ins>{{ a.after_condition }}</ins>{% endif %}
+  {% if warnungen %}
+  <div class="anmerkung">
+    <strong>Anmerkungen zum Vergleich</strong>
+    <ul>{% for w in warnungen %}<li>{{ w }}</li>{% endfor %}</ul>
   </div>
   {% endif %}
 
-  {% if a.note %}<p style="margin-top:2.5mm">{{ a.note }}</p>{% endif %}
-</div>
-{% endfor %}
-{% else %}
-<p class="ruhig">Zwischen den beiden Erfassungen hat sich an den Befunden nichts
-geändert. Das ist ein Ergebnis, kein Fehler — bei der Überwachung einer
-abgegebenen Unterlassungserklärung ist es das erwartete.</p>
-{% endif %}
+  {% if bemerkenswert %}
+  <div class="karten">
+    {% for a in bemerkenswert %}
+    <div class="karte {{ 'betont' if a.kind == 'grund_geaendert' }}">
+      <div class="art">{{ art_label[a.kind] }}</div>
+      <div class="id">{{ a.rule_id }}</div>
+      <div class="was">{{ a.rule_name }}</div>
+      <div class="weg">
+        <del>{{ stufe_label[a.before_level] }}</del> →
+        <span class="neu {{ a.after_level }}">{{ stufe_label[a.after_level] }}</span>
+        {% if a.kind == 'grund_geaendert' %}(neu begründet){% endif %}
+      </div>
+      {% if a.note %}<div class="was" style="margin-top:8px">{{ a.note }}</div>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
 
-<h2>Alle Regeln im Überblick</h2>
-<table>
-  <tr><th>Regel</th><th>Kategorie</th><th>vorher</th><th></th><th>nachher</th><th>Art</th></tr>
-  {% for a in aenderungen %}
-  <tr>
-    <td>{{ a.rule_id }}<br><span class="unterzeile">{{ a.rule_name[:44] }}</span></td>
-    <td>{{ a.category }}</td>
-    <td><span class="marke2 unveraendert">{{ stufe_label[a.before_level] }}</span></td>
-    <td class="pfeil">→</td>
-    <td><span class="marke2 {{ a.kind }}">{{ stufe_label[a.after_level] }}</span></td>
-    <td>{{ art_label[a.kind] }}</td>
-  </tr>
+  {% if bemerkenswert | selectattr('kind', 'equalto', 'grund_geaendert') | list %}
+  <p class="deutung">
+    Bei mindestens einem Befund ist die Stufe unverändert, beruht jedoch auf
+    anderen Messwerten als im früheren Lauf. Der Sachverhalt ist deshalb neu
+    zu würdigen; der frühere Nachweis trägt die aktuelle Feststellung nicht.
+  </p>
+  {% endif %}
+  {% else %}
+  <p class="ruhig">Zwischen den beiden Erfassungen hat sich an den Befunden nichts
+  geändert. Das ist ein Ergebnis, kein Fehler — bei der Überwachung einer
+  abgegebenen Unterlassungserklärung ist es das erwartete.</p>
+  {% endif %}
+
+  <h2 class="abschnitt">Alle Regeln im Überblick</h2>
+  <table class="vergleich">
+    <thead>
+      <tr><th style="width:26%">Regel</th><th>Kategorie</th>
+        <th>{{ zeitachse.earlier.meta.timestamp[:10] if zeitachse.earlier.meta.timestamp else "früher" }}</th>
+        <th>{{ zeitachse.later.meta.timestamp[:10] if zeitachse.later.meta.timestamp else "später" }}</th>
+        <th style="width:22%">Bewertung der Änderung</th></tr>
+    </thead>
+    <tbody>
+      {% for a in aenderungen %}
+      <tr>
+        <td>{{ a.rule_id }}<br><span class="bewertung">{{ a.rule_name }}</span></td>
+        <td class="bewertung">{{ a.category }}</td>
+        <td class="{{ 'alt' if a.kind != 'unveraendert' }}">{{ stufe_label[a.before_level] }}</td>
+        <td class="{{ 'neu' if a.kind != 'unveraendert' }}">{{ stufe_label[a.after_level] }}</td>
+        <td class="bewertung {{ 'wichtig' if a.kind in ('neu','verschaerft','grund_geaendert') }}">
+          {{ art_label[a.kind] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2 class="abschnitt">Signalvergleich</h2>
+  <p class="ruhig" style="margin-bottom:10px">Was sich an der Seite tatsächlich
+  geändert hat — unabhängig davon, ob eine Regel darauf anschlägt. Eine gleich
+  gebliebene Befundstufe kann auf völlig anderen Tatsachen beruhen.</p>
+  {% if signale %}
+  <table class="vergleich">
+    <thead>
+      <tr><th style="width:32%">Signal</th><th>Schritt</th>
+        <th>{{ zeitachse.earlier.meta.timestamp[:10] if zeitachse.earlier.meta.timestamp else "früher" }}</th>
+        <th>{{ zeitachse.later.meta.timestamp[:10] if zeitachse.later.meta.timestamp else "später" }}</th>
+        <th style="width:20%">Bewertung der Änderung</th></tr>
+    </thead>
+    <tbody>
+      {% for s in signale %}
+      <tr>
+        <td>{{ s.signal }}</td>
+        <td class="bewertung">{{ s.step or "—" }}</td>
+        <td>{% if s.kind == 'neu_erhoben' %}<span class="leer">nicht erhoben</span>
+            {% else %}<span class="alt">{{ s.before }}</span>{% endif %}</td>
+        <td>{% if s.kind == 'nicht_mehr_erhoben' %}<span class="leer">nicht mehr erhoben</span>
+            {% else %}<span class="neu">{{ s.after }}</span>{% endif %}</td>
+        <td class="bewertung">{{ art_label.get(s.kind, s.kind | replace("_", " ")) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="ruhig">Kein Messwert hat sich geändert.</p>
+  {% endif %}
+
+  {% if paare %}
+  <h2 class="abschnitt">Nachweise im Gegenüber</h2>
+  {% for p in paare %}
+  <div class="paar">
+    <div class="label">
+      Schritt {{ p.step }} — {% if p.changed %}Seitenzustand geändert{% else %}Seitenzustand identisch{% endif %}
+    </div>
+    <div class="gegenueber">
+      <div class="seite">
+        {% if p.frueher %}<img src="{{ p.frueher }}" alt="frühere Erfassung {{ p.step }}">
+        {% else %}<div class="hatch"></div>{% endif %}
+        <div class="bu">
+          {{ zeitachse.earlier.meta.timestamp[:10] if zeitachse.earlier.meta.timestamp else "früher" }}
+          {% if not p.frueher %} · kein Screenshot vorhanden{% endif %}<br>{{ p.frueher_hash }}
+        </div>
+      </div>
+      <div class="seite aktuell">
+        {% if p.spaeter %}<img src="{{ p.spaeter }}" alt="aktuelle Erfassung {{ p.step }}">
+        {% else %}<div class="hatch"></div>{% endif %}
+        <div class="bu">
+          {{ zeitachse.later.meta.timestamp[:10] if zeitachse.later.meta.timestamp else "später" }}
+          {% if not p.spaeter %} · kein Screenshot vorhanden{% endif %}<br>{{ p.spaeter_hash }}
+        </div>
+      </div>
+    </div>
+  </div>
   {% endfor %}
-</table>
+  {% endif %}
 
-<h2>Geänderte Messwerte</h2>
-<p class="ruhig">Hier steht, was sich an der Seite tatsächlich geändert hat —
-unabhängig davon, ob eine Regel darauf anschlägt. Eine gleich gebliebene
-Befundstufe kann auf völlig anderen Tatsachen beruhen.</p>
-{% if signale %}
-<table>
-  <tr><th>Signal</th><th>Schritt</th><th>vorher</th><th></th><th>nachher</th></tr>
-  {% for s in signale %}
-  <tr>
-    <td class="mono">{{ s.signal }}</td>
-    <td>{{ s.step or "—" }}</td>
-    <td class="mono">{% if s.kind == 'neu_erhoben' %}<span class="unterzeile">nicht erhoben</span>{% else %}<del>{{ s.before }}</del>{% endif %}</td>
-    <td class="pfeil">→</td>
-    <td class="mono">{% if s.kind == 'nicht_mehr_erhoben' %}<span class="unterzeile">nicht mehr erhoben</span>{% else %}<ins>{{ s.after }}</ins>{% endif %}</td>
-  </tr>
-  {% endfor %}
-</table>
-{% else %}
-<p class="ruhig">Kein Messwert hat sich geändert.</p>
-{% endif %}
-
-<h2>Seitenzustand</h2>
-<table>
-  <tr><th>Schritt</th><th>Hash der ersten Erfassung</th><th>Hash der zweiten</th><th></th></tr>
-  {% for s in schritte %}
-  <tr>
-    <td>{{ s.step }}</td>
-    <td class="mono">{{ s.before_hash }}</td>
-    <td class="mono">{{ s.after_hash }}</td>
-    <td>{% if s.changed %}geändert{% else %}identisch{% endif %}</td>
-  </tr>
-  {% endfor %}
-</table>
-
-<div class="fuss">
-  <strong>Hinweis.</strong> {{ produkt }} vergleicht zwei Erfassungen derselben
-  Seite und stellt fest, was sich an messbaren Tatsachen geändert hat. Es trifft
-  keine rechtliche Feststellung eines Verstoßes und keine Aussage darüber, ob eine
-  Veränderung gegen eine abgegebene Unterlassungserklärung verstößt. Beides ist
-  von der prüfenden Person zu beurteilen. Maßgeblich für ein einzelnes Verfahren
-  bleibt die Beweisakte der jeweiligen Erfassung.
-</div>
+  <div class="hinweis">
+    <strong>Hinweis.</strong> {{ produkt }} vergleicht zwei Erfassungen derselben
+    Seite und stellt fest, was sich an messbaren Tatsachen geändert hat. Es trifft
+    keine rechtliche Feststellung eines Verstoßes und keine Aussage darüber, ob eine
+    Veränderung gegen eine abgegebene Unterlassungserklärung verstößt. Beides ist
+    von der prüfenden Person zu beurteilen. Maßgeblich für ein einzelnes Verfahren
+    bleibt die Beweisakte der jeweiligen Erfassung.
+  </div>
 
 </div>
 </body>

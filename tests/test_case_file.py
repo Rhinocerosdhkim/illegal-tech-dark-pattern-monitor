@@ -36,7 +36,9 @@ with tempfile.TemporaryDirectory() as tmp:
             ("sha256:", "DOM hash"),
             ("Erfassungsbedingungen", "reproducibility"),
             ("Herkunft der Schwellenwerte", "threshold_source"),
-            ("Fehlalarmrisiken", "false_positive_risks"),
+            # Spelling follows the design handoff ("Bekannte Fehlalarm-Risiken"),
+            # which supplies the final German copy for every label.
+            ("Fehlalarm-Risiken", "false_positive_risks"),
             ("Anspruchskette", "claim chain"),
             ("PLATZHALTER", "provisional notice (packet 3 outstanding)"),
             ("Nicht erhoben", "measurement gaps are named"),

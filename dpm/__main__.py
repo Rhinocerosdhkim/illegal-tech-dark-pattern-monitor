@@ -30,6 +30,9 @@ from dpm.engine.rules import load_rules
 from dpm.engine.run import load_run
 from dpm.engine.verdict import (CLEAR, NOT_APPLICABLE, NO_FINDING, SUSPECTED,
                                 UNRESOLVED, assess)
+from dpm.report.archive import build as build_archive, relative
+from dpm.report.gold import (GOLD, compare as compare_gold,
+                             rate as gold_rate, read as read_gold)
 from dpm.report.case_file import build as build_case_file
 from dpm.report.diff import build as build_timeline, compare
 from dpm.report.overview import build as build_overview, collect
@@ -219,6 +222,9 @@ def cmd_rebuild(arguments) -> int:
     groups = by_target(runs)
     print(f"\n{len(runs)} Erfassungen, {len(groups)} Ziele\n")
 
+    folder = Path(arguments.output)
+    akten = []
+
     print("Beweisakten")
     built = 0
     for path in runs:
@@ -227,6 +233,16 @@ def cmd_rebuild(arguments) -> int:
         result = build_case_file(run, findings, output=arguments.output,
                                  as_pdf=not arguments.html_only)
         built += 1
+        counts = {}
+        for finding in findings:
+            if finding.reportable:
+                counts[finding.level] = counts.get(finding.level, 0) + 1
+        akten.append({"target": run.target, "industry": run.industry,
+                      "timestamp": run.meta.get("timestamp"),
+                      "run_id": run.run_id, "counts": counts,
+                      "findings": result.finding_count,
+                      "html": relative(result.html, folder),
+                      "pdf": relative(result.pdf, folder)})
         print(f"  {run.target:22} {result.finding_count} Befunde   "
               f"{result.pdf or result.html}")
 
@@ -236,8 +252,13 @@ def cmd_rebuild(arguments) -> int:
                             as_pdf=not arguments.html_only)
     print(f"  {result['sites']} Seiten, {result['findings']} Befunde   "
           f"{result['pdf'] or result['html']}")
+    uebersicht = {"sites": result["sites"], "findings": result["findings"],
+                  "html": relative(result["html"], folder),
+                  "csv": relative(result["csv"], folder),
+                  "pdf": relative(result["pdf"], folder)}
 
     print("\nZeitachsen")
+    zeitachsen = []
     pairs = pairs_to_compare(groups)
     if not pairs:
         print("  keine — kein Ziel wurde bisher zweimal erfasst")
@@ -250,10 +271,79 @@ def cmd_rebuild(arguments) -> int:
                                 as_pdf=not arguments.html_only)
         wording = (f"{result['changes']} Veraenderung(en)" if result["changes"]
                    else "keine Veraenderung")
+        zeitachsen.append({"target": target, "spanne": timeline.days_between,
+                           "changes": result["changes"],
+                           "html": relative(result["html"], folder),
+                           "pdf": relative(result["pdf"], folder)})
         print(f"  {target:22} {timeline.days_between}   {wording}   "
               f"{result['pdf'] or result['html']}")
 
-    print(f"\nFertig. Alles liegt unter {Path(arguments.output).resolve()}\n")
+    index = build_archive(akten, uebersicht, zeitachsen,
+                          output=arguments.output)
+    print(f"\nUebersichtsseite\n  {index}")
+
+    print(f"\nFertig. Alles liegt unter {folder.resolve()}")
+    print(f"Zum Ansehen: {index} im Browser oeffnen.\n")
+    return 0
+
+
+def cmd_gold(arguments) -> int:
+    """Compare the system's verdicts against the hand-written gold standard.
+
+    The number the consumer agency asks for first is not how much we find,
+    it is how often we are wrong about a site where there is nothing. That
+    is why the false-alarm rate is printed against the clean rows only.
+    """
+    gold_rows = read_gold(arguments.file)
+    if not gold_rows:
+        print(f"\n{arguments.file} enthaelt noch keine bewerteten Zeilen.\n"
+              f"Ohne Menschenbefunde gibt es keine Treffsicherheit zu messen "
+              f"(siehe data/gold-standard/README.md).\n", file=sys.stderr)
+        return 1
+
+    rules = load_rules(arguments.rules)
+    paths = find_runs(*arguments.runs) if arguments.runs else find_runs()
+    runs = [load_run(path) for path in paths]
+    overview = collect(paths, rules)
+    result = compare_gold(gold_rows, overview.rows, runs)
+
+    print(f"\nGold Standard — System gegen Mensch")
+    print(f"Datei     {arguments.file}")
+    print(f"Zeilen    {len(gold_rows)} bewertet, "
+          f"{len(result.uncovered)} ohne Erfassung, "
+          f"{len(result.unreadable)} unlesbar\n")
+
+    print(f"Verglichen            {len(result.rows)}")
+    print(f"  nicht messbar       {gold_rate(result.unresolved, result.rows)}"
+          f"   unklar — weder Treffer noch Fehler")
+    print(f"  entschieden         {len(result.decided)}")
+    print(f"    uebereinstimmend  {gold_rate(result.agreed, result.decided)}")
+    print(f"    Fehlalarm         {gold_rate(result.false_alarms, result.clean)}"
+          f"   von den Seiten, auf denen der Mensch nichts fand")
+    print(f"    uebersehen        "
+          f"{gold_rate(result.missed, result.flagged_by_human)}"
+          f"   von den Seiten, auf denen der Mensch etwas fand")
+
+    if result.deviations:
+        print("\nAbweichungen im Einzelnen")
+        for row in result.deviations:
+            print(f"  {row['site']:24} {row['rule']:8} "
+                  f"Mensch {LABEL[row['human']]:14} "
+                  f"System {LABEL[row['system']]}")
+            if row["note"]:
+                print(f"    {row['note']}")
+
+    if result.uncovered:
+        print("\nOhne Erfassung — nicht verglichen")
+        for row in result.uncovered:
+            print(f"  {row['site']:24} {row['rule']:8} "
+                  f"Mensch {LABEL[row['human']]}")
+
+    if result.unreadable:
+        print(f"\n{len(result.unreadable)} Zeile(n) unlesbar — url, "
+              f"pattern_id und befund_mensch muessen gefuellt sein")
+
+    print()
     return 0
 
 
@@ -312,6 +402,16 @@ def main(argv=None) -> int:
     tl.add_argument("--output", type=Path, default=Path("out"))
     tl.add_argument("--pdf", action="store_true", help="also print a PDF")
     tl.set_defaults(function=cmd_timeline)
+
+    gold = commands.add_parser(
+        "gold", help="system verdicts against the hand-written gold standard")
+    gold.add_argument("runs", type=Path, nargs="*",
+                      help="where to look for captures; default: out/ and "
+                           "data/fixtures/")
+    gold.add_argument("--file", type=Path, default=GOLD,
+                      help="the gold standard CSV")
+    gold.add_argument("--rules", type=Path, default=None)
+    gold.set_defaults(function=cmd_gold)
 
     rb = commands.add_parser(
         "rebuild", help="rebuild every output from the captures on disk")

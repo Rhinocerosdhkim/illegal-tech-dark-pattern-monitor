@@ -1,0 +1,21 @@
+/* ---------------------------------------------------------------- print
+   Included LAST by every view, after the view's own styles — otherwise a
+   page-level rule of equal specificity wins over these and the desk the
+   document floats on ends up printed as a grey border.
+
+   On paper the app chrome is not part of the document. */
+@media print {
+  body { background: #fff; }
+  .titlebar, .subtabs, .no-print { display: none !important; }
+  .schreibtisch { background: #fff; padding: 0; }
+  .blatt {
+    max-width: none; margin: 0; padding: 0;
+    border: none; box-shadow: none; background: #fff;
+  }
+  /* Keep the small units together; a whole finding is regularly taller
+     than a page, so forbidding a break inside it only moves the problem. */
+  .werte, .regelkasten, .nachweisbild, .original, .karte,
+  .pruefliste li, li, tr { break-inside: avoid; }
+  .abschnitt, .befund-kopf, .label { break-after: avoid; }
+  .befund { break-before: auto; }
+}

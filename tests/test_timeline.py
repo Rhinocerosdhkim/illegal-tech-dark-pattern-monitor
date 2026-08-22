@@ -79,7 +79,10 @@ with tempfile.TemporaryDirectory() as tmp:
     assert result["changes"] == 3
     for needle, name in [("Zeitachse", "title"),
                          ("Stufe gleich, Grund anders", "the important case"),
-                         ("Geänderte Messwerte", "signal table"),
+                         # Renamed with the design handoff (view #1e); the
+                         # hash comparison now sits with the two screenshots
+                         # of the step instead of in a table of its own.
+                         ("Signalvergleich", "signal table"),
                          ("Seitenzustand", "hash comparison"),
                          ("Unterlassungserklärung", "enforcement note"),
                          ("keine rechtliche Feststellung", "disclaimer")]:

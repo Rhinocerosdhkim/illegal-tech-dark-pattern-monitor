@@ -10,6 +10,30 @@ Nur mit dieser Referenz können wir in der Präsentation eine belastbare Aussage
 
 Am Freitagnachmittag vergleichen wir Systembefund gegen Menschenbefund und erhalten die ersten Genauigkeitszahlen.
 
+## Zahlen abrufen
+
+```bash
+python -m dpm gold
+```
+
+Vergleicht jede ausgefüllte Zeile mit der Erfassung derselben Seite und
+derselben Regel. Wurde eine Seite mehrfach erfasst, gilt die **neueste**
+Erfassung.
+
+Drei Dinge, die der Vergleich bewusst nicht tut, damit die Zahl nicht
+schöner aussieht als sie ist:
+
+- **`unklar` zählt nicht als Fehler.** Die Stufe bedeutet „nicht messbar" und
+  behauptet nichts — sie kann weder richtig noch falsch sein. Sie steht auf
+  einer eigenen Zeile.
+- **Die Fehlalarmquote wird nur über die unauffälligen Zeilen gebildet.** Also:
+  Wie oft schlägt das System an, wo der Mensch nichts gefunden hat. Über alle
+  Zeilen gerechnet würde die Quote allein dadurch besser, dass man mehr
+  auffällige Seiten in die Stichprobe nimmt.
+- **Zeilen ohne Erfassung verschwinden nicht.** Sie werden getrennt ausgewiesen
+  — „wir waren uns bei neun von neun erfassten Seiten einig" ist eine andere
+  Aussage als „bei neun von zwanzig".
+
 ## Auswahlkriterien
 
 - ohne Login erreichbar

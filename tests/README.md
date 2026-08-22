@@ -14,6 +14,8 @@ Runnable without setup, no external services:
 .venv/bin/python tests/test_timeline.py       # Zeitachse: two captures compared
 .venv/bin/python tests/test_pdf_export.py     # PDF export with the filter applied
 .venv/bin/python tests/test_rebuild.py        # the handover command, run discovery
+.venv/bin/python tests/test_design.py         # greyscale proof, nothing fetched
+.venv/bin/python tests/test_gold.py           # accuracy figures and their denominators
 ```
 
 `tests/test_verdicts.py` checks the hand-written fixture

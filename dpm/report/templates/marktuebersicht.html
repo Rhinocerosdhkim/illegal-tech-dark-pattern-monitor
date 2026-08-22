@@ -4,219 +4,323 @@
 <meta charset="utf-8">
 <title>{{ produkt }} — Marktübersicht</title>
 <style>
-  * { box-sizing: border-box; }
-  body { font: 11pt/1.55 "Helvetica Neue", Arial, sans-serif; color: #16181d;
-         margin: 0; padding: 8mm 6mm 20mm; background: #fff; }
-  .wrap { max-width: 1180px; margin: 0 auto; }
-  h1 { font-size: 21pt; margin: 0 0 1mm; letter-spacing: -.3pt; }
-  h2 { font-size: 12pt; margin: 9mm 0 3mm; padding-bottom: 1.5mm;
-       border-bottom: 1.4pt solid #16181d; }
-  .marke { font-size: 8pt; letter-spacing: 1.6pt; text-transform: uppercase; color: #6b7280; }
-  .kopf { border-bottom: 2.4pt solid #16181d; padding-bottom: 4mm; margin-bottom: 4mm; }
-  .unterzeile { color: #4b5563; font-size: 9.5pt; }
-  table { width: 100%; border-collapse: collapse; }
-  th, td { text-align: left; vertical-align: top; padding: 2mm 2.5mm;
-           border-bottom: .5pt solid #d5d8de; font-size: 9pt; }
-  th { background: #f2f3f5; font-size: 7.6pt; text-transform: uppercase;
-       letter-spacing: .5pt; color: #4b5563; border-bottom: 1pt solid #b9bec7;
-       position: sticky; top: 0; }
-  .mono { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 8.4pt;
-          word-break: break-word; }
-  .stufe { display: inline-block; padding: .5mm 2mm; border-radius: 1mm;
-           font-size: 7.6pt; font-weight: 700; text-transform: uppercase;
-           letter-spacing: .4pt; border: .8pt solid; white-space: nowrap; }
-  .eindeutig       { color: #7f1d1d; border-color: #7f1d1d; background: #fdf0f0; }
-  .verdaechtig     { color: #7c4a03; border-color: #7c4a03; background: #fdf6e8; }
-  .unklar          { color: #374151; border-color: #9ca3af; background: #f3f4f6; }
-  .unauffaellig    { color: #14532d; border-color: #14532d; background: #eff6ef; }
-  .nicht_anwendbar { color: #6b7280; border-color: #d5d8de; background: #fafbfc; }
-  .raster { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-            gap: 4mm; margin: 3mm 0 0; }
-  .karte { border: .8pt solid #b9bec7; padding: 3mm; }
-  .karte h3 { font-size: 7.6pt; text-transform: uppercase; letter-spacing: .6pt;
-              color: #6b7280; margin: 0 0 2mm; font-weight: 600; }
-  .balken { display: flex; align-items: center; gap: 2mm; margin-bottom: 1.4mm; }
-  .balken .n { font-variant-numeric: tabular-nums; font-weight: 700; min-width: 6mm;
-               text-align: right; font-size: 9pt; }
-  .balken .b { height: 3mm; background: #16181d; }
-  .balken .t { font-size: 8.6pt; color: #374151; }
-  .filter { display: flex; flex-wrap: wrap; gap: 2mm; align-items: center;
-            margin: 4mm 0 3mm; padding: 3mm; background: #f7f8f9;
-            border: .8pt solid #d5d8de; }
-  .filter label { font-size: 8pt; text-transform: uppercase; letter-spacing: .5pt;
-                  color: #6b7280; margin-right: 1mm; }
-  select, button { font: inherit; font-size: 9pt; padding: 1.2mm 2mm;
-                   border: .8pt solid #b9bec7; background: #fff; border-radius: 1mm; }
-  button { cursor: pointer; }
-  .zaehler { margin-left: auto; font-size: 9pt; color: #4b5563;
-             font-variant-numeric: tabular-nums; }
-  .kasten { border: .8pt solid #b45309; background: #fdf6e8; padding: 3mm; margin: 3mm 0; }
-  .fuss { margin-top: 10mm; padding-top: 3mm; border-top: 1pt solid #b9bec7;
-          font-size: 8.5pt; color: #4b5563; }
-  tr.aus { display: none; }
+{% include "_design.css" %}
 
-  /* Nur im Druck sichtbar: welcher Filter stand, als gedruckt wurde. Eine
-     gefilterte Tabelle ohne diese Zeile ist ein Dokument, das niemand
-     nachpruefen kann. */
-  .nur-druck { display: none; }
+/* ---------------------------------------------- market overview, view #1d */
+.filterleiste {
+  display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap;
+  padding: 16px 22px; background: var(--bar-alt);
+  border-bottom: 1px solid var(--b-12);
+}
+.filterleiste .feld { display: flex; flex-direction: column; gap: 5px; }
+.filterleiste label {
+  font: 500 9.5px var(--mono); letter-spacing: .1em; text-transform: uppercase;
+  color: var(--t-50);
+}
+.filterleiste select, .filterleiste button {
+  font: 400 12px var(--sans); padding: 7px 9px;
+  border: 1px solid var(--b-28); background: #fff; color: var(--ink);
+  border-radius: 0;
+}
+.filterleiste button { cursor: pointer; align-self: flex-end; }
+.zaehler {
+  margin-left: auto; padding-bottom: 8px;
+  font: 400 11px var(--mono); font-variant-numeric: tabular-nums;
+  color: var(--t-55);
+}
 
-  @media print {
-    @page { size: A4 landscape; }
-    body { padding: 0; }
-    .filter, .zaehler { display: none !important; }
-    .nur-druck { display: block; }
-    th { position: static; }
-    tr, .karte { page-break-inside: avoid; }
-    thead { display: table-header-group; }
-    a { text-decoration: none; color: inherit; }
+.koerper {
+  display: grid; grid-template-columns: 1fr 340px;
+  gap: 1px; background: var(--b-12);
+}
+.koerper > * { background: var(--paper); }
+.tabellenspalte { grid-column: 1; grid-row: 1; }
+.statistik { grid-column: 2; grid-row: 1; }
+
+table.liste { width: 100%; border-collapse: collapse; }
+table.liste th {
+  text-align: left; padding: 9px 0; background: var(--bar);
+  font: 500 9.5px var(--mono); letter-spacing: .08em; text-transform: uppercase;
+  color: var(--t-65); border-bottom: 1px solid var(--b-14);
+}
+table.liste td {
+  padding: 10px 0; vertical-align: top; font: 400 11.5px/1.45 var(--sans);
+  border-bottom: 1px solid var(--b-07);
+}
+table.liste th:first-child, table.liste td:first-child { padding-left: 22px; }
+table.liste th:last-child, table.liste td:last-child { padding-right: 22px; }
+table.liste td + td, table.liste th + th { padding-left: 14px; }
+table.liste tr.aus { display: none; }
+table.liste .ziel { font-family: var(--mono); }
+table.liste .norm { font: 400 11px var(--mono); }
+table.liste .wert { font: 400 11px var(--mono); overflow-wrap: anywhere; }
+table.liste .dim { color: var(--t-55); }
+
+/* right rail */
+.statistik { background: var(--bar-alt); padding: 20px 22px; }
+.statistik section { margin-bottom: 26px; }
+.statistik section:last-child { margin-bottom: 0; }
+.statistik .label { margin-bottom: 11px; }
+.balken { display: flex; flex-direction: column; gap: 9px; }
+.balken .zeile > .kopfzeile {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 12px; margin-bottom: 4px;
+}
+.balken .name { font: 400 11.5px var(--sans); }
+.balken .n {
+  font: 400 11.5px var(--mono); font-variant-numeric: tabular-nums;
+  color: var(--t-60);
+}
+.balken .gleis { height: 7px; background: rgba(0,0,0,.08); }
+.balken .fuellung { height: 7px; background: var(--ink); }
+
+.verteilung { display: flex; flex-direction: column; gap: 7px; }
+.verteilung div {
+  display: flex; justify-content: space-between; gap: 12px;
+  padding-bottom: 7px; border-bottom: 1px solid rgba(0,0,0,.08);
+  font: 400 11.5px var(--mono); font-variant-numeric: tabular-nums;
+}
+.verteilung div:last-child { border-bottom: none; }
+.gross { font: 600 15px var(--sans); }
+.gross-mono { font: 500 14px var(--mono); }
+.dazu { font: 400 11px var(--mono); color: var(--t-60); margin-top: 3px; }
+
+.unten { padding: 26px 22px 30px; }
+.unten h2 {
+  font: 500 10px var(--mono); letter-spacing: .12em; text-transform: uppercase;
+  color: var(--t-55); margin: 0 0 12px;
+}
+table.lauf { width: 100%; border-collapse: collapse; background: var(--paper-doc); }
+table.lauf th {
+  text-align: left; padding: 9px 11px; background: var(--paper-alt);
+  font: 500 9.5px var(--mono); letter-spacing: .08em; text-transform: uppercase;
+  color: var(--t-65); border-bottom: 1px solid var(--b-14);
+}
+table.lauf td {
+  padding: 9px 11px; font: 400 11.5px var(--sans);
+  border-bottom: 1px solid var(--b-07);
+}
+table.lauf td.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.hinweis {
+  margin-top: 26px; border-top: 1px solid var(--b-14); padding-top: 14px;
+  font: 400 12px/1.65 var(--serif); color: var(--t-75); max-width: 88ch;
+}
+.anmerkung {
+  border-left: 2px solid var(--ink); background: var(--paper-alt);
+  padding: 11px 13px; margin-top: 20px; font: 400 12px/1.6 var(--serif);
+}
+.anmerkung ul { margin: 6px 0 0; padding-left: 18px; }
+
+/* The tool is built for a desktop window. A generated file still gets
+   opened in a narrow one, and a rail pushed off-screen looks broken —
+   below 1100px it goes above the table, as it does on paper. */
+@media (max-width: 1100px) {
+  .koerper { display: block; }
+  .statistik {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 22px; border-bottom: 1px solid var(--b-14);
   }
+  .statistik section { margin-bottom: 0; }
+}
+
+/* Only on paper: which filter was set when this was printed. A filtered
+   table without that line is a document nobody can check. */
+.nur-druck { display: none; }
+
+@media print {
+  @page { size: A4 landscape; }
+  .filterleiste, .zaehler { display: none !important; }
+  .nur-druck { display: block; padding: 14px 22px 0; }
+  .koerper { display: block; }
+  .statistik {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px;
+    border-bottom: 1px solid var(--b-14);
+  }
+  .statistik section { margin-bottom: 0; }
+  thead { display: table-header-group; }
+  table.liste th { background: var(--bar); }
+}
+{% include "_print.css" %}
 </style>
 </head>
 <body>
-<div class="wrap">
 
-<div class="kopf">
-  <div class="marke">{{ produkt }} · Marktübersicht</div>
-  <h1>{{ seiten | length }} Seiten · {{ anzahl_befunde }} Befunde</h1>
-  <div class="unterzeile">
-    Erhebung über {{ branchen | length }} Branchen.
-    Aufgenommen sind ausschließlich Befunde, die auf eine Messung gestützt sind.
+<div class="titlebar">
+  <div class="left">
+    <span class="wordmark">DPM</span>
+    <span class="tabs">
+      <span class="tab">Auftrag</span>
+      <span class="tab">Prüflauf</span>
+      <span class="tab active">Ergebnis</span>
+    </span>
   </div>
+  <span class="status">
+    {{ seiten | length }} Ziele · {{ branchen | length }} Branchen · {{ anzahl_befunde }} Befunde
+  </span>
 </div>
 
-<h2>Statistik</h2>
-<div class="raster">
-
-  <div class="karte">
-    <h3>Nach Befundstufe</h3>
-    {% set groesste = statistik.by_level | map(attribute='count') | max %}
-    {% for e in statistik.by_level %}
-    <div class="balken">
-      <span class="n">{{ e.count }}</span>
-      <span class="b" style="width: {{ (e.count / groesste * 42) | round(1) }}mm;
-            background: {{ {'eindeutig':'#7f1d1d','verdaechtig':'#7c4a03','unklar':'#9ca3af','unauffaellig':'#14532d','nicht_anwendbar':'#d5d8de'}[e.code] }}"></span>
-      <span class="t">{{ e.key }}</span>
-    </div>
-    {% endfor %}
-  </div>
-
-  {% for titel, daten in [("Nach Branche", statistik.by_industry),
-                          ("Nach Kategorie", statistik.by_category)] %}
-  <div class="karte">
-    <h3>{{ titel }}</h3>
-    {% if daten %}
-    {% set groesste = daten | map(attribute='count') | max %}
-    {% for e in daten %}
-    <div class="balken">
-      <span class="n">{{ e.count }}</span>
-      <span class="b" style="width: {{ (e.count / groesste * 42) | round(1) }}mm"></span>
-      <span class="t">{{ e.key }}</span>
-    </div>
-    {% endfor %}
-    {% else %}<div class="t">keine Befunde</div>{% endif %}
-  </div>
-  {% endfor %}
-
-  <div class="karte">
-    <h3>Häufigste Norm</h3>
-    {% if statistik.by_norm %}
-    {% for e in statistik.by_norm[:6] %}
-    <div class="balken">
-      <span class="n">{{ e.count }}</span>
-      <span class="t">{{ e.key }}</span>
-    </div>
-    {% endfor %}
-    {% else %}<div class="t">keine Befunde</div>{% endif %}
-  </div>
-
+<div class="subtabs">
+  <span class="views">
+    <span class="view">Beweisakte</span>
+    <span class="view active">Marktübersicht</span>
+    <span class="view">Zeitachse</span>
+  </span>
+  <span class="aside">marktuebersicht.csv · marktuebersicht.pdf</span>
 </div>
 
-<h2>Befunde</h2>
-
-<div class="nur-druck" style="margin-bottom:3mm">
-  <span class="label" style="font-size:7.4pt; text-transform:uppercase;
-        letter-spacing:.6pt; color:#6b7280">Angewandter Filter</span><br>
-  <span id="filter-hinweis">keiner — vollständige Erhebung</span>
-  <div style="font-size:8.2pt; color:#4b5563; margin-top:1.5mm">
-    Die Statistik oben bezieht sich auf die vollständige Erhebung; die
-    folgende Tabelle zeigt die gefilterte Auswahl.
+<div class="filterleiste">
+  <div class="feld">
+    <label for="f-branche">Branche</label>
+    <select id="f-branche" style="min-width:130px"><option value="">Alle ({{ branchen | length }})</option>
+      {% for b in branchen %}<option>{{ b }}</option>{% endfor %}</select>
   </div>
-</div>
-
-<div class="filter">
-  <label for="f-branche">Branche</label>
-  <select id="f-branche"><option value="">alle</option>
-    {% for b in branchen %}<option>{{ b }}</option>{% endfor %}</select>
-
-  <label for="f-kategorie">Kategorie</label>
-  <select id="f-kategorie"><option value="">alle</option>
-    {% for k in kategorien %}<option>{{ k }}</option>{% endfor %}</select>
-
-  <label for="f-stufe">Stufe</label>
-  <select id="f-stufe"><option value="">alle</option>
-    {% for s in stufen %}<option value="{{ s.code }}">{{ s.label }}</option>{% endfor %}
-    <option value="__befund">nur Befunde</option>
-  </select>
-
-  <label for="f-norm">Norm</label>
-  <select id="f-norm"><option value="">alle</option>
-    {% for e in statistik.by_norm %}<option>{{ e.key }}</option>{% endfor %}</select>
-
+  <div class="feld">
+    <label for="f-kategorie">Kategorie</label>
+    <select id="f-kategorie" style="min-width:130px"><option value="">Alle</option>
+      {% for k in kategorien %}<option>{{ k }}</option>{% endfor %}</select>
+  </div>
+  <div class="feld">
+    <label for="f-stufe">Befundstufe</label>
+    <select id="f-stufe" style="min-width:150px"><option value="">alle Stufen</option>
+      {% for s in stufen %}<option value="{{ s.code }}">{{ s.label }}</option>{% endfor %}
+      <option value="__befund">nur Befunde</option>
+    </select>
+  </div>
+  <div class="feld">
+    <label for="f-norm">Norm</label>
+    <select id="f-norm" style="min-width:170px"><option value="">Alle Normen</option>
+      {% for e in statistik.by_norm %}<option>{{ e.key }}</option>{% endfor %}</select>
+  </div>
   <button type="button" id="zuruecksetzen">zurücksetzen</button>
   <span class="zaehler"><span id="sichtbar">{{ zeilen | length }}</span> von {{ zeilen | length }} Zeilen</span>
 </div>
 
-<table id="tabelle">
-  <tr>
-    <th>Seite</th><th>Branche</th><th>Muster</th><th>Kategorie</th>
-    <th>Norm</th><th>Stufe</th><th>Gemessene Bedingung</th><th>Nachweis</th>
-  </tr>
-  {% for z in zeilen %}
-  <tr data-branche="{{ z.industry }}" data-kategorie="{{ z.category }}"
-      data-stufe="{{ z.level }}" data-norm="{{ z.norm }}">
-    <td>{{ z.target }}<br><span class="mono">{{ z.timestamp[:10] }}</span></td>
-    <td>{{ z.industry }}</td>
-    <td>{{ z.rule_name }}<br><span class="mono">{{ z.rule_id }} · {{ z.status }}</span></td>
-    <td>{{ z.category }}</td>
-    <td>{{ z.norm }}</td>
-    <td><span class="stufe {{ z.level }}">{{ stufe_label[z.level] }}</span></td>
-    <td class="mono">{{ z.condition or "—" }}</td>
-    <td class="mono">{{ z.evidence or "—" }}</td>
-  </tr>
-  {% endfor %}
-</table>
-
-<h2>Erfassungsläufe</h2>
-<table>
-  <tr><th>Seite</th><th>Branche</th><th>Erfassung</th><th>Vorgang</th>
-    {% for s in stufen %}<th>{{ s.label }}</th>{% endfor %}</tr>
-  {% for s in seiten %}
-  <tr>
-    <td>{{ s.target }}</td><td>{{ s.industry }}</td>
-    <td class="mono">{{ s.timestamp }}</td>
-    <td class="mono">{{ s.run_id }}</td>
-    {% for st in stufen %}<td>{{ s.counts[st.code] or "—" }}</td>{% endfor %}
-  </tr>
-  {% endfor %}
-</table>
-
-{% if warnungen %}
-<div class="kasten">
-  <strong>Anmerkungen zur Erfassung</strong>
-  <ul>{% for w in warnungen %}<li>{{ w }}</li>{% endfor %}</ul>
-</div>
-{% endif %}
-
-<div class="fuss">
-  <strong>Hinweis.</strong> {{ produkt }} stellt technisch messbare Tatsachen fest
-  und ordnet sie einem Regelwerk zu. Es trifft keine rechtliche Feststellung eines
-  Verstoßes. Die Stufe <em>unklar</em> bedeutet, dass ein benötigter Messwert nicht
-  erhoben werden konnte — nicht, dass ein Verstoß vorliegt. Diese Übersicht dient
-  der Marktbeobachtung; für ein einzelnes Verfahren ist die Beweisakte der jeweiligen
-  Seite maßgeblich.
+<div class="nur-druck">
+  <div class="label">Angewandter Filter</div>
+  <div style="font:400 11.5px var(--mono); margin-top:5px" id="filter-hinweis">
+    keiner — vollständige Erhebung
+  </div>
+  <div style="font:400 11px var(--sans); color:var(--t-60); margin-top:5px">
+    Die Statistik oben bezieht sich auf die vollständige Erhebung; die
+    Tabelle zeigt die gefilterte Auswahl.
+  </div>
 </div>
 
+<div class="koerper">
+  <div class="statistik">
+    <section>
+      <div class="label">Befunde je Branche</div>
+      {% if statistik.by_industry %}
+      {% set groesste = statistik.by_industry | map(attribute='count') | max %}
+      <div class="balken">
+        {% for e in statistik.by_industry %}
+        {% set ziele = seiten | selectattr('industry', 'equalto', e.key) | list | length %}
+        <div class="zeile">
+          <div class="kopfzeile">
+            <span class="name">{{ e.key }}</span>
+            <span class="n">{{ e.count }} / {{ ziele }} Ziel{{ "e" if ziele != 1 }}</span>
+          </div>
+          <div class="gleis">
+            <div class="fuellung" style="width: {{ (e.count / groesste * 100) | round(1) }}%"></div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}<div class="n">keine Befunde</div>{% endif %}
+    </section>
+
+    <section>
+      <div class="label">Verteilung der Stufen</div>
+      <div class="verteilung">
+        {% for e in statistik.by_level %}
+        <div><span>{{ e.key }}</span><span>{{ e.count }}</span></div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section>
+      <div class="label">Häufigste Kategorie</div>
+      {% if statistik.by_category %}
+      <div class="gross">{{ statistik.by_category[0].key }}</div>
+      <div class="dazu">{{ statistik.by_category[0].count }} von {{ anzahl_befunde }} Befunden</div>
+      {% else %}<div class="n">keine Befunde</div>{% endif %}
+    </section>
+
+    <section>
+      <div class="label">Meistzitierte Norm</div>
+      {% if statistik.by_norm %}
+      <div class="gross-mono">{{ statistik.by_norm[0].key }}</div>
+      <div class="dazu">{{ statistik.by_norm[0].count }} von {{ anzahl_befunde }} Befunden</div>
+      {% else %}<div class="n">keine Befunde</div>{% endif %}
+    </section>
+  </div>
+  <div class="tabellenspalte">
+    <table class="liste" id="tabelle">
+      <thead>
+        <tr>
+          <th>Ziel</th><th>Branche</th><th style="width:16%">Nr.</th><th>Kategorie</th>
+          <th style="width:15%">Norm</th><th>Stufe</th>
+          <th style="width:22%">Gemessene Bedingung</th><th style="width:10%">Nachweis</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for z in zeilen %}
+        <tr data-branche="{{ z.industry }}" data-kategorie="{{ z.category }}"
+            data-stufe="{{ z.level }}" data-norm="{{ z.norm }}">
+          <td><span class="ziel">{{ z.target }}</span><br>
+              <span class="norm dim">{{ z.timestamp[:10] }}</span></td>
+          <td>{{ z.industry }}</td>
+          <td><span class="norm">{{ z.rule_id }}</span><br>
+              <span class="dim">{{ z.rule_name }}</span></td>
+          <td>{{ z.category }}</td>
+          <td class="norm">{{ z.norm }}</td>
+          <td><span class="stufe stufe-sm {{ z.level }}">{{ stufe_label[z.level] }}</span></td>
+          <td class="wert">{{ z.condition or "—" }}</td>
+          <td class="wert">{{ z.evidence or "—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
 </div>
+
+<div class="unten">
+  <h2>Erfassungsläufe</h2>
+  <table class="lauf">
+    <thead>
+      <tr><th>Ziel</th><th>Branche</th><th>Erfassung</th><th>Vorgang</th>
+        {% for s in stufen %}<th>{{ s.label }}</th>{% endfor %}</tr>
+    </thead>
+    <tbody>
+      {% for s in seiten %}
+      <tr>
+        <td class="mono">{{ s.target }}</td><td>{{ s.industry }}</td>
+        <td class="mono">{{ s.timestamp }}</td>
+        <td class="mono">{{ s.run_id }}</td>
+        {% for st in stufen %}<td class="mono">{{ s.counts[st.code] or "—" }}</td>{% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if warnungen %}
+  <div class="anmerkung">
+    <strong>Anmerkungen zur Erfassung</strong>
+    <ul>{% for w in warnungen %}<li>{{ w }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+
+  <div class="hinweis">
+    <strong>Hinweis.</strong> {{ produkt }} stellt technisch messbare Tatsachen fest
+    und ordnet sie einem Regelwerk zu. Es trifft keine rechtliche Feststellung eines
+    Verstoßes. Die Stufe <em>unklar</em> bedeutet, dass ein benötigter Messwert nicht
+    erhoben werden konnte — nicht, dass ein Verstoß vorliegt. Diese Übersicht dient
+    der Marktbeobachtung; für ein einzelnes Verfahren ist die Beweisakte der jeweiligen
+    Seite maßgeblich.
+  </div>
+</div>
+
 <script>
 (function () {
   var felder = ["branche", "kategorie", "stufe", "norm"];

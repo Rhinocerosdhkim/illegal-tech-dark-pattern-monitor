@@ -1,0 +1,208 @@
+{{ fonts() }}
+
+/* ---------------------------------------------------------------- tokens
+   Design handoff "DPM — Dark Pattern Monitor", section Design Tokens.
+   Radius is 0 everywhere on purpose: this is paper, not a floating UI. */
+:root {
+  --ink: #1c1b19;          --ink-deep: #141312;
+  --paper: #f6f5f1;        --paper-doc: #fdfcf9;   --paper-alt: #efeee9;
+  --paper-row: #fbfaf7;    --paper-rule: #f3f1ec;
+  --bar: #e7e5df;          --bar-alt: #f0eeea;     --desk: #d9d7d0;
+  --ink-inverse: #e9e7e1;
+  --link: #3a5a7a;
+  --accent-live: #c9a227;
+
+  --t-80: rgba(28,27,25,.8);  --t-75: rgba(28,27,25,.75);
+  --t-70: rgba(28,27,25,.7);  --t-65: rgba(28,27,25,.65);
+  --t-60: rgba(28,27,25,.6);  --t-55: rgba(28,27,25,.55);
+  --t-50: rgba(28,27,25,.5);  --t-45: rgba(28,27,25,.45);
+
+  --b-07: rgba(0,0,0,.07);  --b-10: rgba(0,0,0,.1);   --b-12: rgba(0,0,0,.12);
+  --b-14: rgba(0,0,0,.14);  --b-16: rgba(0,0,0,.16);  --b-18: rgba(0,0,0,.18);
+  --b-20: rgba(0,0,0,.2);   --b-28: rgba(0,0,0,.28);
+
+  --sans: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", "SF Mono", Menlo, Consolas, monospace;
+  --serif: "IBM Plex Serif", Georgia, "Times New Roman", serif;
+
+  --level-eindeutig: oklch(0.45 0.1 25);
+  --level-eindeutig-text: oklch(0.38 0.1 25);
+  --level-verdaechtig: oklch(0.55 0.09 70);
+  --level-verdaechtig-text: oklch(0.42 0.09 70);
+  --level-unklar: rgba(28,27,25,.5);
+  --level-unklar-text: rgba(28,27,25,.7);
+  --level-unauffaellig: oklch(0.6 0.05 150);
+  --level-unauffaellig-text: oklch(0.42 0.05 150);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font: 400 12.5px/1.5 var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--link); text-decoration: none; }
+a:hover { color: var(--ink); }
+
+/* Every number, ID, signal name, hash and statute reference is mono with
+   tabular figures — columns of measurements have to line up. */
+.mono, .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.serif { font-family: var(--serif); }
+
+/* The uppercase eyebrow label, used for every section and field caption. */
+.label {
+  font: 500 9.5px/1.4 var(--mono); letter-spacing: .1em;
+  text-transform: uppercase; color: var(--t-50);
+}
+.label-lg { font-size: 10px; letter-spacing: .12em; color: var(--t-55); }
+
+/* ----------------------------------------------------------------- chrome */
+.titlebar {
+  display: flex; justify-content: space-between; align-items: center;
+  height: 38px; padding: 0 16px;
+  background: var(--ink); color: var(--ink-inverse);
+}
+.titlebar .wordmark {
+  font: 600 13px var(--mono); letter-spacing: .14em;
+}
+.titlebar .left { display: flex; align-items: center; gap: 22px; }
+.titlebar .tabs { display: flex; gap: 2px; }
+.titlebar .tab {
+  font: 400 11.5px var(--sans); padding: 6px 12px;
+  color: rgba(233,231,225,.5);
+}
+.titlebar .tab.active {
+  font-weight: 500; background: var(--paper); color: var(--ink);
+}
+.titlebar .status {
+  font: 400 10px var(--mono); letter-spacing: .06em;
+  color: rgba(233,231,225,.45); text-transform: uppercase;
+}
+
+.subtabs {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0 22px; background: var(--bar);
+  border-bottom: 1px solid var(--b-16);
+}
+.subtabs .views { display: flex; gap: 26px; }
+.subtabs .view {
+  padding: 12px 0; font: 400 12.5px var(--sans); color: var(--t-55);
+}
+.subtabs .view.active {
+  font-weight: 600; color: var(--ink); box-shadow: inset 0 -2px 0 var(--ink);
+}
+.subtabs .aside {
+  font: 400 10.5px var(--mono); color: var(--t-50);
+}
+
+/* --------------------------------------------------------- verdict chips
+   Level is carried by border weight, border style and marker shape.
+   Colour is reinforcement only — the four chips must stay distinguishable
+   in greyscale, because the Beweisakte gets printed and filed. */
+.stufe {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 8px; font: 500 11px var(--mono); white-space: nowrap;
+  background: none;
+}
+.stufe::before { content: ""; width: 7px; height: 7px; flex: none; }
+.stufe-lg { gap: 7px; padding: 5px 11px; font-size: 13px; }
+.stufe-lg::before { width: 8px; height: 8px; }
+.stufe-sm { gap: 5px; padding: 2px 7px; font-size: 10.5px; }
+.stufe-sm::before { width: 6px; height: 6px; }
+
+.stufe.eindeutig {
+  /* The handoff says 1.5px. Chrome rounds a used border-width down to whole
+     pixels, so 1.5 paints as 1 and the level loses the heavier frame that
+     is supposed to set it apart from "unauffaellig" in greyscale — the one
+     distinction the design calls load-bearing. 2px keeps the intent. */
+  border: 2px solid var(--level-eindeutig); color: var(--level-eindeutig-text);
+}
+.stufe.eindeutig::before { background: var(--level-eindeutig); }
+
+.stufe.verdaechtig {
+  border: 1px solid var(--level-verdaechtig); color: var(--level-verdaechtig-text);
+}
+.stufe.verdaechtig::before {
+  background: var(--level-verdaechtig); transform: rotate(45deg);
+}
+
+.stufe.unklar {
+  border: 1px dashed var(--level-unklar); color: var(--level-unklar-text);
+}
+.stufe.unklar::before {
+  border: 1px solid rgba(28,27,25,.6); border-radius: 50%;
+}
+
+.stufe.unauffaellig {
+  border: 1px solid var(--level-unauffaellig); color: var(--level-unauffaellig-text);
+}
+.stufe.unauffaellig::before { border: 1px solid oklch(0.5 0.05 150); }
+
+/* Not a fifth level: the rule does not apply to this site, so there is
+   nothing to grade. Deliberately not a chip — a chip would read as a
+   verdict. */
+.stufe.nicht_anwendbar {
+  border: none; padding-left: 0; color: var(--t-45); font-weight: 400;
+}
+.stufe.nicht_anwendbar::before { display: none; }
+
+/* ----------------------------------------------------------------- boxes */
+.kasten {
+  border: 1px solid var(--b-16); background: var(--paper-doc);
+  padding: 11px 13px;
+}
+.regelkasten {
+  border: 1px solid var(--b-20); background: var(--paper-rule);
+  padding: 11px 13px; font: 400 11.5px/1.7 var(--mono);
+  white-space: pre-wrap; word-break: break-word;
+}
+.regelkasten .spur { color: var(--t-60); }
+
+/* key/value: the measured values, right column always numeric */
+.werte { border: 1px solid var(--b-16); display: grid; grid-template-columns: 1fr auto; }
+.werte > div {
+  padding: 8px 11px; font: 400 11.5px var(--mono);
+  font-variant-numeric: tabular-nums; border-top: 1px solid rgba(0,0,0,.08);
+}
+.werte > div:nth-child(1), .werte > div:nth-child(2) { border-top: none; }
+.werte .k { color: var(--t-75); word-break: break-all; }
+.werte .v { color: var(--ink); font-weight: 500; text-align: right; }
+
+/* paper checkboxes — for a human with a pen, never wired to state */
+.pruefliste { display: flex; flex-direction: column; gap: 7px; margin: 0; padding: 0; list-style: none; }
+.pruefliste li {
+  display: flex; gap: 9px; font: 400 12px/1.5 var(--serif); color: var(--t-80);
+}
+.pruefliste li::before {
+  content: ""; width: 11px; height: 11px; flex: none; margin-top: 3px;
+  border: 1px solid var(--t-55);
+}
+
+/* evidence thumbnails; the hatch is also the missing/loading state */
+.nachweisbild { border: 1px solid var(--b-16); background: var(--paper-doc); }
+.nachweisbild img { display: block; width: 100%; }
+.nachweisbild .hatch {
+  height: 96px;
+  background: repeating-linear-gradient(135deg,#e6e3dc 0 6px,#f1efe9 6px 12px);
+}
+.nachweisbild .bu {
+  padding: 7px 9px; font: 400 10px/1.5 var(--mono); color: var(--t-70);
+  word-break: break-all;
+}
+.nachweisbild .bu .hash { color: var(--t-50); }
+
+/* ---------------------------------------------------------------- tables */
+table.doc { width: 100%; border-collapse: collapse; font-family: var(--sans); }
+table.doc th {
+  text-align: left; padding: 8px; font: 500 9.5px var(--mono);
+  letter-spacing: .08em; text-transform: uppercase; color: var(--t-65);
+  border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink);
+}
+table.doc td {
+  padding: 11px 8px; vertical-align: top; font-size: 12px; line-height: 1.45;
+  border-bottom: 1px solid var(--b-10);
+}
+table.doc th:first-child, table.doc td:first-child { padding-left: 0; }
+table.doc th:last-child, table.doc td:last-child { padding-right: 0; }
+table.doc tr:last-child td { border-bottom: none; }
+table.doc td.mono { font-size: 11.5px; }
