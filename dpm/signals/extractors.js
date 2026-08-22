@@ -188,29 +188,42 @@
     .map((node) => ({ element: node, label: lower(node) }))
     .filter((entry) => entry.label.length > 0 && entry.label.length < 80);
 
-  const CONSENT_CHOICE = WORDS.accept.concat(WORDS.reject, WORDS.more);
+  // A whole label that is nothing but a confirmation. Matched against the
+  // complete text, never as a substring: "ok" inside "cookie", "lokal" or
+  // "blockieren" would turn half the page into an accept button.
+  const SHORT_ACCEPT =
+    /^(ok|okay|verstanden|alles klar|einverstanden|zulassen|weiter)[.!]?$/;
+
+  const isAccept = (label) =>
+    hasWord(label, WORDS.accept) || SHORT_ACCEPT.test(label);
+  const isReject = (label) => hasWord(label, WORDS.reject);
 
   // A consent banner is recognised by the choice it offers, not by the
   // words it happens to contain. Every lawful German site carries a fixed
   // footer with "Impressum · Datenschutz · AGB"; on the words alone that
   // footer counts as a banner, reject_button_present comes out false, and
   // DP-001 certifies "eindeutig" against a site that did nothing wrong.
-  // A candidate therefore has to hold a control that actually accepts,
-  // refuses, or opens the settings.
+  //
+  // The choice has to be an acceptance or a refusal. "Einstellungen",
+  // "Details", "Verwalten", "Optionen" are ordinary interface words, and
+  // gating on those as well let the consent-withdrawal tab that OneTrust,
+  // Usercentrics and Cookiebot leave floating on every page count as a
+  // banner — a tab that sits on more lawful sites than unlawful ones.
   const withChoice = bannerCandidates.filter(
     (element) => controlsOf(element).some(
-      (entry) => hasWord(entry.label, CONSENT_CHOICE)));
+      (entry) => isAccept(entry.label) || isReject(entry.label)));
 
   const banner = withChoice
     .filter((element) => !withChoice.some(
       (other) => other !== element && element.contains(other)))
     .sort((a, b) => area(b) - area(a))[0] || null;
 
-  // Consent wording but nothing clickable we can read: that is a banner we
-  // cannot see into, not the absence of one. It belongs in errors -- "we
-  // could not check" -- and never as banner_detected = false.
-  const unreadableBanner = !banner && bannerCandidates.some(
-    (element) => controlsOf(element).length === 0);
+  // Consent wording, but no acceptance and no refusal we can read: a
+  // settings tab, a privacy teaser — or a real banner whose buttons sit
+  // behind a closed shadow root or carry their text in an attribute we do
+  // not read. From here those cannot be told apart, and "false" would be
+  // an assertion where we have none. It belongs in errors.
+  const unreadableBanner = !banner && bannerCandidates.length > 0;
 
   const consentIframe = Array.from(document.querySelectorAll("iframe"))
     .some((frame) => hasWord(
@@ -237,7 +250,9 @@
       return best;
     };
 
-    const acceptButton = pick(WORDS.accept);
+    const acceptButton = pick(WORDS.accept)
+      || (controls.find((entry) => SHORT_ACCEPT.test(entry.label))
+          || {}).element || null;
     const rejectButton = pick(WORDS.reject);
     const moreButton = pick(WORDS.more);
 
@@ -272,8 +287,8 @@
         boxes.filter((box) => box.checked && !box.disabled).length);
   } else if (consentIframe || closedRootSeen || unreadableBanner) {
     gap("banner_detected",
-        "moegliches Einwilligungsbanner in einem iframe oder geschlossenen "
-        + "Shadow DOM — von hier nicht messbar");
+        "Einwilligungswoerter gefunden, aber weder Zustimmung noch Ablehnung "
+        + "lesbar — von hier nicht entscheidbar, ob ein Banner vorliegt");
   } else {
     set("banner_detected", false);
   }

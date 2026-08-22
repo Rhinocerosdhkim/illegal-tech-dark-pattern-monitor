@@ -179,12 +179,32 @@ FOOTER = FRAME.format("""
 </footer>""")
 
 values, gaps = asyncio.run(measure(FOOTER))
-assert values["banner_detected"] is False, \
+assert "banner_detected" not in values, \
     "a Datenschutz link in a fixed footer was taken for a consent banner"
+assert "banner_detected" in gaps, gaps
 assert "reject_button_present" not in values, \
     "a footer produced a statement about a reject button"
 assert "accept_button_area_px2" in gaps
-print("  ok  banner_detected = false, keine Aussage ueber Schaltflaechen")
+print("  ok  banner_detected -> errors, keine Aussage ueber Schaltflaechen")
+
+# The same footer plus the consent-withdrawal link that Art. 7 III DSGVO
+# effectively requires, and that OneTrust, Usercentrics and Cookiebot leave
+# floating on every page they serve. Gating on WORDS.more as well made this
+# a banner again — on more lawful sites than unlawful ones.
+WITHDRAWAL = FRAME.format("""
+<h1>Sauberer Shop</h1>
+<p>Kaffeemuehle, 49,00 EUR inkl. MwSt.</p>
+<button>Zahlungspflichtig bestellen</button>
+<footer style="position:fixed;bottom:0;left:0;right:0;background:#eee;padding:12px">
+  <a href="/impressum">Impressum</a> ·
+  <a href="/datenschutz">Datenschutz</a> ·
+  <button>Cookie-Einstellungen</button>
+</footer>""")
+
+values, gaps = asyncio.run(measure(WITHDRAWAL))
+assert "banner_detected" not in values, \
+    "a Cookie-Einstellungen link made the footer a banner again"
+print("  ok  auch mit Widerrufslink kein gemessenes Banner")
 
 with tempfile.TemporaryDirectory() as tmp:
     folder = pathlib.Path(tmp)
@@ -200,6 +220,39 @@ with tempfile.TemporaryDirectory() as tmp:
     assert dp001.level != CLEAR, \
         f"DP-001 accuses a lawful page at the highest level: {dp001.condition}"
     print(f"  ok  DP-001 {dp001.level}, nicht eindeutig")
+
+print("\nA real banner whose only button says OK is still a banner")
+# Narrowing the gate to acceptance and refusal must not lose the banners
+# that confirm with a single word. "OK" is matched against the whole label,
+# never as a substring — inside "cookie" or "blockieren" it would turn half
+# the page into an accept button.
+for wording in ["OK", "Verstanden", "Alles klar", "Einverstanden"]:
+    page = FRAME.format(f"""
+    <div style="position:fixed;bottom:0;left:0;right:0;background:#fff;
+         z-index:9999;padding:12px">
+      <p>Wir verwenden Cookies und benoetigen Ihre Einwilligung.</p>
+      <button style="width:200px;height:44px">{wording}</button>
+    </div>
+    <h1>Shop</h1>""")
+    values, gaps = asyncio.run(measure(page))
+    assert values.get("banner_detected") is True, \
+        f"a banner confirming with {wording!r} was lost"
+    assert values.get("accept_button_area_px2") == 8800, \
+        f"{wording}: {values.get('accept_button_area_px2')}"
+    assert "reject_button_area_px2" in gaps, "a missing reject button got an area"
+print("  ok  OK / Verstanden / Alles klar / Einverstanden erkannt")
+
+# And the substring trap it would open.
+TRAP = FRAME.format("""
+<div style="position:fixed;top:0;left:0;right:0;padding:12px">
+  <p>Datenschutz und Cookies</p>
+  <button style="width:300px;height:40px">Alle Cookies blockieren</button>
+</div>
+<h1>Shop</h1>""")
+values, gaps = asyncio.run(measure(TRAP))
+assert values.get("accept_button_area_px2") != 12000, \
+    "'blockieren' was read as an acceptance because it contains 'ok'"
+print("  ok  'blockieren' ist keine Zustimmung")
 
 print("\nA banner we cannot see into is a gap, not an absence")
 # Consent wording, but every control lives behind a closed shadow root, so
