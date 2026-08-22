@@ -12,6 +12,7 @@ Runnable without setup, no external services:
 .venv/bin/python tests/test_rule_defects.py   # guards for the rulebook repairs of 20.08.
 .venv/bin/python tests/test_overview.py       # Marktübersicht: aggregation, filters, CSV
 .venv/bin/python tests/test_timeline.py       # Zeitachse: two captures compared
+.venv/bin/python tests/test_pdf_export.py     # PDF export with the filter applied
 ```
 
 `tests/test_verdicts.py` checks the hand-written fixture

@@ -6,6 +6,10 @@
     python -m dpm overview data/fixtures/*         Marktuebersicht over many sites
     python -m dpm timeline <earlier> <later>       Zeitachse: two captures compared
 
+Both accept --pdf. The market overview additionally takes --branche,
+--kategorie, --stufe and --norm: the PDF is then printed with those filters
+applied, so the document shows exactly the view somebody selected.
+
 Design constraint from AGENDA_Technik.md §6: on Monday a person without a
 development background has to operate this alone.
 """
@@ -140,21 +144,32 @@ def cmd_report(arguments) -> int:
 
 def cmd_overview(arguments) -> int:
     overview = collect(arguments.runs, load_rules(arguments.rules))
-    result = build_overview(overview, output=arguments.output)
+    selection = {"branche": arguments.branche, "kategorie": arguments.kategorie,
+                 "stufe": arguments.stufe, "norm": arguments.norm}
+    result = build_overview(overview, output=arguments.output,
+                            as_pdf=arguments.pdf or any(selection.values()),
+                            selection=selection)
 
     print(f"\nMarktuebersicht — {result['sites']} sites, "
           f"{result['findings']} findings")
     for warning in overview.warnings:
         print(f"  ! {warning}")
+    chosen = "  ".join(f"{k}={v}" for k, v in selection.items() if v)
+    if chosen:
+        print(f"  Filter    {chosen}")
     print(f"  {result['html']}")
-    print(f"  {result['csv']}\n")
+    print(f"  {result['csv']}")
+    if result["pdf"]:
+        print(f"  {result['pdf']}")
+    print()
     return 0
 
 
 def cmd_timeline(arguments) -> int:
     timeline = compare(arguments.earlier, arguments.later,
                        load_rules(arguments.rules))
-    result = build_timeline(timeline, output=arguments.output)
+    result = build_timeline(timeline, output=arguments.output,
+                            as_pdf=arguments.pdf)
 
     print(f"\nZeitachse {timeline.later.target} — {timeline.days_between}")
     for warning in timeline.warnings:
@@ -172,7 +187,10 @@ def cmd_timeline(arguments) -> int:
     changed = [s for s in timeline.signal_changes if s.kind == "geaendert"]
     print(f"\n  {len(changed)} Messwerte geaendert, "
           f"{sum(1 for s in timeline.step_changes if s.changed)} Seitenzustaende")
-    print(f"  {result['html']}\n")
+    print(f"  {result['html']}")
+    if result["pdf"]:
+        print(f"  {result['pdf']}")
+    print()
     return 0
 
 
@@ -213,6 +231,14 @@ def main(argv=None) -> int:
                       help="folders containing capture.json")
     over.add_argument("--rules", type=Path, default=None)
     over.add_argument("--output", type=Path, default=Path("out"))
+    over.add_argument("--pdf", action="store_true",
+                      help="also print a PDF of the table")
+    for name, helptext in [("branche", "e.g. Ticketing"),
+                           ("kategorie", "e.g. Zeitdruck"),
+                           ("stufe", "eindeutig | verdaechtig | unklar"),
+                           ("norm", "provision as shown in the table")]:
+        over.add_argument(f"--{name}", default=None,
+                          help=f"print the PDF filtered by {name} ({helptext})")
     over.set_defaults(function=cmd_overview)
 
     tl = commands.add_parser("timeline",
@@ -221,6 +247,7 @@ def main(argv=None) -> int:
     tl.add_argument("later", type=Path, help="the later capture run")
     tl.add_argument("--rules", type=Path, default=None)
     tl.add_argument("--output", type=Path, default=Path("out"))
+    tl.add_argument("--pdf", action="store_true", help="also print a PDF")
     tl.set_defaults(function=cmd_timeline)
 
     arguments = parser.parse_args(argv)

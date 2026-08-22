@@ -34,6 +34,7 @@ from dpm.engine.run import Run, load_run
 from dpm.engine.verdict import (CLEAR, NOT_APPLICABLE, NO_FINDING, SUSPECTED,
                                 UNRESOLVED, assess)
 from dpm.report.case_file import CATEGORY_LABEL, LEVEL_LABEL, _environment
+from dpm.report.pdf import render as render_pdf
 
 # How far apart two levels are. "unklar" deliberately sits between silence
 # and a finding: it is not a stronger statement than "unauffaellig", but it
@@ -224,7 +225,8 @@ def _show(value) -> str:
     return f"„{value}“" if isinstance(value, str) else str(value)
 
 
-def build(timeline: Timeline, output: str | Path = "out") -> dict:
+def build(timeline: Timeline, output: str | Path = "out",
+          as_pdf: bool = False) -> dict:
     folder = Path(output) / f"zeitachse_{timeline.later.run_id}"
     folder.mkdir(parents=True, exist_ok=True)
 
@@ -242,4 +244,7 @@ def build(timeline: Timeline, output: str | Path = "out") -> dict:
     )
     path = folder / "zeitachse.html"
     path.write_text(html, encoding="utf-8")
-    return {"html": path, "changes": len(timeline.noteworthy)}
+    # A timeline is what you attach when a company reintroduced a design it
+    # had undertaken to stop using. That has to be a document, not a tab.
+    pdf = render_pdf(path) if as_pdf else None
+    return {"html": path, "pdf": pdf, "changes": len(timeline.noteworthy)}

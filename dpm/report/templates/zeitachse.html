@@ -46,6 +46,13 @@
   .fuss { margin-top: 10mm; padding-top: 3mm; border-top: 1pt solid #b9bec7;
           font-size: 8.5pt; color: #4b5563; }
   del { color: #7f1d1d; text-decoration-thickness: 1pt; }
+
+  @media print {
+    @page { size: A4; }
+    body { padding: 0; }
+    .aenderung, tr { page-break-inside: avoid; }
+    thead { display: table-header-group; }
+  }
   ins { color: #14532d; text-decoration: none; font-weight: 600; }
 </style>
 </head>

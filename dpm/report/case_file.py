@@ -34,6 +34,7 @@ from dpm.engine.conditions import MissingSignal, SignalTable
 from dpm.engine.run import Run
 from dpm.engine.rules import Rule
 from dpm.engine.verdict import CLEAR, SUSPECTED, UNRESOLVED, Finding
+from dpm.report.pdf import render as render_pdf
 
 LEVEL_LABEL = {CLEAR: "eindeutig", SUSPECTED: "verdächtig",
                UNRESOLVED: "unklar", "unauffaellig": "unauffällig",
@@ -94,7 +95,7 @@ def build(run: Run, findings: list, output: str | Path = "out",
     target_html = folder / "beweisakte.html"
     target_html.write_text(html, encoding="utf-8")
 
-    pdf = _to_pdf(target_html) if as_pdf else None
+    pdf = render_pdf(target_html) if as_pdf else None
     return CaseFile(html=target_html, pdf=pdf, finding_count=len(reportable))
 
 
@@ -222,23 +223,3 @@ def _environment() -> Environment:
     environment.filters["absatz"] = lambda t: [
         p.strip() for p in (t or "").split("\n\n") if p.strip()]
     return environment
-
-
-# --- PDF -----------------------------------------------------------------
-
-def _to_pdf(html: Path) -> Path | None:
-    try:
-        from playwright.sync_api import sync_playwright
-    except ImportError:
-        return None
-
-    target = html.with_suffix(".pdf")
-    with sync_playwright() as p:
-        browser = p.chromium.launch()
-        page = browser.new_page()
-        page.goto(html.resolve().as_uri())
-        page.pdf(path=str(target), format="A4", print_background=True,
-                 margin={"top": "18mm", "bottom": "18mm",
-                         "left": "16mm", "right": "16mm"})
-        browser.close()
-    return target

@@ -29,6 +29,7 @@ from dpm.engine.run import load_run
 from dpm.engine.verdict import (CLEAR, NOT_APPLICABLE, NO_FINDING, SUSPECTED,
                                 UNRESOLVED, assess)
 from dpm.report.case_file import CATEGORY_LABEL, LEVEL_LABEL, _environment
+from dpm.report.pdf import apply_filters, render as render_pdf
 
 # Order matters: it is the order of the summary and of the filter buttons.
 LEVEL_ORDER = [CLEAR, SUSPECTED, UNRESOLVED, NO_FINDING, NOT_APPLICABLE]
@@ -133,7 +134,16 @@ def _tally(rows, key) -> list:
             for k, n in sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))]
 
 
-def build(overview: Overview, output: str | Path = "out") -> dict:
+def build(overview: Overview, output: str | Path = "out",
+          as_pdf: bool = False, selection: dict | None = None) -> dict:
+    """Write the overview as HTML, CSV and — on request — as a PDF.
+
+    `selection` maps filter name to value (branche / kategorie / stufe /
+    norm). The PDF is printed with those filters applied, so the document
+    shows exactly the view somebody chose. The agency asked for a
+    "Tabelle (z. B. PDF) mit Filtermoeglichkeit"; a PDF that always shows
+    everything would answer only half of that.
+    """
     folder = Path(output) / "marktuebersicht"
     folder.mkdir(parents=True, exist_ok=True)
 
@@ -162,5 +172,8 @@ def build(overview: Overview, output: str | Path = "out") -> dict:
         for row in overview.rows:
             writer.writerow(asdict(row))
 
-    return {"html": html_path, "csv": csv_path,
+    pdf = render_pdf(html_path, before=apply_filters(selection or {}),
+                     landscape=True) if as_pdf else None
+
+    return {"html": html_path, "csv": csv_path, "pdf": pdf,
             "sites": len(overview.sites), "findings": len(overview.findings)}
