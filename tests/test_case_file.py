@@ -9,7 +9,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from dpm.engine.run import load_run
 from dpm.engine.rules import load_rules
 from dpm.engine.verdict import assess
-from dpm.report.case_file import build
+from dpm.report.case_file import _evidence, build, step_index
 
 run = load_run("data/fixtures/viagogo")
 findings = [assess(r, run.table) for r in load_rules()]
@@ -66,5 +66,50 @@ with tempfile.TemporaryDirectory() as tmp:
     assert result.html.exists()
     assert (folder / "S-01.png").exists(), "the evidence was lost"
     print("  ok  no SameFileError, screenshots still there")
+
+print("\nThe hash under a screenshot belongs to that screenshot")
+# A walk can pass the same page twice, and since a signal keeps the step it
+# was really measured on, its evidence may point at the earlier of two steps
+# with the same name. Keyed by name alone, the Beweisakte printed the hash
+# of the LAST such step under the image of the first — and that hash is what
+# proves the image shows that page state.
+import json
+
+with tempfile.TemporaryDirectory() as tmp:
+    folder = pathlib.Path(tmp) / "doppelt"
+    folder.mkdir()
+    (folder / "capture.json").write_text(json.dumps({
+        "meta": {"target": "doppelt", "industry": "Test",
+                 "run_id": "2026-08-22T00-00-00_doppelt"},
+        "steps": [
+            {"step": "startseite", "url": "https://a.de/",
+             "screenshot": "S-01.png", "dom_hash": "sha256:aaaa"},
+            {"step": "startseite", "url": "https://a.de/nach-consent",
+             "screenshot": "S-02.png", "dom_hash": "sha256:bbbb"},
+        ],
+        "signals": {
+            "banner_detected": {"value": True, "step": "startseite",
+                                "evidence": "S-01.png"},
+            "preselected_checkbox_count": {"value": 2, "step": "startseite",
+                                           "evidence": "S-01.png"},
+        },
+        "signal_errors": {},
+    }, ensure_ascii=False), encoding="utf-8")
+
+    doubled = load_run(folder)
+    case = build(doubled, [assess(r, doubled.table) for r in load_rules()],
+                 output=folder / "out", as_pdf=False)
+    # Checked on the data rather than on the rendered page: the evidence
+    # rows and the Erfassungsprotokoll both print hashes, and a search over
+    # the text cannot tell which one it found.
+    index = step_index(doubled)
+    for finding in [assess(r, doubled.table) for r in load_rules()]:
+        for raw in finding.evidence:
+            shown = _evidence(raw, index)
+            assert shown["dom_hash"] == "sha256:aaaa", \
+                f"{raw['signal']} auf {raw['evidence']}: {shown['dom_hash']}"
+            assert shown["url"] == "https://a.de/", shown["url"]
+    assert case.html.exists()
+    print("  ok  Hash und Adresse gehoeren zum Screenshot des Signals")
 
 print("\nAll case-file tests passed.")

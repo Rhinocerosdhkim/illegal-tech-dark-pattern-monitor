@@ -123,6 +123,23 @@ assert result.rows[0]["system"] == NOT_APPLICABLE, result.rows[0]
 assert result.missed, "a rule that excluded itself was not counted as a miss"
 print(f"  ok  gezaehlt als uebersehen, nicht als Enthaltung")
 
+print("\nA rule that excluded itself is out of the false-alarm denominator")
+# A rule that does not apply cannot raise a false alarm, so counting it in
+# the denominator improves the rate for free: point DP-004 at enough shops
+# without a subscription and the figure approaches zero without the system
+# getting any better.
+rows = [{"url": "https://www.beispiel-ratgeber.de", "pattern_id": "DP-002",
+         "befund_mensch": "unauffaellig", "notiz": ""},
+        {"url": "https://www.beispielshop.de", "pattern_id": "DP-002",
+         "befund_mensch": "unauffaellig", "notiz": ""}]
+result = compare(rows, overview.rows, runs)
+assert len(result.rows) == 2, result
+systeme = sorted(r["system"] for r in result.rows)
+assert NOT_APPLICABLE in systeme, systeme
+assert all(r["system"] != NOT_APPLICABLE for r in result.clean), \
+    "a rule that excluded itself padded the false-alarm denominator"
+print(f"  ok  {len(result.clean)} von {len(result.rows)} Zeilen im Nenner")
+
 print("\nAn empty gold standard yields no figure at all")
 with tempfile.TemporaryDirectory() as tmp:
     empty = pathlib.Path(tmp) / "gold.csv"

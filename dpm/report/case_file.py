@@ -82,8 +82,7 @@ def build(run: Run, findings: list, output: str | Path = "out",
     folder.mkdir(parents=True, exist_ok=True)
 
     reportable = [f for f in findings if f.reportable]
-    steps = {s["step"]: s for s in run.steps
-             if isinstance(s, dict) and s.get("step")}
+    steps = step_index(run)
 
     for name in _screenshot_names(reportable, run):
         source = run.screenshot(name)
@@ -145,9 +144,27 @@ def _entry(nr: int, finding: Finding, steps: dict, run: Run,
     }
 
 
+def step_index(run) -> dict:
+    """Look up a step by its screenshot, and only then by its name.
+
+    Two steps can carry the same name: a walk may pass the start page
+    twice, and since a signal keeps the step it was really measured on, its
+    evidence may point at the earlier of them. Keyed by name alone, the
+    last step of that name won, and the Beweisakte printed its hash and its
+    address under the screenshot of the first. In an evidence document the
+    hash is what proves that this image shows that page state, so it has to
+    belong to the image beside it.
+    """
+    index = {s["step"]: s for s in run.steps
+             if isinstance(s, dict) and s.get("step")}
+    index.update({s["screenshot"]: s for s in run.steps
+                  if isinstance(s, dict) and s.get("screenshot")})
+    return index
+
+
 def _evidence(raw: dict, steps: dict) -> dict:
     label = raw.get("step")
-    step = steps.get(label) or {}
+    step = steps.get(raw.get("evidence")) or steps.get(label) or {}
     return {**raw,
             "display": _short(raw.get("value")),
             "url": step.get("url"),

@@ -93,8 +93,17 @@ class Comparison:
         there was nothing to find, how often did we claim otherwise. Divided
         by all rows instead, the number improves whenever more guilty sites
         are added to the sample — which would be meaningless.
+
+        Rows where the rule excluded itself are out as well. A rule that
+        does not apply cannot raise a false alarm, so counting it in the
+        denominator improves the rate for free — point DP-004 at enough
+        shops without a subscription and the figure approaches zero without
+        the system getting any better. What the number should say is: of
+        the cases where the rule was in play and there was nothing to find,
+        how often did we claim otherwise.
         """
-        return [r for r in self.decided if r["human"] == NO_FINDING]
+        return [r for r in self.decided
+                if r["human"] == NO_FINDING and r["system"] != NOT_APPLICABLE]
 
     @property
     def flagged_by_human(self) -> list:
