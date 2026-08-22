@@ -114,10 +114,16 @@ Eleven of twelve need no rule file, so I am not blocked by the rulebook and you 
 ## 4. What I owe you for Tuesday and Wednesday
 
 ```bash
-python -m dpm report <run_id>     # stored capture.json → Beweisakte + Marktübersicht, regenerated
+python -m dpm rebuild             # every output, from every capture on disk
 ```
 
-No engine edits, no capture code touched, no environment variables, no keys, no setup. You re-capture viagogo on Wednesday, run one command, and the presentation material is current.
+**This exists now.** No arguments, no engine edits, no capture code touched, no environment variables, no keys, no setup. You re-capture viagogo on Wednesday, run one command, and the presentation material is current.
+
+It finds the captures itself under `out/` and `data/fixtures/`, then builds a Beweisakte for each, one Marktübersicht over all of them, and — for every target captured more than once — the Zeitachse, without anyone having to name the two folders. Target and timestamp are read out of each `capture.json`, not out of the folder name.
+
+One consequence worth knowing on your side: **a hand-written fixture is never compared against a real capture.** Different viewport, different capture method — the diff would look plausible and mean nothing. The pair is skipped with a reason printed. So once your layer produces real runs, the timelines it builds are real-vs-real.
+
+Add `--html-only` to skip the PDFs while you are iterating.
 
 Same reason the UI stays **one rendering path — Jinja2 + FastAPI**. Adding Streamlit would give us a second, parallel way of rendering the same data, and it cannot produce the Beweisakte PDF anyway. One set of templates feeds the screen, the PDF and the CSV.
 
