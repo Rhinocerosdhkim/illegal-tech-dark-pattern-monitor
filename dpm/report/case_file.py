@@ -71,7 +71,13 @@ class CaseFile:
 
 
 def build(run: Run, findings: list, output: str | Path = "out",
-          as_pdf: bool = True) -> CaseFile:
+          as_pdf: bool = True, summaries: dict | None = None) -> CaseFile:
+    """Write the Beweisakte.
+
+    `summaries` maps a rule id to a machine-formulated paragraph (AI ④).
+    It is empty by default and the document is complete without it: what
+    carries a finding is the rulebook's own text, not a model's.
+    """
     folder = Path(output) / run.run_id
     folder.mkdir(parents=True, exist_ok=True)
 
@@ -84,7 +90,7 @@ def build(run: Run, findings: list, output: str | Path = "out",
         if source:
             shutil.copyfile(source, folder / name)
 
-    eintraege = [_entry(nr, f, steps, run, folder)
+    eintraege = [_entry(nr, f, steps, run, folder, summaries or {})
                  for nr, f in enumerate(reportable, start=1)]
 
     html = _environment().get_template("beweisakte.html").render(
@@ -114,7 +120,7 @@ def build(run: Run, findings: list, output: str | Path = "out",
 # --- preparation ---------------------------------------------------------
 
 def _entry(nr: int, finding: Finding, steps: dict, run: Run,
-           folder: Path) -> dict:
+           folder: Path, summaries: dict | None = None) -> dict:
     evidence = [_evidence(e, steps) for e in finding.evidence]
     return {
         "nr": nr,
@@ -132,6 +138,7 @@ def _entry(nr: int, finding: Finding, steps: dict, run: Run,
                                for e in evidence) or "—",
         "screenshots": _images(evidence, folder),
         "erlaeuterung": _explanation(finding, run.table),
+        "zusammenfassung": (summaries or {}).get(finding.rule.id),
     }
 
 

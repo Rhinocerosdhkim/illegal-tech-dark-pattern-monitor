@@ -5,6 +5,8 @@
     python -m dpm report data/fixtures/viagogo     Beweisakte as HTML and PDF
     python -m dpm overview data/fixtures/*         Marktuebersicht over many sites
     python -m dpm timeline <earlier> <later>       Zeitachse: two captures compared
+    python -m dpm zielliste <datei>                document with links -> target list
+    python -m dpm gold                             accuracy against the gold standard
     python -m dpm rebuild                          rebuild EVERY output, no arguments
 
 Both accept --pdf. The market overview additionally takes --branche,
@@ -30,6 +32,9 @@ from dpm.engine.rules import load_rules
 from dpm.engine.run import load_run
 from dpm.engine.verdict import (CLEAR, NOT_APPLICABLE, NO_FINDING, SUSPECTED,
                                 UNRESOLVED, assess)
+from dpm.ai.client import Model, ModelError, unavailable as model_unavailable
+from dpm.ai.doc_import import read_targets, write as write_targets
+from dpm.ai.narrative import facts as narrative_facts, summarise
 from dpm.report.archive import build as build_archive, relative
 from dpm.report.gold import (GOLD, compare as compare_gold,
                              rate as gold_rate, read as read_gold)
@@ -130,10 +135,45 @@ def cmd_assess(arguments) -> int:
     return 0
 
 
+def _summaries(findings: list) -> dict:
+    """AI (4): one machine-formulated paragraph per finding.
+
+    Off unless asked for. The document handed over on Monday contains no
+    model-written sentence at all, and that is a claim we have to be able
+    to make without qualification.
+    """
+    reason = model_unavailable()
+    if reason:
+        print(f"\n  ! Zusammenfassungen uebersprungen — {reason}")
+        return {}
+
+    model = Model.open()
+    texts, verworfen = {}, []
+
+    async def run_all():
+        for finding in findings:
+            if not finding.reportable:
+                continue
+            draft = await summarise(model,
+                                    narrative_facts(finding,
+                                                    LABEL[finding.level]))
+            if draft.text:
+                texts[finding.rule.id] = draft.text
+            else:
+                verworfen.append((finding.rule.id, draft.rejected))
+
+    asyncio.run(run_all())
+    for rule_id, grund in verworfen:
+        print(f"  ! {rule_id}: Zusammenfassung verworfen — {grund}")
+    return texts
+
+
 def cmd_report(arguments) -> int:
     run, findings = _findings(arguments)
+    summaries = _summaries(findings) if arguments.zusammenfassung else None
     result = build_case_file(run, findings, output=arguments.output,
-                             as_pdf=not arguments.html_only)
+                             as_pdf=not arguments.html_only,
+                             summaries=summaries)
 
     print()
     _warnings(run)
@@ -287,6 +327,48 @@ def cmd_rebuild(arguments) -> int:
     return 0
 
 
+def cmd_zielliste(arguments) -> int:
+    """AI (2): a document with links becomes a target list.
+
+    The model proposes; every address it names has to occur in the
+    document, and the list is written for a person to correct. Nothing
+    here starts a capture.
+    """
+    reason = model_unavailable()
+    if reason:
+        print(f"\n{reason}\n", file=sys.stderr)
+        return 1
+
+    try:
+        targets, dropped = asyncio.run(
+            read_targets(Model.open(), arguments.file))
+    except (ModelError, ValueError, OSError) as error:
+        print(f"\n{error}\n", file=sys.stderr)
+        return 1
+
+    if not targets:
+        print(f"\nIn {arguments.file} wurde keine verwertbare Adresse "
+              f"gefunden.\n", file=sys.stderr)
+        return 1
+
+    path = write_targets(targets, arguments.output)
+    print(f"\nZielliste aus {arguments.file}\n")
+    print(f"{'Adresse':40} Branche")
+    print("-" * 60)
+    for target in targets:
+        print(f"{target['url'][:39]:40} {target['branche'] or '— offen'}")
+
+    if dropped:
+        print(f"\nVerworfen ({len(dropped)}):")
+        for entry in dropped:
+            print(f"  {entry.get('url', '?')[:39]:40} {entry['grund']}")
+
+    print(f"\n{path}")
+    print("Bitte durchsehen und die offenen Branchen ergaenzen; die Spalte "
+          "geprueft_von_mensch danach auf ja setzen.\n")
+    return 0
+
+
 def cmd_gold(arguments) -> int:
     """Compare the system's verdicts against the hand-written gold standard.
 
@@ -376,6 +458,9 @@ def main(argv=None) -> int:
             sub.add_argument("--output", type=Path, default=Path("out"))
             sub.add_argument("--html-only", action="store_true",
                              dest="html_only", help="skip the PDF, for quick runs")
+            sub.add_argument("--zusammenfassung", action="store_true",
+                             help="machine-formulated paragraph per finding "
+                                  "(AI 4); needs a model key")
         sub.set_defaults(function=function)
 
     over = commands.add_parser(
@@ -402,6 +487,12 @@ def main(argv=None) -> int:
     tl.add_argument("--output", type=Path, default=Path("out"))
     tl.add_argument("--pdf", action="store_true", help="also print a PDF")
     tl.set_defaults(function=cmd_timeline)
+
+    zl = commands.add_parser(
+        "zielliste", help="read a document with links into a target list (AI 2)")
+    zl.add_argument("file", type=Path, help="csv, txt, xlsx or docx")
+    zl.add_argument("--output", type=Path, default=Path("out/zielliste.csv"))
+    zl.set_defaults(function=cmd_zielliste)
 
     gold = commands.add_parser(
         "gold", help="system verdicts against the hand-written gold standard")

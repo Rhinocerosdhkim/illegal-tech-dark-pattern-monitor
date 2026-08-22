@@ -16,6 +16,7 @@ Runnable without setup, no external services:
 .venv/bin/python tests/test_rebuild.py        # the handover command, run discovery
 .venv/bin/python tests/test_design.py         # greyscale proof, nothing fetched
 .venv/bin/python tests/test_gold.py           # accuracy figures and their denominators
+.venv/bin/python tests/test_ai_guards.py      # what AI 2 and AI 4 may put in a document
 ```
 
 `tests/test_verdicts.py` checks the hand-written fixture

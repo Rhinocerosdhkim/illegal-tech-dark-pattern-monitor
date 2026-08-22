@@ -67,6 +67,15 @@
 .feld li { font: 400 12px/1.65 var(--serif); color: var(--t-80); margin-bottom: 4px; }
 .bilder { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
 
+/* Machine-formulated text is marked as such wherever it appears. We have
+   to be able to say exactly which sentences a model wrote. */
+.maschinell {
+  border-left: 2px solid var(--b-28); padding-left: 13px;
+}
+.maschinell .quelle {
+  font: 400 11px/1.5 var(--sans); color: var(--t-55); margin-top: 6px;
+}
+
 .anmerkung {
   border-left: 2px solid var(--ink); background: var(--paper-alt);
   padding: 10px 13px; margin-bottom: 20px;
@@ -258,6 +267,16 @@
         <div class="feld">
           <div class="label">Erläuterung</div>
           {% for absatz in e.erlaeuterung | absatz %}<p>{{ absatz }}</p>{% endfor %}
+        </div>
+        {% endif %}
+
+        {% if e.zusammenfassung %}
+        <div class="feld maschinell">
+          <div class="label">Maschinell formulierte Zusammenfassung</div>
+          <p>{{ e.zusammenfassung }}</p>
+          <p class="quelle">Formuliert aus den oben genannten Messwerten. Der
+          Befund selbst und seine Stufe stammen aus dem Regelwerk, nicht aus
+          dieser Zusammenfassung.</p>
         </div>
         {% endif %}
       </div>
