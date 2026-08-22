@@ -1,3 +1,8 @@
 PyYAML>=6.0
 Jinja2>=3.1
 playwright>=1.40
+
+# capture layer — only needed for `python -m dpm capture`.
+# The evaluation layer runs without them.
+playwright-stealth>=1.0
+google-genai>=1.0

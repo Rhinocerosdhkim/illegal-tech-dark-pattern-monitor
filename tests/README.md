@@ -3,6 +3,7 @@
 Runnable without setup, no external services:
 
 ```
+.venv/bin/python tests/test_capture.py        # capture layer, no network
 .venv/bin/python tests/test_conditions.py     # condition parser
 .venv/bin/python tests/test_verdicts.py       # rulebook against the fixture
 .venv/bin/python tests/test_case_file.py      # Beweisakte

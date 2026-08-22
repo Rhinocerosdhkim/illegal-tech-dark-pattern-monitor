@@ -1,5 +1,6 @@
 """One entry point, one output folder, no setup.
 
+    python -m dpm capture viagogo                  capture a site into out/
     python -m dpm assess data/fixtures/viagogo     findings table
     python -m dpm report data/fixtures/viagogo     Beweisakte as HTML and PDF
     python -m dpm overview data/fixtures/*         Marktuebersicht over many sites
@@ -12,6 +13,7 @@ development background has to operate this alone.
 from __future__ import annotations
 
 import argparse
+import asyncio
 import json
 import sys
 from pathlib import Path
@@ -34,6 +36,47 @@ def _findings(arguments):
     run = load_run(arguments.run)
     rules = load_rules(arguments.rules)
     return run, [assess(rule, run.table) for rule in rules]
+
+
+def cmd_capture(arguments) -> int:
+    from dpm.ai.client import Model, unavailable
+    from dpm.capture.driver import capture
+    from dpm.capture.targets import load as load_target, slug
+
+    profile = load_target(arguments.target)
+    url = arguments.url or profile.get("start")
+    if not url:
+        print(f"\nNo start URL. Either give one, or add a profile with a "
+              f"'start:' entry as data/targets/{arguments.target}.yaml\n",
+              file=sys.stderr)
+        return 1
+    if not profile:
+        profile = {"name": slug(arguments.target)}
+
+    # No model is not a failure. The start page, its screenshot and its hash
+    # are still evidence, and every signal simply lands in signal_errors.
+    model, reason = None, unavailable()
+    if reason:
+        print(f"\n  ! no model available: {reason}")
+        print("    capturing the start page only — no navigation, no signals")
+    else:
+        model = Model.open()
+        print(f"\nModel     {model.name}  ({model.backend})")
+
+    run = asyncio.run(capture(url, profile, model,
+                              output_root=arguments.output,
+                              max_steps=arguments.steps))
+    file = run.write()
+
+    print(f"\nTarget    {run.meta['target']}  ({run.meta['industry']})")
+    print(f"Path      " + " -> ".join(s["step"] for s in run.steps))
+    print(f"Signals   {len(run.signals)} measured, "
+          f"{len(run.errors)} not captured")
+    for note in run.notes:
+        print(f"  ! {note}")
+    print(f"\n  {file}")
+    print(f"\nNext:  python -m dpm assess {run.path}\n")
+    return 0
 
 
 def cmd_assess(arguments) -> int:
@@ -142,6 +185,16 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(prog="dpm", description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
 
+    cap = commands.add_parser(
+        "capture", help="capture a site and write out/<run_id>/capture.json")
+    cap.add_argument("target", help="a name from data/targets/, or a URL")
+    cap.add_argument("--url", default=None,
+                     help="start URL, if the target has no profile")
+    cap.add_argument("--output", type=Path, default=Path("out"))
+    cap.add_argument("--steps", type=int, default=6,
+                     help="how many path steps at most")
+    cap.set_defaults(function=cmd_capture)
+
     for name, help_text, function in [
             ("assess", "check a capture run against the rulebook", cmd_assess),
             ("report", "build the Beweisakte as HTML and PDF", cmd_report)]:
@@ -184,6 +237,10 @@ def main(argv=None) -> int:
               f"{error.msg}\n", file=sys.stderr)
     except yaml.YAMLError as error:
         print(f"\nA YAML file is not readable:\n{error}\n", file=sys.stderr)
+    except ImportError as error:
+        print(f"\nA package is missing: {error}\n"
+              f"Install it with:  .venv/bin/pip install -r requirements.txt\n",
+              file=sys.stderr)
     return 1
 
 
