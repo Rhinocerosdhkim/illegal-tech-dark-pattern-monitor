@@ -84,6 +84,18 @@ async def measure(html: str) -> tuple[dict, dict]:
     return result
 
 
+async def wall(html: str):
+    """Why extractors.js thinks this page is not the site, or None."""
+    from playwright.async_api import async_playwright
+    async with async_playwright() as play:
+        browser = await play.chromium.launch()
+        page = await browser.new_page(viewport={"width": 1440, "height": 900})
+        await page.set_content(html)
+        result = await collect.blocked(page)
+        await browser.close()
+    return result
+
+
 try:
     from playwright.async_api import async_playwright        # noqa: F401
 except ImportError:                                          # pragma: no cover
@@ -267,5 +279,36 @@ assert "banner_detected" not in values, \
     "an unreadable banner was reported as measured"
 assert "banner_detected" in gaps, gaps
 print(f"  ok  banner_detected -> errors: {gaps['banner_detected'][:52]}")
+
+print("\nAn interstitial says so, and a shop with a login box does not")
+# Without a model there is no navigator to answer "abseits", and that is the
+# mode anybody without an API key runs in. Measuring a bot check and filing
+# it under "startseite" is the same silent all-clear the escape hatch exists
+# to prevent, so the judgement is made here instead. Narrow on purpose: a
+# false positive throws a real measurement away.
+for name, body, erwartet in [
+    ("Anmeldewand",
+     '<h1>Anmelden</h1><p>Bitte melden Sie sich an.</p>'
+     '<input type="password"><button>Anmelden</button>', True),
+    ("Bot-Pruefung",
+     '<h1>Sicherheitspruefung</h1><div class="g-recaptcha"></div>', True),
+    ("Fehlerseite (nur Titel und H1)",
+     '<h1>Seite nicht gefunden</h1><p>Zurueck zur Startseite</p>', True),
+    ("echter Shop",
+     '<h1>Ticketshop</h1><p>129,00 EUR inkl. MwSt.</p>'
+     '<button>Jetzt kaufen</button>', False),
+    ("Shop mit Anmeldefeld in der Kopfzeile",
+     '<header><input type="password"><button>Anmelden</button></header>'
+     '<h1>Ticketshop Muenchen</h1>'
+     '<p>Konzertkarten, Theaterkarten und Sportevents. Alle Preise inkl. '
+     'MwSt. Versandkostenfrei ab 50 EUR. Kundenservice montags bis freitags. '
+     'Sichere Zahlung per Rechnung, Lastschrift oder Kreditkarte. Umtausch '
+     'innerhalb von 14 Tagen moeglich. Persoenliche Beratung im Ladengeschaeft '
+     'in der Innenstadt.</p><p>129,00 EUR inkl. MwSt.</p>'
+     '<button>Jetzt kaufen</button>', False),
+]:
+    got = asyncio.run(wall(FRAME.format(body)))
+    assert bool(got) is erwartet, f"{name}: blocked={got!r}"
+    print(f"  ok  {name:38} {got or '— die Seite selbst'}")
 
 print("\nAll extractor tests passed.")

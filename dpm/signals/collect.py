@@ -29,6 +29,25 @@ def script() -> str:
     return SOURCE.read_text(encoding="utf-8")
 
 
+async def blocked(page) -> str | None:
+    """Why this page is not the site, or None if it is.
+
+    A bot check, a login wall, an error page. The navigator can say
+    "abseits", but only where there is a model; without one -- the keyless
+    mode, which is what the demonstration runs in -- nobody is there to
+    ask. The same judgement is made in extractors.js, deterministically.
+    """
+    answer = await _evaluate(page)
+    return answer.get("blocked") if isinstance(answer, dict) else None
+
+
+async def _evaluate(page):
+    try:
+        return await page.evaluate(script())
+    except Exception:                             # navigation, CSP, syntax
+        return None
+
+
 async def measure(page) -> tuple[dict, dict]:
     """(values, gaps) for the page as it currently stands.
 

@@ -18,7 +18,9 @@ from dpm.ai import text_signals
 from dpm.ai.client import ModelError
 from dpm.capture import driver
 from dpm.capture.targets import load as load_target, slug
+from dpm.engine.rules import load_rules
 from dpm.engine.run import load_run
+from dpm.engine.verdict import UNRESOLVED, assess
 
 failures = []
 
@@ -281,6 +283,49 @@ check(got.get("vat_disclosure_present", {}).get("value") is False,
       "the finding, not a loss of one")
 check(got.get("vat_disclosure_present", {}).get("step") == "produktdetail",
       "attributed to the page it was measured on")
+
+print("\nwithout a model an interstitial is still not the site")
+# The keyless mode is what anybody without an API key gets, and it is the
+# mode the demonstration runs in. There is no navigator to answer "abseits"
+# here, so the judgement comes from the DOM. Measuring a login wall and
+# filing it under "startseite" would be the same silent all-clear.
+walls = pathlib.Path(tempfile.mkdtemp())
+(walls / "login.html").write_text(
+    '<html lang="de"><body><h1>Anmelden</h1><p>Bitte melden Sie sich an.</p>'
+    '<input type="password"><button>Anmelden</button></body></html>',
+    encoding="utf-8")
+(walls / "shop.html").write_text(
+    '<html lang="de"><body>'
+    '<div style="position:fixed;bottom:0;left:0;right:0;padding:20px">'
+    '<p>Cookies und Einwilligung</p><button>Alle akzeptieren</button>'
+    '<label><input type="checkbox" checked> Marketing</label></div>'
+    '<h1>Ticketshop</h1><p>129,00 EUR inkl. MwSt.</p>'
+    '<button>Jetzt kaufen</button></body></html>', encoding="utf-8")
+
+with tempfile.TemporaryDirectory() as tmp:
+    run = asyncio.run(driver.capture((walls / "login.html").as_uri(),
+                                     {"name": "wand"}, model=None,
+                                     output_root=pathlib.Path(tmp)))
+    raw = json.loads(run.write().read_text())
+    check(raw["signals"] == {},
+          "a login wall produced no signal without a model either")
+    check([s["step"] for s in raw["steps"]] == [OFF_PATH],
+          "and is recorded as off the path, not as the start page")
+    check(any("Anmeldewand" in n for n in raw["notes"]), raw["notes"])
+
+    findings = [assess(r, load_run(run.path).table) for r in load_rules()]
+    check(all(f.level == UNRESOLVED for f in findings),
+          "no rule reads the wall as a clean bill of health")
+
+with tempfile.TemporaryDirectory() as tmp:
+    run = asyncio.run(driver.capture((walls / "shop.html").as_uri(),
+                                     {"name": "laden"}, model=None,
+                                     output_root=pathlib.Path(tmp)))
+    raw = json.loads(run.write().read_text())
+    check(raw["signals"].get("banner_detected", {}).get("value") is True,
+          "the real shop is still measured in the keyless mode")
+    check([s["step"] for s in raw["steps"]] == ["startseite"],
+          "and keeps its step")
 
 print()
 if failures:

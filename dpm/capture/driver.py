@@ -176,9 +176,18 @@ async def capture(url: str, profile: dict, model: Model | None,
         browser = page = None
         try:
             browser, page = await _open(playwright, stealth)
-            await page.goto(url, wait_until="domcontentloaded", timeout=30000)
-            await _settle(page)
-            await _walk(page, run, model, output, max_steps)
+            answer = await page.goto(url, wait_until="domcontentloaded",
+                                     timeout=30000)
+            status = getattr(answer, "status", None)
+            if status and status >= 400:
+                # Not a measurement gap of the shop: we never reached it.
+                # No walk, and no signal -- an error page has a DOM too, and
+                # measuring it would file the error page under "startseite".
+                run.notes.append(f"the start URL answered {status} — "
+                                 f"nothing about this site was measured")
+            else:
+                await _settle(page)
+                await _walk(page, run, model, output, max_steps)
         except Exception as error:
             run.notes.append(f"capture stopped: {type(error).__name__}: {error}")
         finally:
@@ -217,6 +226,21 @@ async def _walk(page, run: Capture, model, output: Path, max_steps: int) -> None
             # here. The DOM signals need no model at all, and on the start
             # page the step is known -- so they are still measured and the
             # rules that rest on them still produce a finding.
+            #
+            # Unless what the start URL returned is not the site: a bot
+            # check, a login wall, an error page. There is no navigator to
+            # say "abseits" in this mode, and it is the mode anybody
+            # without an API key gets, so the judgement is made from the
+            # DOM instead. Measuring an interstitial and filing it under
+            # "startseite" is the same silent all-clear the navigator's
+            # escape hatch exists to prevent.
+            wall = await collect.blocked(page)
+            if wall:
+                entry["step"] = OFF_PATH
+                entry["blocked"] = wall
+                run.notes.append(f"step {number}: {wall} — "
+                                 f"nothing measured here")
+                return
             await collect.into(run, page, step=step, evidence=name)
             return
 
@@ -245,6 +269,15 @@ async def _walk(page, run: Capture, model, output: Path, max_steps: int) -> None
         entry["step"] = step = decision.step
         entry["chosen_by"] = decision.reason      # 2.9: auditable by a human
 
+        # The model may be wrong about where it stands, and a bot check
+        # looks like an ordinary page to it. A deterministic verdict from
+        # the DOM overrides it, in the one direction that is safe: it can
+        # withhold an attribution, never add one.
+        wall = await collect.blocked(page)
+        if wall:
+            entry["step"] = step = OFF_PATH
+            entry["blocked"] = wall
+
         if step == OFF_PATH:
             # A login wall, a captcha, an error page. Whatever stands here
             # says nothing about the shop, so nothing is attributed to it --
@@ -253,7 +286,8 @@ async def _walk(page, run: Capture, model, output: Path, max_steps: int) -> None
             # itself stays in the record, so the detour is visible in the
             # Beweisakte.
             run.notes.append(f"step {number}: not on the path "
-                             f"({decision.reason}) — nothing measured here")
+                             f"({wall or decision.reason}) — "
+                             f"nothing measured here")
         else:
             await _read_signals(run, model, output / name, step)
             # After the signals read off the screenshot, so that where both

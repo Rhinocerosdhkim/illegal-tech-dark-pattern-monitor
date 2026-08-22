@@ -125,6 +125,62 @@
       || element.getAttribute("role") === "button";
   };
 
+  /* ------------------------------------------- is this the shop at all */
+
+  // What we are standing on may not be the site at all: a bot check, a
+  // login wall, an error page. Whatever is measured there is a fact about
+  // the interstitial, not about the shop, and recorded as one it becomes a
+  // clean bill of health for a site nobody examined.
+  //
+  // The navigator can say "abseits", but only when there is a model. The
+  // keyless mode -- which is what anybody without an API key gets, and the
+  // mode the demonstration runs in -- has nobody to ask. So the same
+  // judgement is made here, deterministically, and kept deliberately
+  // narrow: a false positive throws a real measurement away.
+  const blocked = (() => {
+    const CAPTCHA = ["recaptcha", "hcaptcha", "turnstile", "cf-challenge",
+                     "cf-turnstile", "px-captcha", "geo.captcha"];
+    const marked = Array.from(
+      document.querySelectorAll("script[src], iframe[src], div[id], div[class]"))
+      .some((node) => hasWord(
+        ((node.getAttribute("src") || "") + " " + (node.id || "") + " " +
+         (typeof node.className === "string" ? node.className : ""))
+          .toLowerCase(), CAPTCHA));
+    if (marked || hasWord(BODY_TEXT, ["ich bin kein roboter",
+                                      "verify you are human",
+                                      "sind sie ein mensch",
+                                      "ungewoehnliche aktivitaet",
+                                      "unusual traffic"])) {
+      return "Bot-Pruefung statt der Seite";
+    }
+
+    // A login form in a header dropdown is normal. A page that is nothing
+    // but a login form is a wall. Both conditions have to hold.
+    const password = Array.from(
+      document.querySelectorAll("input[type=password]")).some(visible);
+    const ordering = ALL.some(
+      (element) => clickable(element) && visible(element)
+        && hasWord(lower(element), WORDS.order));
+    if (password && !ordering && BODY_TEXT.length < 1200) {
+      return "Anmeldewand statt der Seite";
+    }
+
+    // Only the title and the first heading -- "404" anywhere in the body
+    // could be an article number.
+    const heading = document.querySelector("h1");
+    const banner_text = ((document.title || "") + " " +
+                         (heading ? text(heading) : "")).toLowerCase();
+    if (hasWord(banner_text, ["seite nicht gefunden", "404", "403",
+                              "nicht verfuegbar", "access denied",
+                              "zugriff verweigert", "page not found",
+                              "service unavailable"])) {
+      return "Fehlerseite statt der Seite";
+    }
+    return null;
+  })();
+
+  if (blocked) out.blocked = blocked;
+
   /* --------------------------------------------------------- colours */
 
   const channel = (value) => {
