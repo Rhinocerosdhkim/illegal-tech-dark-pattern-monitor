@@ -60,6 +60,9 @@
           "zzgl. mwst", "inkl. ust", "mwst.", "mehrwertsteuer"],
     finance: ["bafin", "versicherung", "kredit", "depot", "bausparen",
               "darlehen", "girokonto"],
+    b2b: ["zzgl. mwst", "zzgl. ust", "nettopreis", "preise netto",
+          "nur für gewerbetreibende", "nur fuer gewerbetreibende",
+          "nur für geschäftskunden", "b2b", "gewerbliche kunden"],
     recurring: ["abo", "abonnement", "mitgliedschaft", "tarif"],
     minTerm: ["mindestlaufzeit", "vertragslaufzeit", "mindestvertragslaufzeit"],
     renewal: ["verlängert sich automatisch", "automatische verlängerung",
@@ -361,6 +364,18 @@
   /* ------------------------------------------------ prices, context */
 
   set("has_price_display", PRICE.test(BODY_TEXT));
+
+  // Consumer offer or not: prices quoted including VAT point at consumers,
+  // net prices and "trade customers only" at businesses. Without any price
+  // on the page there is nothing to read it from -- and guessing "yes"
+  // would make rules apply to sites they were never meant for.
+  if (PRICE.test(BODY_TEXT)) {
+    set("is_b2c_offer", !hasWord(BODY_TEXT, WORDS.b2b));
+  } else {
+    gap("is_b2c_offer",
+        "keine Preisangabe auf der Seite — Verbrauchereigenschaft nicht "
+        + "aus dem Preisumfeld ableitbar");
+  }
   set("has_checkout_flow", hasWord(BODY_TEXT, WORDS.checkout)
                            || out.signals.order_button_found === true);
   set("gratis_claim_present", hasWord(BODY_TEXT, WORDS.gratis));

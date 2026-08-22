@@ -34,6 +34,7 @@ from zoneinfo import ZoneInfo
 from dpm.ai import navigator, text_signals
 from dpm.ai.client import Model, ModelError
 from dpm.capture.path import ABANDONED, PATH_STEPS
+from dpm.signals import collect
 from dpm.capture.targets import slug
 
 # Fixed in code, not left to defaults. Pixel areas are meaningless without a
@@ -196,7 +197,11 @@ async def _walk(page, run: Capture, model, output: Path, max_steps: int) -> None
     """One step per iteration: evidence, then navigation."""
     for number in range(1, max_steps + 1):
         name = f"S-{number:02d}.png"
-        step = ABANDONED
+        # The first iteration is the start page by construction -- capture()
+        # navigated there. Every later step only gets its name once the
+        # navigator has spoken, and until then no signal may be attributed
+        # to it (see path.py on ABANDONED).
+        step = PATH_STEPS[0] if number == 1 else ABANDONED
 
         # Evidence first, while the page is untouched by us.
         await page.screenshot(path=str(output / name))
@@ -207,6 +212,11 @@ async def _walk(page, run: Capture, model, output: Path, max_steps: int) -> None
         run.steps.append(entry)
 
         if model is None:
+            # Without a model there is no navigation, so the capture ends
+            # here. The DOM signals need no model at all, and on the start
+            # page the step is known -- so they are still measured and the
+            # rules that rest on them still produce a finding.
+            await collect.into(run, page, step=step, evidence=name)
             return
 
         # Then the overlay, into a second image the report never cites.
@@ -233,6 +243,11 @@ async def _walk(page, run: Capture, model, output: Path, max_steps: int) -> None
         entry["step"] = step = decision.step
         entry["chosen_by"] = decision.reason      # 2.9: auditable by a human
         await _read_signals(run, model, output / name, step)
+        # After the signals read off the screenshot, so that where both
+        # produce the same signal the measured value is the one that
+        # survives: it is deterministic and anybody can recompute it in the
+        # developer tools.
+        await collect.into(run, page, step=step, evidence=name)
 
         if decision.goal_reached:
             return
@@ -281,23 +296,29 @@ def _explain_gaps(run: Capture) -> None:
     the rulebook asks for and the capture layer cannot produce yet; without
     the note they would just be missing and nobody would know why.
     """
+    for name in list(run.errors):
+        if name in run.signals:
+            # Measured after the gap was noted. Both at once would say
+            # "we have a value and we could not get one".
+            run.errors.pop(name)
+
     reached = {s["step"] for s in run.steps}
     if "produktdetail" not in reached:
         run.errors.setdefault(
             "price_listed",
             "the product page was not reached — no path execution yet")
 
-    run.errors.setdefault(
-        "banner_detected",
-        "consent banner not measured — dpm/signals/extractors.js is missing")
-    for name in ("accept_button_area_px2", "reject_button_area_px2",
-                 "accept_contrast_ratio", "reject_contrast_ratio",
-                 "reject_button_present", "reject_click_depth",
-                 "preselected_checkbox_count",
-                 "third_party_cookies_before_consent"):
+    # What dpm/signals/extractors.js measures is not listed here any more:
+    # it either has a value or has said itself why it has none. Only what
+    # nothing in the capture layer produces yet stays.
+    for name in ("reject_click_depth", "banner_reappears_on_reject"):
         run.errors.setdefault(
-            name, "requires deterministic measurement in the browser — "
-                  "dpm/signals/extractors.js is missing")
+            name, "requires clicking through the reject path — a procedure, "
+                  "not a measurement; not implemented yet")
+    run.errors.setdefault(
+        "third_party_cookies_before_consent",
+        "not in the DOM — requires reading the cookie jar before any "
+        "interaction; not implemented yet")
     for name in ("countdown_resets_on_revisit", "countdown_initial_value_sec",
                  "scarcity_value_unchanged_scans"):
         run.errors.setdefault(

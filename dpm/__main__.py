@@ -73,7 +73,8 @@ def cmd_capture(arguments) -> int:
     model, reason = None, unavailable()
     if reason:
         print(f"\n  ! no model available: {reason}")
-        print("    capturing the start page only — no navigation, no signals")
+        print("    start page only, no navigation — the signals measured "
+              "in the DOM are still taken")
     else:
         model = Model.open()
         print(f"\nModel     {model.name}  ({model.backend})")

@@ -136,8 +136,21 @@ with tempfile.TemporaryDirectory() as tmp:
     check(raw["meta"]["locale"] == "de-DE", "the page is loaded in German")
     check(len(raw["steps"]) == 1, "one step captured, then it stops cleanly")
     check(raw["steps"][0]["dom_hash"].startswith("sha256:"), "with a hash")
-    check(raw["signals"] == {}, "no signal is invented without a model")
-    check("banner_detected" in raw["signal_errors"],
+    # The DOM signals need no model, so they are measured even here. What a
+    # model would have read off the screenshot is absent -- and, this is the
+    # point, not invented in its place.
+    measured = {name: entry["value"] for name, entry in raw["signals"].items()}
+    check(measured.get("banner_detected") is False,
+          "a missing banner is measured as absent, not guessed")
+    check(measured.get("order_button_label") == "Jetzt bestellen",
+          "the order button is read out of the DOM")
+    check(all({"value", "step", "evidence"} <= set(entry)
+              for entry in raw["signals"].values()),
+          "every measured signal carries its step and its evidence")
+    check(not {"countdown_element_present", "countdown_text", "scarcity_value",
+               "scarcity_text_present"} & set(raw["signals"]),
+          "nothing a model would have read is invented without one")
+    check("third_party_cookies_before_consent" in raw["signal_errors"],
           "what cannot be measured yet says so in signal_errors")
 
     loaded = load_run(run.path)
