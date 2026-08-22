@@ -153,33 +153,48 @@ def _applicability(rule: Rule, table: SignalTable):
     conservative thing.
     """
     used: list = []
-    open_points: list = []
 
-    def truths(conditions, establishes=True):
+    def truths(conditions, gaps_into, establishes=True):
         results = []
         for text in conditions:
             evaluation, gaps = _condition(Condition(text=text), rule, table)
             if gaps:
-                open_points.extend(gaps)
+                gaps_into.extend(gaps)
                 continue
             if establishes:
                 used.extend(evaluation.signals_used)
             results.append(evaluation.is_true)
         return results
 
-    all_of = truths(rule.applies_when.get("all", []))
-    any_of = truths(rule.applies_when.get("any", []))
-    none_of = truths(rule.applies_when.get("none", []), establishes=False)
+    all_gaps: list = []
+    any_gaps: list = []
+    none_gaps: list = []
+    all_of = truths(rule.applies_when.get("all", []), all_gaps)
+    any_of = truths(rule.applies_when.get("any", []), any_gaps)
+    none_of = truths(rule.applies_when.get("none", []), none_gaps,
+                     establishes=False)
     has_any = bool(rule.applies_when.get("any"))
 
     # If it is already established that a prerequisite fails, that is a
     # statement — not an "unklar".
     if any(r is False for r in all_of) or any(r is True for r in none_of):
         return NO, [], _unique(used)
-    if has_any and any(any_of):
-        pass                                  # at least one satisfied
-    elif has_any and not open_points:
-        return NO, [], _unique(used)
+
+    # Gaps are tracked per group, because they do not all weigh the same.
+    open_points = all_gaps + none_gaps
+    if has_any:
+        if any(any_of):
+            # One alternative is established. "any" asks for at least one,
+            # so whether the others could be measured cannot change the
+            # answer — and counting their gaps here would turn a rule whose
+            # prerequisite is proven into "unklar". DP-001 applies once a
+            # banner is found; that the cookies before consent were not
+            # counted is a question for the verdict, not for applicability.
+            pass
+        elif not any_gaps:
+            return NO, [], _unique(used)
+        else:
+            open_points = open_points + any_gaps
 
     if open_points:
         return UNCERTAIN, _unique(open_points), _unique(used)

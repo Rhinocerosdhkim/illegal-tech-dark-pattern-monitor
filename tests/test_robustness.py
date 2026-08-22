@@ -142,4 +142,28 @@ try:
 except RuleSyntaxError:
     print("  ok  a genuine rulebook error is still a rulebook error")
 
+# --------------------------------------------------------------------------
+print("\nAn 'any:' prerequisite that is already satisfied stays satisfied")
+
+# DP-001 applies when a banner was found OR cookies were set before any
+# consent. On a real capture the cookie count is often not measured at all.
+# That must not turn a rule whose prerequisite is proven into "unklar" —
+# "any" asks for at least one, so the unmeasured alternative cannot change
+# the answer. Without this the strongest finding we have would never
+# survive a live run.
+def _drop_cookies(raw):
+    raw["signals"].pop("third_party_cookies_before_consent", None)
+    raw["signal_errors"]["third_party_cookies_before_consent"] = (
+        "Netzwerkmitschnitt nicht implementiert")
+    raw["signals"]["reject_button_present"] = {
+        "value": False, "step": "startseite", "evidence": "S-01.png"}
+
+_, findings, _ = run_with(_drop_cookies, "any-prerequisite")
+dp001 = next(f for f in findings if f.rule.id == "DP-001")
+assert dp001.level != UNRESOLVED, (
+    "a satisfied 'any' alternative was overruled by an unmeasured one")
+assert dp001.level == "eindeutig", dp001.level
+print(f"  ok  DP-001 {dp001.level}, obwohl ein anderes any-Signal fehlt")
+
+
 print("\nAll robustness tests passed.")
