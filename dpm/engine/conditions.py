@@ -42,6 +42,8 @@ _CONTAINS_NAMED = re.compile(
     r"^([a-zA-Z_][a-zA-Z0-9_]*)\s+(not_contains_any|contains_any)"
     r"\s+([a-zA-Z_][a-zA-Z0-9_]*)$")
 _NUMBER = re.compile(r"^-?\d+(\.\d+)?$")
+# Look like an identifier but are not signal names.
+_LITERALS = ("true", "True", "false", "False")
 _IDENTIFIER = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
 
 # Arithmetic only with surrounding spaces. Otherwise "-1" could not be told
@@ -203,20 +205,50 @@ def _atom(text: str, table, lists, used) -> bool:
         raise RuleSyntaxError(f"no comparison operator in condition: {text!r}")
 
     operator = match.group(1)
-    a = _operand(text[:match.start()], table, lists, used)
-    b = _operand(text[match.end():], table, lists, used)
+    left, right = text[:match.start()].strip(), text[match.end():].strip()
+    a = _operand(left, table, lists, used)
+    b = _operand(right, table, lists, used)
 
     if operator == "==":
         return a == b
     if operator == "!=":
         return a != b
 
-    for value in (a, b):
-        if not isinstance(value, (int, float)) or isinstance(value, bool):
-            raise RuleSyntaxError(
-                f"operator '{operator}' needs numbers, got {a!r} and {b!r} "
-                f"in: {text!r}")
+    _need_numbers(((left, a), (right, b)),
+                  f"operator '{operator}' needs numbers, got {a!r} and {b!r} "
+                  f"in: {text!r}",
+                  f"the rule compares it with '{operator}'")
     return {">": a > b, ">=": a >= b, "<": a < b, "<=": a <= b}[operator]
+
+
+def _need_numbers(operands, rule_defect: str, signal_defect: str) -> None:
+    """Both operands have to be numbers. Whose defect is it if one is not?
+
+    At runtime a malformed rule and a mismeasured signal look the same, so
+    the literal side decides:
+
+        banner_detected > true    nonsense whatever was measured -> the rule
+        scarcity_value > 0        a sound rule that got False    -> the signal
+
+    The distinction is not cosmetic. A signal we cannot read means we do not
+    know, so the finding is "unklar" and names the signal. Calling that a
+    Regelwerksfehler sends the legal team looking for a mistake they did not
+    make -- which is what happened with the capture of 22.08., where
+    scarcity_value arrived as false and DP-003 was reported as broken.
+    """
+    def is_number(value) -> bool:
+        return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+    def is_signal(source: str) -> bool:
+        return bool(_IDENTIFIER.match(source)) and source not in _LITERALS
+
+    for source, value in operands:              # the rule's own text first
+        if not is_number(value) and not is_signal(source):
+            raise RuleSyntaxError(rule_defect)
+    for source, value in operands:
+        if not is_number(value):
+            raise MissingSignal(source, f"value {value!r} is not a number, "
+                                        f"but {signal_defect}")
 
 
 def _named_list(name: str, lists: dict, text: str) -> list:
@@ -295,9 +327,9 @@ def _operand(raw: str, table, lists, used):
     if len(parts) == 3 and parts[1] in _ARITHMETIC:
         left = _operand(parts[0], table, lists, used)
         right = _operand(parts[2], table, lists, used)
-        for value in (left, right):
-            if not isinstance(value, (int, float)) or isinstance(value, bool):
-                raise RuleSyntaxError(f"arithmetic needs numbers: {text!r}")
+        _need_numbers(((parts[0], left), (parts[2], right)),
+                      f"arithmetic needs numbers: {text!r}",
+                      "the rule calculates with it")
         if parts[1] == "/" and right == 0:
             # Division by zero is not a statement, it is a measurement gap.
             raise MissingSignal(parts[2], "value 0, ratio cannot be formed")

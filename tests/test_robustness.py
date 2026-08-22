@@ -10,7 +10,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 from dpm.engine.run import load_run
 from dpm.engine.rules import load_rules
-from dpm.engine.verdict import assess
+from dpm.engine.verdict import UNRESOLVED, assess
 from dpm.report.case_file import build
 
 RULES = load_rules()
@@ -57,6 +57,10 @@ cases = [
      lambda r: r.pop("signal_errors")),
     ("legacy German key names",
      lambda r: r.update({"schritte": r.pop("steps")})),
+    ("a number signal arrives as a boolean",
+     lambda r: r["signals"]["scarcity_value"].update({"value": False})),
+    ("a number signal arrives with a German decimal comma",
+     lambda r: r["signals"]["accept_contrast_ratio"].update({"value": "8,4"})),
 ]
 
 for name, mutation in cases:
@@ -97,5 +101,45 @@ run, _, html = run_with(lambda r: r["signals"].update({"banner_detected": True})
 assert any("without provenance" in w for w in run.warnings), run.warnings
 assert "without provenance" in html
 print("  ok  a contract violation appears in the file, not only in the terminal")
+
+print("\nA signal of the wrong type is not blamed on the rulebook")
+# Real case: the capture of 22.08. delivered scarcity_value = false. The
+# engine reported DP-003 as a Regelwerksfehler, so the legal team would have
+# gone looking for a mistake in a rule that was fine. A wrong type is a gap
+# in the measurement: unklar, and name the signal.
+for signal, wert in [("scarcity_value", False),
+                     ("accept_contrast_ratio", "8,4"),
+                     ("third_party_cookies_before_consent", "zwei")]:
+    run, findings, html = run_with(
+        lambda r, s=signal, w=wert: r["signals"][s].update({"value": w}),
+        f"{signal}={wert!r}")
+    for f in findings:
+        genannt = [g["signal"] for g in f.unresolved]
+        assert "(Regelwerksfehler)" not in genannt, \
+            f"{f.rule.id} blames the rulebook for {signal}={wert!r}: {f.unresolved}"
+    assert "Regelwerksfehler" not in html
+    print(f"  ok  {signal}={wert!r} -> kein Regelwerksfehler im Dokument")
+
+# Und dort, wo der falsche Wert wirklich entscheidet, wird das Signal benannt.
+from dpm.engine.conditions import MissingSignal, SignalTable, evaluate
+tabelle = SignalTable(errors={}, values={
+    "scarcity_value": {"value": False, "step": "x", "evidence": "y"},
+    "price_listed": {"value": "29,99", "step": "x", "evidence": "y"}})
+for bedingung, signal in [("scarcity_value > 0", "scarcity_value"),
+                          ("price_listed / 2 > 1", "price_listed")]:
+    try:
+        evaluate(bedingung, tabelle)
+        raise AssertionError(f"{bedingung!r} silently produced a result")
+    except MissingSignal as error:
+        assert error.name == signal, f"{bedingung!r} names {error.name}"
+        print(f"  ok  {bedingung!r} -> unklar, Signal {error.name}")
+
+# Ein echter Regelwerksfehler muss weiterhin einer bleiben.
+from dpm.engine.conditions import RuleSyntaxError
+try:
+    evaluate('3 > "drei"', SignalTable(values={}, errors={}))
+    raise AssertionError("a genuine rulebook error was swallowed")
+except RuleSyntaxError:
+    print("  ok  a genuine rulebook error is still a rulebook error")
 
 print("\nAll robustness tests passed.")
