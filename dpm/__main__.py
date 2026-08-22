@@ -406,7 +406,11 @@ def cmd_gold(arguments) -> int:
     print(f"Datei     {arguments.file}")
     print(f"Zeilen    {len(gold_rows)} bewertet, "
           f"{len(result.uncovered)} ohne Erfassung, "
-          f"{len(result.unreadable)} unlesbar\n")
+          f"{len(result.unreadable)} unlesbar")
+    if result.fixtures_ignored:
+        print(f"          {result.fixtures_ignored} Fixture(s) uebergangen — "
+              f"handgeschrieben, keine Messung")
+    print()
 
     print(f"Verglichen            {len(result.rows)}")
     print(f"  nicht messbar       {gold_rate(result.unresolved, result.rows)}"

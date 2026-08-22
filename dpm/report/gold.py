@@ -29,7 +29,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import urlparse
 
-from dpm.engine.verdict import CLEAR, NO_FINDING, SUSPECTED, UNRESOLVED
+from dpm.engine.verdict import (CLEAR, NOT_APPLICABLE, NO_FINDING, SUSPECTED,
+                                UNRESOLVED)
 
 GOLD = Path("data/gold-standard/gold-standard.csv")
 
@@ -43,12 +44,20 @@ HUMAN = {"eindeutig": CLEAR, "verdaechtig": SUSPECTED,
 # A finding is "asserted" when the system claims something about the site.
 ASSERTED = (CLEAR, SUSPECTED)
 
+# The system said nothing about this rule on this site. "nicht_anwendbar"
+# belongs here as much as "unauffaellig" does: it is an assertion — the rule
+# does not apply — and if a person found a violation of exactly that rule,
+# we were silent about it. Counting only "unauffaellig" made the miss rate
+# better the more often a rule excluded itself.
+SILENT = (NO_FINDING, NOT_APPLICABLE)
+
 
 @dataclass
 class Comparison:
     rows: list = field(default_factory=list)      # matched pairs
     uncovered: list = field(default_factory=list)  # gold rows with no capture
     unreadable: list = field(default_factory=list)  # rows we could not use
+    fixtures_ignored: int = 0                     # hand-written, not measured
 
     @property
     def agreed(self) -> list:
@@ -64,7 +73,7 @@ class Comparison:
     def missed(self) -> list:
         """The human found something, the system stayed silent about it."""
         return [r for r in self.rows
-                if r["human"] in ASSERTED and r["system"] == NO_FINDING]
+                if r["human"] in ASSERTED and r["system"] in SILENT]
 
     @property
     def unresolved(self) -> list:
@@ -124,8 +133,17 @@ def compare(gold_rows: list, overview_rows: list, runs: list) -> Comparison:
     # sensible one is the most recent: the human judged the site as it is
     # now. Picking whichever run was found first would silently compare
     # against a state nobody looked at.
+    # A fixture is a capture we wrote by hand, carrying the verdicts we
+    # wanted to see. Held against a human verdict it measures nothing but
+    # our own consistency, and it does worse than that: it displaces the
+    # real capture of the same site, because "most recent wins" and
+    # viagogo-2026-09 is dated in the future. Filtered here and not at the
+    # call site, so that no caller can put them back by forgetting.
+    real = [run for run in runs
+            if (run.meta.get("capture_mode") or "") != "fixture"]
+
     captured = {}
-    for run in runs:
+    for run in real:
         key = domain(run.meta.get("start_url") or "") or (run.target or "")
         current = captured.get(key)
         if current is None or str(run.meta.get("timestamp") or "") > str(
@@ -134,7 +152,7 @@ def compare(gold_rows: list, overview_rows: list, runs: list) -> Comparison:
 
     by_run_rule = {(row.run_id, row.rule_id): row for row in overview_rows}
 
-    result = Comparison()
+    result = Comparison(fixtures_ignored=len(runs) - len(real))
     for gold in gold_rows:
         human = HUMAN.get((gold.get("befund_mensch") or "").strip().lower())
         rule = (gold.get("pattern_id") or "").strip().upper()
