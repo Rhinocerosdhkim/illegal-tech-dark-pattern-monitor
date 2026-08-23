@@ -10,7 +10,8 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 from dpm.engine.run import load_run
 from dpm.engine.rules import load_rules
-from dpm.engine.verdict import assess
+from dpm.engine.verdict import (CLEAR, NOT_APPLICABLE, NO_FINDING,
+                                SUSPECTED, UNRESOLVED, assess)
 
 run = load_run("data/fixtures/viagogo")
 findings = {f.rule.id: f for f in (assess(r, run.table) for r in load_rules())}
@@ -78,5 +79,44 @@ assert dp006.level == "unklar", dp006.level
 assert any(g["signal"] == "required_info_found" and "warenkorb" in g["reason"]
            for g in dp006.unresolved), dp006.unresolved
 print("  ok  a step that was never reached becomes unklar, with its reason")
+
+
+# --------------------------------------------------------------------------
+# data/fixtures/README.md is where ARBEITSTEILUNG_Technik.md sends Karthik to
+# learn the schema, and its result table drifted for three days without
+# anything noticing: it promised viagogo "3 x eindeutig" while the engine
+# produced none. A reader then cannot tell whether the engine is broken or
+# the document is stale. So the table is checked against the engine here.
+print("\nThe fixture README lists what the engine actually produces")
+
+import re
+
+LEVEL_WORDS = {"eindeutig": CLEAR, "verdaechtig": SUSPECTED, "unklar": UNRESOLVED,
+               "unauffaellig": NO_FINDING, "nicht anwendbar": NOT_APPLICABLE}
+
+readme = pathlib.Path("data/fixtures/README.md").read_text(encoding="utf-8")
+rows = re.findall(r"^\| `([a-z0-9-]+)/` \|[^|]*\|([^|]*)\|", readme, re.M)
+assert len(rows) >= 5, f"the folder table was not found: {rows}"
+
+for folder, promised in rows:
+    counted = {}
+    run = load_run(f"data/fixtures/{folder}")
+    for finding in (assess(rule, run.table) for rule in load_rules()):
+        counted[finding.level] = counted.get(finding.level, 0) + 1
+
+    claims = re.findall(r"(\d+)\s*×\s*(eindeutig|verdaechtig|unklar|"
+                        r"unauffaellig|nicht anwendbar)", promised)
+    assert claims, f"{folder}: the README row names no expected result"
+    for number, word in claims:
+        level = LEVEL_WORDS[word]
+        actual = counted.get(level, 0)
+        assert actual == int(number), (
+            f"{folder}: README promises {number} x {word}, engine produces "
+            f"{actual}. One of the two is wrong — look, do not adjust silently.")
+    # A level the engine produces but the row does not mention is drift too.
+    named = {LEVEL_WORDS[w] for _, w in claims}
+    missing = {lv for lv, n in counted.items() if n and lv not in named}
+    assert not missing, f"{folder}: README does not mention {sorted(missing)}"
+    print(f"  ok  {folder}: {', '.join(f'{n} × {w}' for n, w in claims)}")
 
 print("\nAll verdict tests passed.")

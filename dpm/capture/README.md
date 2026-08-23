@@ -12,9 +12,13 @@ export GEMINI_API_KEY=…                    # free tier, ~10–15 requests/minu
 .venv/bin/python -m dpm assess out/<run_id>
 ```
 
-Without a key it still runs: the start page, its screenshot and its hash are
-captured, and every signal lands in `signal_errors`. That is a valid partial
-capture, not a failure.
+Without a key it still runs, and it measures. The start page, its screenshot
+and its hash are captured, and `dpm/signals/extractors.js` reads every DOM
+signal — on a shop with a consent banner that is 27 measured signals and 15
+uncaptured, enough for DP-001, DP-002, DP-005 and DP-006 to produce a
+finding. What needs a model is the navigation and the signals read off the
+screenshot (countdown, scarcity, viewer count); those land in
+`signal_errors`. A keyless run is a valid partial capture, not a failure.
 
 ## Where the model comes from
 
@@ -41,35 +45,43 @@ AI. Cost is not the reason — five to eleven calls per run is about one cent
 | | |
 |---|---|
 | `driver.py` | browser boot, the step loop, writes `capture.json` |
-| `path.py` | the five path step names |
+| `path.py` | the step names, and which measurement may replace which |
 | `targets.py` | reads `data/targets/<name>.yaml` |
 | `som_overlay.js` | numbered boxes for the navigator — pure browser JS |
+| `../signals/extractors.js` | the DOM measurements — pure browser JS, no Playwright |
+| `../signals/collect.py` | injects it and stamps step and evidence |
 | `../ai/client.py` | the one place a model is called from |
 | `../ai/navigator.py` | AI ③ — which box leads further |
 | `../ai/text_signals.py` | AI ① — what a screenshot honestly shows |
+
+`extractors.js` was written and wired on 22.08. — 35 signals, called from
+`_walk` at `driver.py` in both the keyless and the model branch, checked by
+`tests/test_extractors.py` against four pages the test builds itself. It
+carries what the element tree, its geometry and its computed styles decide.
+Details and the full signal list: [`../signals/README.md`](../signals/README.md).
 
 ## Still missing
 
 Ordered by what blocks a finding. Ownership: capture layer.
 
-1. **`dpm/signals/extractors.js`** — deterministic measurement in the browser.
-   Without it DP-001 and DP-002, the two finished rules, can only be `unklar`:
-   `banner_detected`, `accept_button_area_px2`, `reject_button_area_px2`, both
-   contrast ratios, `reject_button_present`, `preselected_checkbox_count`,
-   `third_party_cookies_before_consent`. All of it is
-   `getBoundingClientRect()` and `getComputedStyle()`, roughly 100 lines. A
-   model cannot read a px² area or a WCAG contrast ratio off an image, and
-   reproducibility is our whole claim against the ML approach.
-2. **Path execution in `path.py`** — the six verbs `navigate` · `search` ·
+1. **Path execution in `path.py`** — the six verbs `navigate` · `search` ·
    `click` · `click_first_result` · `scroll` · `wait`, driven from
    `data/targets/*.yaml`. The navigator can only click, so on a site that
    needs a search it never reaches `produktdetail` — where the scarcity note
    and the VAT line live. `data/targets/viagogo.yaml` already declares the
    path.
-3. **`reject_click_depth`** — how many interactions until consent is fully
-   refused. Deliberately absent: the ported code counted funnel clicks under
-   that name, and DP-001 judges on it, so it produced a confident wrong
-   finding. Better no signal than a wrong one.
+2. **`reject_click_depth`** and **`banner_reappears_on_reject`** — how many
+   interactions until consent is fully refused, and whether the banner comes
+   back afterwards. Both are procedures, not measurements: somebody has to
+   click, so they cannot come out of `extractors.js`. `reject_click_depth` is
+   deliberately absent rather than approximated — the ported code counted
+   funnel clicks under that name, and DP-001 judges on it, so it produced a
+   confident wrong finding. Better no signal than a wrong one.
+3. **`third_party_cookies_before_consent`** — not in the DOM at all; it is in
+   the browser's cookie jar and has to be read on the Playwright side, before
+   any interaction with the banner. `_SIGNALE.md` calls it technically very
+   reliable, and it is the one DP-001 condition that is independent of how the
+   banner looks.
 4. **Second capture of the same target** — clean browser state, revisit, same
    start value. DP-003 needs `countdown_unchanged_scans` and
    `scarcity_value_unchanged_scans`, so without it our strongest rule cannot

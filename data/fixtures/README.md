@@ -6,13 +6,31 @@ layer** — and afterwards serve as a regression test.
 
 | Folder | What it represents | Expected result |
 |---|---|---|
-| `viagogo/` | reference case, named by the consumer agency | 3 × eindeutig, 3 × unklar |
-| `sauberer-shop/` | unremarkable shop, correctly designed | no finding |
-| `ratgeber-portal/` | editorial portal, no shop, no banner | rules do not apply at all |
-| `viagogo-2026-09/` | the same site three weeks later | for the timeline — see below |
+| `viagogo/` | reference case, named by the consumer agency | 4 × verdaechtig · 1 × unklar · 1 × nicht anwendbar |
+| `viagogo-2026-09/` | the same site three weeks later | 2 × verdaechtig · 1 × unklar · 2 × unauffaellig · 1 × nicht anwendbar — for the timeline, see below |
+| `sauberer-shop/` | unremarkable shop, correctly designed | 2 × unklar · 3 × unauffaellig · 1 × nicht anwendbar — **no verdaechtig, no eindeutig** |
+| `ratgeber-portal/` | editorial portal, no shop, no banner | 6 × nicht anwendbar — the rules do not apply at all |
+| `nachrichtenportal/` | news site, tracking before any banner | 1 × eindeutig · 5 × nicht anwendbar |
 
-**`sauberer-shop` and `ratgeber-portal` deliberately have no target profile
-in `data/targets/`.** That verifies an arbitrary target runs through the
+The numbers above are what the engine produces today; `tests/test_verdicts.py`
+and `tests/test_false_alarms.py` assert exactly them. If you change a rule and
+a number here stops matching, one of the two is wrong — look, do not adjust
+silently.
+
+`sauberer-shop` is the false-alarm test, so read its row carefully: the two
+`unklar` are not findings. `unklar` asserts nothing — it says a signal could
+not be measured, and here that is three the capture layer does not produce
+yet: `banner_reappears_on_reject` and `banner_reappears_count_24h` for
+DP-001, `preselected_paid_addon_count` for DP-005. Both rows become
+`unauffaellig` once those signals exist.
+
+`nachrichtenportal` is the only fixture that reaches `eindeutig`, and it does
+so without a target profile: a banner that offers no way to refuse, the OLG
+Köln 6 U 80/23 branch of DP-001. It is the case that justifies the top level
+existing at all.
+
+**Only `viagogo` has a target profile in `data/targets/`.** The other four
+deliberately do not. That verifies an arbitrary target runs through the
 whole chain without hand setup — the tool is meant for any website, not
 only the ones we prepared.
 
@@ -27,9 +45,9 @@ different kinds of change are represented on purpose:
 
 | Rule | Change | Why it is in there |
 |---|---|---|
-| DP-003 | `eindeutig` → `unauffaellig` | the countdown is gone — a finding was corrected |
+| DP-003 | `verdaechtig` → `unauffaellig` | the countdown is gone — a finding was corrected |
 | DP-002 | `verdaechtig` → `unauffaellig` | the button label was fixed |
-| DP-001 | `eindeutig` → `eindeutig` | **the level is unchanged but the facts are not**: tracking before consent stopped, pre-ticked checkboxes appeared instead |
+| DP-001 | `verdaechtig` → `verdaechtig` | **the level is unchanged but the facts are not**: tracking before consent stopped, pre-ticked checkboxes appeared instead |
 
 The third is the one a comparison of verdict levels alone would miss, and
 the reason the timeline compares signals rather than verdicts.

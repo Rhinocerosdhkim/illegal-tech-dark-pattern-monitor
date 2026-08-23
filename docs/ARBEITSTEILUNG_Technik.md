@@ -141,11 +141,28 @@ If this command does not exist on Monday, the product dies the moment I leave. I
 | **No model call anywhere outside `src/ai/`** | We have to be able to prove where we do *not* use AI. `engine/` containing no LLM import at all is both an architecture rule and our strongest slide |
 | Rule files (`rules/*.yaml`) belong to the legal team | Neither of us edits them to make our code pass |
 
+> ### ⚠️ I crossed the second line. Read this before you pull.
+> **Stand 23.08., Donghyun.** Between the port of your agent and now I
+> changed ten files in `capture/`, `signals/` and `ai/` — about 1200 lines.
+> `data/targets/` I did not touch. Change any of it back if you disagree;
+> none of it is load-bearing for the evaluation layer.
+>
+> | | What | Why |
+> |---|---|---|
+> | `signals/extractors.js` · `collect.py` | new, 35 DOM signals, injected with `page.evaluate()` | task 4 of section 2. Without it DP-001, DP-004 and DP-006 could never fire on a live run |
+> | `capture/driver.py` | calls `collect.into()` in both branches; step 1 is named `startseite`; `_explain_gaps` no longer claims `extractors.js` is missing | the DOM signals need no model, so a keyless run measures instead of returning empty |
+> | `capture/path.py` | `OFF_PATH`, `FIRST_CONTACT`, `depth()`, `supersedes()` | a login wall was being recorded as the shop, and a later step overwrote what an earlier one had found |
+> | `ai/navigator.py` | may answer `abseits` | its schema allowed only the five path steps, so a captcha had to be labelled as one of them |
+> | `ai/doc_import.py` · `ai/narrative.py` | new — AI ② and AI ④ | section 3, row 11. They were always mine; they only sit in your directory |
+>
+> **The `capture-layer` branch is 27 commits behind main** in exactly these
+> files. Do not merge it — everything in it is already in `main`.
+
 ---
 
 ## 6. The one thing we do together, before splitting
 
-**Hand-written fixtures: `data/fixtures/<target>/capture.json` plus a few screenshots.** Three exist already — `viagogo`, `sauberer-shop`, `ratgeber-portal`. They are the schema you have to produce; read one before you start.
+**Hand-written fixtures: `data/fixtures/<target>/capture.json` plus a few screenshots.** Five exist now — `viagogo`, `viagogo-2026-09`, `sauberer-shop`, `ratgeber-portal`, `nachrichtenportal`. They are the schema you have to produce; read one before you start, and read [`data/fixtures/README.md`](../data/fixtures/README.md) beside it — the expected result of each one is listed there and is what `tests/test_verdicts.py` asserts.
 
 - Fill it with exactly the signals DP-001 needs, and put **one entry in `signal_errors` on purpose** so the `unklar` path is exercised from day one.
 - **I write it** — the consumer writes the contract, because I am the one who finds out at 2am what the engine actually needs.

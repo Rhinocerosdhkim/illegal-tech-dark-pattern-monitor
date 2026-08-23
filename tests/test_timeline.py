@@ -37,7 +37,7 @@ assert c.before_level == c.after_level == "verdaechtig"
 assert "third_party_cookies" in c.before_condition
 assert "preselected_checkbox_count" in c.after_condition
 assert "anderen Bedingung" in c.note
-print("  ok  DP-001 stays eindeutig, but on a different condition")
+print("  ok  DP-001 stays verdaechtig, but on a different condition")
 print(f"      {c.before_condition}  ->  {c.after_condition}")
 
 print("\nUnchanged rules are not reported as changes")
