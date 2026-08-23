@@ -71,6 +71,34 @@
       mit den mitgelieferten Beispielakten bereit.
     </div>
     {% endif %}
+
+    <div class="weitere">
+      <div class="label">Über alle Ziele</div>
+      <ul>
+        {% if uebersicht.html %}
+        <li>
+          <span>Marktübersicht — {{ akten | length }} Erfassungen</span>
+          <span class="wege">
+            <a href="{{ uebersicht.html }}">HTML</a>
+            {% if uebersicht.csv %} · <a href="{{ uebersicht.csv }}">CSV</a>{% endif %}
+            {% if uebersicht.pdf %} · <a href="{{ uebersicht.pdf }}">PDF</a>{% endif %}
+          </span>
+        </li>
+        {% endif %}
+        {% for z in zeitachsen %}
+        <li>
+          <span>Zeitachse {{ z.ziel }}</span>
+          <span class="wege">
+            <a href="{{ z.html }}">HTML</a>
+            {% if z.pdf %} · <a href="{{ z.pdf }}">PDF</a>{% endif %}
+          </span>
+        </li>
+        {% endfor %}
+        {% if not uebersicht.html and not zeitachsen %}
+        <li><span class="fehlt">noch nicht erzeugt — <span class="mono">python -m dpm rebuild</span></span></li>
+        {% endif %}
+      </ul>
+    </div>
   </div>
 
   <div class="tafel rechts">

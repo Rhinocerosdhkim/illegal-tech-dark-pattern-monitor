@@ -44,6 +44,18 @@ for href in re.findall(r'href="(/akte/[^"]+)"', page.text):
     assert answer.status_code == 200, f"{href} -> {answer.status_code}"
 print("  ok  every Akte link resolves")
 
+print("\nEvery view is reachable by clicking, not only by typing a path")
+# The Auftrag screen used to link the Beweisakten and nothing else. The
+# market overview and the timeline were served but had no link anywhere,
+# so the two views that answer "across all targets" were invisible.
+links = re.findall(r'href="(/akte/[^"]+)"', page.text)
+assert any("marktuebersicht" in href for href in links), \
+    "no link to the Marktübersicht"
+assert any("zeitachse" in href for href in links), "no link to the Zeitachse"
+for href in links:
+    assert client.get(href).status_code == 200, href
+print(f"  ok  Marktübersicht and Zeitachse linked, {len(links)} links resolve")
+
 print("\nAn empty address is refused")
 answer = client.post("/prueflauf", data={"url": "  ", "branche": ""})
 assert answer.status_code == 400, answer.status_code

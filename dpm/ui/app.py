@@ -120,11 +120,38 @@ def create(output: Path = Path("out")) -> object:
 
         await asyncio.to_thread(report)
 
+    def across_targets() -> dict:
+        """The outputs that are about all targets rather than one.
+
+        They are files in the same folder, so the page can only offer what
+        `rebuild` has actually written — a link to a document that was
+        never built is a claim that it exists.
+        """
+        def link(path: Path) -> str | None:
+            return f"/akte/{path.relative_to(output)}" if path.exists() else None
+
+        markt = output / "marktuebersicht"
+        zeitachsen = []
+        for folder in sorted(output.glob("zeitachse_*")):
+            page = folder / "zeitachse.html"
+            if page.exists():
+                zeitachsen.append({
+                    # zeitachse_<timestamp>_<target> -- the target is the tail
+                    "ziel": folder.name.split("_", 2)[-1],
+                    "html": link(page), "pdf": link(folder / "zeitachse.pdf")})
+        return {
+            "uebersicht": {"html": link(markt / "marktuebersicht.html"),
+                           "csv": link(markt / "marktuebersicht.csv"),
+                           "pdf": link(markt / "marktuebersicht.pdf")},
+            "zeitachsen": zeitachsen,
+        }
+
     @app.get("/", response_class=HTMLResponse)
     def auftrag():
-        return render("auftrag.html", akten=archive(),
+        akten = archive()
+        return render("auftrag.html", akten=akten,
                       laeuft=runs.busy(), letzter=runs.latest(),
-                      modell=model_unavailable())
+                      modell=model_unavailable(), **across_targets())
 
     @app.post("/prueflauf")
     async def start(url: str = Form(...), branche: str = Form("")):
