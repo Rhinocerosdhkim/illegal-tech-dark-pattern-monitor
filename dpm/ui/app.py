@@ -13,6 +13,7 @@ a capture and watching it run.
 from __future__ import annotations
 
 import asyncio
+import re
 import secrets
 from pathlib import Path
 
@@ -158,7 +159,10 @@ def create(output: Path = Path("out")) -> object:
         url = (url or "").strip()
         if not url:
             raise HTTPException(400, "Ohne Adresse kein Prüflauf.")
-        if not url.startswith(("http://", "https://")):
+        # Only a bare host gets a scheme. Prepending one unconditionally
+        # turned "file:///tmp/x.html" into "https://file:///tmp/x.html",
+        # which captured nothing and reported "fertig" with zero shots.
+        if not re.match(r"^[a-zA-Z][\w+.\-]*://", url):
             url = "https://" + url
         if runs.busy():
             raise HTTPException(
