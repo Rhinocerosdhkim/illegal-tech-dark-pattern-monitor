@@ -180,6 +180,8 @@ def cmd_report(arguments) -> int:
     print()
     _warnings(run)
     print(f"\nBeweisakte {run.target} — {result.finding_count} findings")
+    for warning in result.warnings:
+        print(f"  ! {warning}")
     print(f"  {result.html}")
     if result.pdf:
         print(f"  {result.pdf}  ({result.pdf.stat().st_size // 1024} kB)")
@@ -287,6 +289,8 @@ def cmd_rebuild(arguments) -> int:
                       "pdf": relative(result.pdf, folder)})
         print(f"  {run.target:22} {result.finding_count} Befunde   "
               f"{result.pdf or result.html}")
+        for warning in result.warnings:
+            print(f"    ! {warning}")
 
     print("\nMarktuebersicht")
     overview = collect(runs, rules)

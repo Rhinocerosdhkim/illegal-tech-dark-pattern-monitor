@@ -112,4 +112,72 @@ with tempfile.TemporaryDirectory() as tmp:
     assert case.html.exists()
     print("  ok  Hash und Adresse gehoeren zum Screenshot des Signals")
 
+print("\nAn explanation may never claim more than its level does")
+
+from dpm.report.case_file import INCOMPLETE_TEXT, _explanation
+from dpm.engine.verdict import UNRESOLVED
+
+
+class _Rule:
+    def __init__(self, templates):
+        self.id, self.name, self.explanation_template = "DP-XXX", "Probe", templates
+
+
+class _Finding:
+    def __init__(self, level, templates):
+        self.level, self.rule = level, _Rule(templates)
+        self.reason, self.notes, self.evidence, self.unresolved = "", [], [], []
+
+
+table = load_run("data/fixtures/viagogo").table
+
+# "unklar" means a value could not be measured, so it asserts nothing. A
+# text written for the rule in general describes a measurement, and printing
+# it here claims more than the finding does -- DP-005 put its checkout-price
+# paragraph directly under "Nicht erhoben, deshalb keine Feststellung".
+text, problem = _explanation(_Finding(UNRESOLVED, {"*": "Festgestellt wurde X."}), table)
+assert text == "" and problem is None, (text, problem)
+print("  ok  a '*' text is not used at unklar")
+
+# A rule that wants to speak at unklar says so explicitly, as DP-006 does.
+text, _ = _explanation(
+    _Finding(UNRESOLVED, {"*": "Festgestellt wurde X.", "unklar": "Nicht messbar."}),
+    table)
+assert text == "Nicht messbar.", text
+print("  ok  an explicit unklar text is still used")
+
+text, _ = _explanation(_Finding("verdaechtig", {"*": "Allgemeiner Text."}), table)
+assert text == "Allgemeiner Text.", text
+print("  ok  and '*' still serves the levels that do assert something")
+
+# Placeholders the legal team left behind went into the PDF verbatim:
+# [CHECKOUT_PRICE], and the conditional form the rulebook proposes but no
+# engine implements. Better an openly named gap than a printed marker.
+for template, what in [("Preis war [CHECKOUT_PRICE] am Ende.", "[CHECKOUT_PRICE]"),
+                       ("Es {countdown_personalized == false, default: 'x'} so.",
+                        "the conditional form")]:
+    text, problem = _explanation(_Finding("verdaechtig", {"*": template}), table)
+    assert text == "", f"{what} reached the document: {text!r}"
+    assert problem and "DP-XXX" in problem, problem
+    print(f"  ok  {what} is dropped and reported")
+
+# A real measurement must still substitute.
+text, problem = _explanation(
+    _Finding("verdaechtig", {"*": "Gemessen: {reject_click_depth}."}), table)
+assert text == "Gemessen: 3." and problem is None, (text, problem)
+print("  ok  a real signal still substitutes")
+
+# And the whole way through: nothing unresolved reaches the rendered file,
+# the reader is told why, and the command can say so too.
+with tempfile.TemporaryDirectory() as tmp:
+    result = build(run, findings, output=tmp, as_pdf=False)
+    page = result.html.read_text(encoding="utf-8")
+    import re as _re
+    left = [m for m in _re.findall(r"\[[A-Z][A-Z0-9_]{2,}\]", page)]
+    assert not left, f"placeholders still in the document: {left}"
+    assert INCOMPLETE_TEXT[:40] in page, "the reader is not told the text is missing"
+    assert result.warnings, "the command would have stayed silent about it"
+    print(f"  ok  0 placeholders in the file, {len(result.warnings)} warnings raised")
+
+
 print("\nAll case-file tests passed.")

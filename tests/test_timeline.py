@@ -89,4 +89,51 @@ with tempfile.TemporaryDirectory() as tmp:
         assert needle in html, f"missing from the timeline: {name}"
         print(f"  ok  {name}")
 
+print("\n'unklar' on either side is a measurement change, never a verdict")
+
+from dpm.report.diff import (KIND_LABEL, MEASUREMENT, RuleChange, Timeline,
+                             _classify)
+from dpm.engine.verdict import CLEAR, NO_FINDING, SUSPECTED, UNRESOLVED
+
+
+class _Side:
+    def __init__(self, level):
+        self.level, self.condition = level, "eine Bedingung"
+
+
+# A site that merely stopped being measurable used to be reported as having
+# fixed the violation, and the reverse arrived as "neu" with the note about
+# a Unterlassungserklaerung. In an enforcement file that is backwards.
+for before, after, why in [
+        (SUSPECTED, UNRESOLVED, "a finding that became unmeasurable"),
+        (CLEAR, UNRESOLVED, "the same from the top level"),
+        (UNRESOLVED, SUSPECTED, "a finding that became measurable"),
+        (UNRESOLVED, NO_FINDING, "neither side asserts anything")]:
+    kind, note = _classify(_Side(before), _Side(after))
+    assert kind == MEASUREMENT, f"{why}: {KIND_LABEL[kind]}"
+    assert note, why
+    assert "behoben" not in note and "Unterlassungserkl" not in note, note
+    print(f"  ok  {before} -> {after}: {KIND_LABEL[kind]}")
+
+# The genuine transitions must keep their meaning.
+assert _classify(_Side(SUSPECTED), _Side(NO_FINDING))[0] == "behoben"
+assert _classify(_Side(NO_FINDING), _Side(SUSPECTED))[0] == "neu"
+print("  ok  measured transitions are still behoben / neu")
+
+# ...and widening the gate must not drop them out of what a person sees.
+def _change(before, after):
+    return RuleChange(rule_id="DP-X", rule_name="x", category="c", norm="n",
+                      before_level=before, after_level=after,
+                      kind=_classify(_Side(before), _Side(after))[0])
+
+seen = Timeline(earlier=None, later=None, rule_changes=[
+    _change(SUSPECTED, UNRESOLVED), _change(UNRESOLVED, SUSPECTED),
+    _change(UNRESOLVED, NO_FINDING)])
+kinds = [(c.before_level, c.after_level) for c in seen.noteworthy]
+assert (SUSPECTED, UNRESOLVED) in kinds, "a lost finding vanished from the list"
+assert (UNRESOLVED, SUSPECTED) in kinds, "a newly measurable finding vanished"
+assert (UNRESOLVED, NO_FINDING) not in kinds, "noise was promoted to noteworthy"
+print("  ok  both finding-side cases stay visible, the noise does not")
+
+
 print("\nAll timeline tests passed.")

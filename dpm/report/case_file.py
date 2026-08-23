@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import re
 import shutil
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from jinja2 import (ChainableUndefined, Environment, FileSystemLoader,
@@ -42,6 +42,21 @@ LEVEL_LABEL = {CLEAR: "eindeutig", SUSPECTED: "verdächtig",
                "nicht_anwendbar": "nicht anwendbar"}
 
 _PLACEHOLDER = re.compile(r"\{([a-zA-Z_][a-zA-Z0-9_]*)\}")
+
+# Markers the legal team left in a text that is still being written:
+# [CHECKOUT_PRICE], or the conditional form {signal == value, default: '...'}
+# that the rulebook proposes and no engine implements. They are looked for
+# AFTER substitution, so every {name} that stands for a measurement is gone
+# by then and whatever braces remain were never going to resolve.
+_UNFINISHED = re.compile(r"\[[A-Z][A-Z0-9_]{2,}\]|\{[^{}]*\}")
+
+# Printed instead of the text. Better openly unfinished than quietly wrong:
+# the placeholders themselves went into the PDF before this.
+INCOMPLETE_TEXT = (
+    "Der Erlaeuterungstext dieser Regel ist im Regelwerk noch nicht "
+    "vollstaendig — er enthaelt Platzhalter, die sich nicht aufloesen "
+    "lassen, und wird deshalb hier nicht wiedergegeben. Der Befund, die "
+    "zutreffende Bedingung und die Messwerte stehen unveraendert oben.")
 
 # Order in which the levels are counted out wherever a run is summarised.
 LEVEL_CLASS_ORDER = [(CLEAR, "eindeutig"), (SUSPECTED, "verdaechtig"),
@@ -68,6 +83,10 @@ class CaseFile:
     html: Path
     pdf: Path | None
     finding_count: int
+    # Problems with the rulebook rather than with the capture. Printed by
+    # the command, because a document that silently drops a paragraph looks
+    # exactly like one that never had it.
+    warnings: list = field(default_factory=list)
 
 
 def build(run: Run, findings: list, output: str | Path = "out",
@@ -116,7 +135,9 @@ def build(run: Run, findings: list, output: str | Path = "out",
     running = footer(f"{PRODUCT_NAME} · {len(findings)} Regeln · "
                      f"{run.run_id} · lokal erzeugt")
     pdf = render_pdf(target_html, running_footer=running) if as_pdf else None
-    return CaseFile(html=target_html, pdf=pdf, finding_count=len(reportable))
+    return CaseFile(html=target_html, pdf=pdf, finding_count=len(reportable),
+                    warnings=[e["unfertiger_text"] for e in eintraege
+                              if e["unfertiger_text"]])
 
 
 # --- preparation ---------------------------------------------------------
@@ -124,6 +145,10 @@ def build(run: Run, findings: list, output: str | Path = "out",
 def _entry(nr: int, finding: Finding, steps: dict, run: Run,
            folder: Path, summaries: dict | None = None) -> dict:
     evidence = [_evidence(e, steps) for e in finding.evidence]
+    erlaeuterung, unfertig = _explanation(finding, run.table)
+    # The note goes where the reader is already looking for caveats, and it
+    # names the rule, so nobody has to guess which text is missing.
+    hinweise = [*finding.notes, INCOMPLETE_TEXT] if unfertig else finding.notes
     return {
         "nr": nr,
         "regel": finding.rule,
@@ -132,14 +157,15 @@ def _entry(nr: int, finding: Finding, steps: dict, run: Run,
         "bedingung": finding.condition,
         "begruendung": finding.reason,
         "herabgestuft": finding.downgraded,
-        "hinweise": finding.notes,
+        "hinweise": hinweise,
         "unklar_wegen": finding.unresolved,
         "wuerde_stufe": LEVEL_LABEL.get(finding.would_be_level or ""),
         "nachweise": evidence,
         "messwerte": ", ".join(f"{e['signal']} = {_short(e['value'])}"
                                for e in evidence) or "—",
         "screenshots": _images(evidence, folder),
-        "erlaeuterung": _explanation(finding, run.table),
+        "erlaeuterung": erlaeuterung,
+        "unfertiger_text": unfertig,
         "zusammenfassung": (summaries or {}).get(finding.rule.id),
     }
 
@@ -195,14 +221,24 @@ def _images(evidence: list, folder: Path) -> list:
     return images
 
 
-def _explanation(finding: Finding, table: SignalTable) -> str:
+def _explanation(finding: Finding, table: SignalTable) -> tuple:
     """Pick the text for THIS finding's level, then substitute placeholders.
+
+    Returns (text, problem). `problem` is None when the text is usable.
 
     The template is chosen per verdict level. A "verdaechtig" finding must
     not be explained with a sentence that asserts the requirement was not
     met — that would claim more than the level does
     (docs/BEFUNDSTUFEN.md 6). Rules that give a single text keep it under
-    the key "*", and it then applies to every level.
+    the key "*".
+
+    That "*" is NOT used at "unklar". The level asserts nothing at all —
+    it means a value could not be measured — so any narrative describing a
+    measurement claims more than the finding does. DP-005 printed its
+    checkout-price text directly under "Nicht erhoben — deshalb keine
+    Feststellung" on the clean reference shop. A rule that wants to say
+    something at "unklar" gives it an explicit "unklar" template, as
+    DP-006 does.
 
     {befund} is replaced by the reason of the condition that fired.
 
@@ -215,9 +251,11 @@ def _explanation(finding: Finding, table: SignalTable) -> str:
     not captured when it was would be a factual error.
     """
     templates = finding.rule.explanation_template
-    template = templates.get(finding.level) or templates.get("*") or ""
+    template = templates.get(finding.level)
+    if template is None and finding.level != UNRESOLVED:
+        template = templates.get("*")
     if not template:
-        return ""
+        return "", None
 
     def substitute(match):
         name = match.group(1)
@@ -228,7 +266,14 @@ def _explanation(finding: Finding, table: SignalTable) -> str:
         except MissingSignal:
             return "[nicht erhoben]"
 
-    return _PLACEHOLDER.sub(substitute, template)
+    text = _PLACEHOLDER.sub(substitute, template)
+
+    leftover = _UNFINISHED.findall(text)
+    if leftover:
+        return "", (f"{finding.rule.id}: Erlaeuterungstext nicht verwendet, "
+                    f"er enthaelt {len(leftover)} nicht aufgeloeste "
+                    f"Platzhalter ({', '.join(sorted(set(leftover))[:3])})")
+    return text, None
 
 
 def _summary(findings: list) -> list:

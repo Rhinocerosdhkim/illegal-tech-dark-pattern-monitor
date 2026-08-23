@@ -107,7 +107,17 @@ class Timeline:
 
     @property
     def noteworthy(self) -> list:
-        return [c for c in self.rule_changes if c.kind in NOTEWORTHY]
+        """What a person has to look at.
+
+        A change in measurability counts when a finding stands on either
+        side: "we can no longer reproduce this" and "this is measurable
+        now" both need a decision, even though neither says the site
+        changed. Between two levels that assert nothing it is noise.
+        """
+        return [c for c in self.rule_changes
+                if c.kind in NOTEWORTHY
+                or (c.kind == MEASUREMENT
+                    and {c.before_level, c.after_level} & {CLEAR, SUSPECTED})]
 
     @property
     def days_between(self) -> str:
@@ -188,7 +198,27 @@ def _classify(before, after):
                 "Stelle ist ein neuer getreten.")
         return UNCHANGED, ""
 
-    if UNRESOLVED in (before.level, after.level) and not (was_finding or is_finding):
+    # "unklar" is not a statement about the site, it says a value could not
+    # be measured. Comparing a statement with a non-statement cannot produce
+    # a statement about the site -- so every transition involving it is a
+    # change in what we could measure, whichever side it sits on.
+    #
+    # The gate used to require that NEITHER side was a finding, which left
+    # "verdaechtig -> unklar" falling through to RESOLVED: a site that
+    # merely stopped being measurable was reported as having fixed the
+    # violation, and the reverse arrived as "neu" with the note about a
+    # Unterlassungserklaerung. In an enforcement file that is backwards.
+    if UNRESOLVED in (before.level, after.level):
+        if was_finding:
+            return MEASUREMENT, (
+                "Der frühere Befund ist nicht widerlegt — er ließ sich diesmal "
+                "nur nicht mehr messen. Das ist keine Feststellung darüber, "
+                "dass die Seite geändert wurde.")
+        if is_finding:
+            return MEASUREMENT, (
+                "Beim früheren Lauf war dies nicht messbar. Der Befund steht "
+                "für sich; ob er damals schon zutraf, sagt der Vergleich "
+                "nicht.")
         return MEASUREMENT, (
             "Ein Signal war beim einen Lauf messbar und beim anderen nicht. "
             "Das ist keine Aussage über die Seite, sondern über die Erfassung.")
