@@ -332,4 +332,42 @@ for markup, expected, why in [
     print(f"  ok  {why}")
 
 
+print("\nA control can be labelled by value, and invisible while interactive")
+# amazon.de writes both consent buttons as <input type="submit"> with the
+# label in `value` and opacity 0.01 -- a transparent input laid over a
+# styled button, which is what a click actually hits. Reading innerText
+# only, and judging the input by its own opacity, dropped both buttons:
+# the reference case could not be measured at all. Found live, 24.08.
+AMAZON_STYLE = FRAME.format("""
+<div id="banner" style="position:fixed;bottom:0;left:0;right:0;background:#fff;
+     z-index:9999;padding:12px">
+  <p>Wir verwenden Cookies und vergleichbare Technologien zur Einwilligung.</p>
+  <span style="display:inline-block;position:relative">
+    <input type="submit" value="Akzeptieren"
+           style="opacity:0.01;width:96px;height:30px">
+  </span>
+  <span style="display:inline-block;position:relative">
+    <input type="submit" value="Ablehnen"
+           style="opacity:0.01;width:81px;height:30px">
+  </span>
+</div>
+<p>Preis: 10,00 €</p>
+""")
+values, gaps = asyncio.run(measure(AMAZON_STYLE))
+assert values["banner_detected"] is True, gaps.get("banner_detected")
+assert values["reject_button_present"] is True, "the reject button was not seen"
+assert values["accept_button_area_px2"] == 2880, values.get("accept_button_area_px2")
+assert values["reject_button_area_px2"] == 2430, values.get("reject_button_area_px2")
+print(f"  ok  labels out of value, areas "
+      f"{values['accept_button_area_px2']}/{values['reject_button_area_px2']} px²")
+
+# ...but a genuinely faded TEXT is still a finding, not an oversight.
+FADED = FRAME.format("""<p>Preis: 10,00 €</p>
+<footer><span style="opacity:0.3;font-size:9px">Widerruf: 14 Tage.</span></footer>""")
+values, _ = asyncio.run(measure(FADED))
+assert values["hidden_by_opacity_count"] >= 1, \
+    "near-zero opacity stopped counting as concealment"
+print("  ok  faded text still counts as concealment")
+
+
 print("\nAll extractor tests passed.")
