@@ -5,7 +5,8 @@ import asyncio
 from datetime import datetime, timezone
 from google import genai
 from dpm.capture.agent import visual_explore
-from dpm.capture.driver import LOCALE, TIMEZONE, USER_AGENT, VIEWPORT
+from dpm.capture.driver import (LOCALE, STRUCTURAL_GAPS, TIMEZONE,
+                                USER_AGENT, VIEWPORT)
 
 async def walk(target_url, industry="unbekannt", output_root="out"):
     """Walk one target and write out/<run_id>/capture.json.
@@ -43,10 +44,17 @@ async def walk(target_url, industry="unbekannt", output_root="out"):
     # refused" and DP-001 judges on it. A miscounted value here produced a
     # confident false accusation (amazon, 23.08.). Until the reject path is
     # actually walked, the honest answer is a gap.
-    errors.setdefault("reject_click_depth",
-                      "requires clicking through the reject path — the agent "
-                      f"made {reject_depth} funnel clicks, which is not the "
-                      "same measurement")
+    # Structural reasons overwrite whatever the model wrote from the page
+    # it happened to be standing on. "Page is blank" is an observation
+    # about one step; that a cookie count is not in the DOM is a fact
+    # about the capture layer, and that is what belongs in the Beweisakte.
+    for name, reason in STRUCTURAL_GAPS.items():
+        if name not in signals:
+            errors[name] = reason
+    errors["reject_click_depth"] = (
+        f"{STRUCTURAL_GAPS['reject_click_depth']} — der Agent hat "
+        f"{reject_depth} Trichterklicks gemacht, was nicht dieselbe "
+        f"Messung ist")
     
     # Final error pruning: If a signal was found at ANY step, remove it from errors
     final_errors = {k: v for k, v in errors.items() if k not in signals}

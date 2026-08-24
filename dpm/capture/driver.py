@@ -339,6 +339,35 @@ async def _read_signals(run: Capture, model, screenshot: Path, step: str) -> Non
             run.errors[name] = f"{reason} (step {step})"
 
 
+# Signals nothing in the capture layer can produce yet, with the reason
+# that is true regardless of which page the walk happened to end on. A
+# model looking at a broken page writes "Page is blank" into
+# signal_errors, and that sentence then explains in the Beweisakte why
+# § 25 TDDDG could not be checked. The structural reason has to win.
+STRUCTURAL_GAPS = {
+    "reject_click_depth":
+        "erfordert das Ablaufen des Ablehnwegs — ein Vorgang, keine "
+        "Messung; noch nicht umgesetzt",
+    "banner_reappears_on_reject":
+        "erfordert das Ablaufen des Ablehnwegs — ein Vorgang, keine "
+        "Messung; noch nicht umgesetzt",
+    "banner_reappears_count_24h":
+        "erfordert Erfassungen ueber 24 Stunden; noch nicht umgesetzt",
+    "more_info_leads_to_reject":
+        "erfordert das Oeffnen von „Mehr Informationen“ — ein Vorgang, "
+        "keine Messung; noch nicht umgesetzt",
+    "third_party_cookies_before_consent":
+        "steht nicht im DOM — erfordert das Auslesen des Cookie-Speichers "
+        "vor jeder Interaktion; noch nicht umgesetzt",
+    "countdown_unchanged_scans":
+        "erfordert eine zweite Erfassung desselben Ziels; noch nicht "
+        "umgesetzt",
+    "scarcity_value_unchanged_scans":
+        "erfordert eine zweite Erfassung desselben Ziels; noch nicht "
+        "umgesetzt",
+}
+
+
 def _explain_gaps(run: Capture) -> None:
     """Say plainly what this capture does not measure.
 
@@ -361,14 +390,9 @@ def _explain_gaps(run: Capture) -> None:
     # What dpm/signals/extractors.js measures is not listed here any more:
     # it either has a value or has said itself why it has none. Only what
     # nothing in the capture layer produces yet stays.
-    for name in ("reject_click_depth", "banner_reappears_on_reject"):
-        run.errors.setdefault(
-            name, "requires clicking through the reject path — a procedure, "
-                  "not a measurement; not implemented yet")
-    run.errors.setdefault(
-        "third_party_cookies_before_consent",
-        "not in the DOM — requires reading the cookie jar before any "
-        "interaction; not implemented yet")
+    for name, reason in STRUCTURAL_GAPS.items():
+        if name not in run.signals:
+            run.errors[name] = reason
     for name in ("countdown_resets_on_revisit", "countdown_initial_value_sec",
                  "scarcity_value_unchanged_scans"):
         run.errors.setdefault(
