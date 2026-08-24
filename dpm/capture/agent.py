@@ -11,7 +11,7 @@ from google import genai
 from google.genai import types
 from dpm.capture.driver import (LOCALE, TIMEZONE, USER_AGENT, VIEWPORT,
                                 _normalise)
-from dpm.capture.path import supersedes
+from dpm.capture.path import FIRST_CONTACT, supersedes
 from dpm.capture.schemas import UnifiedDecision
 from dpm.signals import collect
 from PIL import Image
@@ -217,7 +217,15 @@ async def visual_explore(url: str, client: genai.Client, output_dir: str):
     final_path = os.path.join(output_dir, "final_audit.png")
     steps_log = []
     reject_click_depth = 0
-    max_steps = 70
+    # Was 70. On mediamarkt.de that meant 17 steps in twenty minutes and
+    # no end in sight: one model call and one interaction per step, against
+    # a free tier that allows 10-15 calls a minute. A capture nobody can
+    # sit through is not a demo, twenty targets are impossible, and the
+    # retrieval we have to defend in the Q&A stops looking polite.
+    #
+    # Twelve reaches the basket on every site tried so far; the driver
+    # works with six. Raise it per run if a funnel is genuinely deeper.
+    max_steps = int(os.environ.get("DPM_MAX_STEPS", "12"))
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(
@@ -444,6 +452,7 @@ async def visual_explore(url: str, client: genai.Client, output_dir: str):
             # the DOM. Where both produced a signal, the measured value wins
             # over the model's reading — it is the number a lawyer can
             # recompute in the developer tools. Gaps never overwrite values.
+            first_contact_done = any(n in all_signals for n in FIRST_CONTACT)
             try:
                 dom_values, dom_gaps = await collect.measure(current_page)
                 for name, value in dom_values.items():
@@ -463,8 +472,19 @@ async def visual_explore(url: str, client: genai.Client, output_dir: str):
                                          "evidence": screenshot_name}
                     all_errors.pop(name, None)
                 for name, reason in dom_gaps.items():
-                    if name != "__extractors__" and name not in all_signals:
-                        all_errors[name] = reason
+                    if name == "__extractors__" or name in all_signals:
+                        continue
+                    # supersedes() protects a first-contact VALUE from a
+                    # later step. A gap needs the same protection: on
+                    # thalia.de the banner was answered at step 1, and the
+                    # DOM of step 3 then reported "kein Einwilligungsbanner
+                    # gefunden" as the reason reject_button_area_px2 was
+                    # missing -- about a banner that had been there.
+                    if name in FIRST_CONTACT and first_contact_done:
+                        all_errors.setdefault(
+                            name, "am Erstkontakt nicht messbar")
+                        continue
+                    all_errors[name] = reason
             except Exception as error:
                 print(f"[!] DOM measurement failed: {error}")
             

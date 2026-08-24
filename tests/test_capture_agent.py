@@ -125,8 +125,12 @@ print("\nA later step may not overwrite a first-contact measurement")
 # the DOM merge assigned unconditionally, so banner_detected was
 # overwritten with the false read off Amazon's sign-in wall and DP-001
 # lost its applicability.
-assert "from dpm.capture.path import supersedes" in AGENT, \
+assert "supersedes" in AGENT and "from dpm.capture.path import" in AGENT, \
     "agent.py does not use path.supersedes"
+# A gap needs the same first-contact protection a value gets: a later
+# step reporting "no banner found" is about a banner that was answered.
+assert "FIRST_CONTACT" in AGENT, \
+    "a later step can still write a first-contact gap"
 merge = AGENT[AGENT.index("dom_values, dom_gaps = await collect.measure"):]
 assert "supersedes(name," in merge[:900], \
     "the DOM merge still assigns unconditionally"
