@@ -79,8 +79,22 @@
 
   const lower = (element) => text(element).toLowerCase();
 
+  // Whole words, not substrings. "kaufen" used to match "Verkaufen bei
+  // Amazon" -- a footer link that sells ON Amazon -- and that string then
+  // travelled as order_button_label into DP-002, which grades the wording
+  // of the order button. Buying and selling are opposites; a substring
+  // match cannot tell them apart.
+  //
+  // The trailing boundary is only applied when the phrase ends in a word
+  // character, so "inkl. mwst." keeps matching.
+  const escape = (word) => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const asWord = (word) =>
+    new RegExp("(?:^|[^\\p{L}\\p{N}_])" + escape(word)
+               + (/[\p{L}\p{N}_]$/u.test(word) ? "(?![\\p{L}\\p{N}_])" : ""),
+               "u");
+
   const hasWord = (haystack, list) =>
-    list.some((word) => haystack.includes(word));
+    list.some((word) => asWord(word).test(haystack));
 
   /* ------------------------------------------------------- the page */
 
@@ -297,7 +311,7 @@
       let best = null, bestLength = 0;
       for (const entry of controls) {
         for (const word of list) {
-          if (entry.label.includes(word) && word.length > bestLength) {
+          if (asWord(word).test(entry.label) && word.length > bestLength) {
             best = entry.element;
             bestLength = word.length;
           }
@@ -413,7 +427,7 @@
 
   let requiredWord = null, requiredNode = null;
   for (const word of WORDS.required) {
-    const hit = leaves.find((element) => lower(element).includes(word));
+    const hit = leaves.find((element) => asWord(word).test(lower(element)));
     if (hit) { requiredWord = word; requiredNode = hit; break; }
   }
 

@@ -311,4 +311,25 @@ for name, body, erwartet in [
     assert bool(got) is erwartet, f"{name}: blocked={got!r}"
     print(f"  ok  {name:38} {got or '— die Seite selbst'}")
 
+print("\nWhole words, not substrings")
+# "kaufen" matched "Verkaufen bei Amazon" -- a footer link that sells ON
+# Amazon -- and that string travelled as order_button_label into DP-002,
+# which grades the wording of the ORDER button. Buying and selling are
+# opposites. Found on a live capture of amazon.de, 24.08.
+FRAME_DE = FRAME.format("<p>Preis: 10,00 €</p>{}")
+for markup, expected, why in [
+        ("<button>Verkaufen bei Amazon</button>", None,
+         "selling is not buying"),
+        ("<button>Jetzt kaufen</button>", "Jetzt kaufen",
+         "the real order button still matches"),
+        ("<button>Zahlungspflichtig bestellen</button>",
+         "Zahlungspflichtig bestellen", "the compliant label still matches"),
+        ("<button>Ankündigen</button>", None,
+         "announcing is not cancelling")]:
+    values, _ = asyncio.run(measure(FRAME_DE.format(markup)))
+    got = values.get("order_button_label")
+    assert got == expected, f"{why}: {got!r}"
+    print(f"  ok  {why}")
+
+
 print("\nAll extractor tests passed.")

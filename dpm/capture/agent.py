@@ -3,13 +3,14 @@ import hashlib
 import random
 import string
 import asyncio
-import aiohttp
 import re
 from typing import Literal
 from playwright.async_api import async_playwright, Page
 from playwright_stealth import Stealth 
 from google import genai
 from google.genai import types
+from dpm.capture.driver import LOCALE, TIMEZONE, USER_AGENT, VIEWPORT
+from dpm.capture.path import supersedes
 from dpm.capture.schemas import UnifiedDecision
 from dpm.signals import collect
 from PIL import Image
@@ -17,26 +18,6 @@ from PIL import Image
 from dpm.capture.prompts import system_prompt
 
 
-async def get_temp_email() -> str:
-    """Generates a random 1secmail address."""
-    username = ''.join(random.choices(string.ascii_lowercase + string.digits, k=10))
-    return f"{username}@1secmail.com"
-
-async def wait_for_email(email_address: str, timeout: int = 60) -> dict:
-    """Polls the 1secmail API every 3 seconds until an email arrives."""
-    username, domain = email_address.split('@')
-    async with aiohttp.ClientSession() as session:
-        for _ in range(timeout // 3):
-            check_url = f"https://www.1secmail.com/api/v1/?action=getMessages&login={username}&domain={domain}"
-            async with session.get(check_url) as resp:
-                messages = await resp.json()
-                if messages:
-                    msg_id = messages[0]['id']
-                    read_url = f"https://www.1secmail.com/api/v1/?action=readMessage&login={username}&domain={domain}&id={msg_id}"
-                    async with session.get(read_url) as read_resp:
-                        return await read_resp.json()
-            await asyncio.sleep(3)
-    return {"error": "Timeout waiting for email"}
 
 async def inject_som_markers(page: Page):
     """Draws numbered bounding boxes over clickable elements across all frames."""
@@ -151,7 +132,13 @@ async def inject_som_markers(page: Page):
                     area: Math.round(rect.width * rect.height),
                     fontSize: details.fontSize,
                     contrast: details.ratio.toFixed(2),
-                    text: el.innerText ? el.innerText.substring(0, 50).replace(/\n/g, ' ') : ''
+                    text: el.innerText ? el.innerText.substring(0, 50).replace(/\n/g, ' ') : '',
+                    // null, not false, when the element is not a selection
+                    // control: "not a checkbox" and "a checkbox that is off"
+                    // are different answers, and preselected_paid_addon_count
+                    // counts the second kind.
+                    checked: (el.type === 'checkbox' || el.type === 'radio')
+                             ? el.checked : null
                 };
                 index++;
             });
@@ -229,7 +216,6 @@ async def visual_explore(url: str, client: genai.Client, output_dir: str):
     final_path = os.path.join(output_dir, "final_audit.png")
     steps_log = []
     reject_click_depth = 0
-    temp_email = None
     max_steps = 70
 
     async with async_playwright() as p:
@@ -237,11 +223,16 @@ async def visual_explore(url: str, client: genai.Client, output_dir: str):
             headless=True,
             args=["--disable-blink-features=AutomationControlled"]
         )
+        # The same configuration driver.py uses, imported rather than
+        # repeated. locale was en-US, so amazon.de served the English shop
+        # and the German keyword rules read "Proceed to Checkout" as an
+        # inadmissible order-button label -- a false accusation produced by
+        # our own browser setting (see docs/ARBEITSTEILUNG_Technik.md 7).
         context = await browser.new_context(
-            viewport={"width": 1440, "height": 900},
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            locale="en-US",
-            timezone_id="Europe/Berlin"
+            viewport=dict(VIEWPORT),
+            user_agent=USER_AGENT,
+            locale=LOCALE,
+            timezone_id=TIMEZONE,
         )
         page = await context.new_page()
         stealth = Stealth()
@@ -275,6 +266,25 @@ async def visual_explore(url: str, client: genai.Client, output_dir: str):
 
             print(f"[*] Step {step} on: {current_page.url}")
             await current_page.wait_for_timeout(2000)
+
+            # Evidence first, while the page is untouched by us. The
+            # Beweisakte cites S-xx.png as proof that the site looked like
+            # this, and hashes it as proof of the page state -- so neither
+            # may contain our own numbered boxes. The marked-up image goes
+            # to the model only, into nav/, which the report never cites.
+            #
+            # The markers of the PREVIOUS step have to go first: a click
+            # that does not replace the document leaves them standing, and
+            # they were still in S-02.png of the amazon.de run on 24.08.
+            # inject_som_markers() clears them too, but that runs after
+            # this shot -- too late for the exhibit.
+            await current_page.evaluate(
+                "document.querySelectorAll('.som-marker').forEach(e => e.remove());")
+            screenshot_name = f"S-{step+1:02d}.png"
+            screenshot_path = os.path.join(output_dir, screenshot_name)
+            await current_page.screenshot(path=screenshot_path)
+            dom_hash = "sha256:" + hashlib.sha256((await current_page.content()).encode('utf-8')).hexdigest()
+
             element_map = await inject_som_markers(current_page)
             print(f"[*] Injected {len(element_map)} markers.")
 
@@ -285,19 +295,18 @@ async def visual_explore(url: str, client: genai.Client, output_dir: str):
                 element_map = await inject_som_markers(current_page)
                 print(f"[*] Retried injection: {len(element_map)} markers.")
 
-            screenshot_name = f"S-{step+1:02d}.png"
-            screenshot_path = os.path.join(output_dir, screenshot_name)
-            await current_page.screenshot(path=screenshot_path)
-            
-            dom_hash = "sha256:" + hashlib.sha256((await current_page.content()).encode('utf-8')).hexdigest()
-            image = Image.open(screenshot_path)
+            nav_dir = os.path.join(output_dir, "nav")
+            os.makedirs(nav_dir, exist_ok=True)
+            marked_path = os.path.join(nav_dir, screenshot_name)
+            await current_page.screenshot(path=marked_path)
+            image = Image.open(marked_path)
 
             # Unified request: Audit + Decision using manual contents list
             # The current turn includes [Pruned History] + [New Screenshot + Prompt]
             current_prompt = f"Step: {step+1}. URL: {current_page.url}.\n\nExtract signals and decide next action. Use placeholders for values."
             contents = lean_history + [
                 types.Content(role="user", parts=[
-                    types.Part(inline_data=types.Blob(mime_type="image/png", data=open(screenshot_path, "rb").read())),
+                    types.Part(inline_data=types.Blob(mime_type="image/png", data=open(marked_path, "rb").read())),
                     types.Part(text=current_prompt)
                 ])
             ]
@@ -341,19 +350,55 @@ async def visual_explore(url: str, client: genai.Client, output_dir: str):
             
             print(f"[*] History size: {len(lean_history)} entries (text-only).")
             
-            # Resolution Logic: Fill placeholders from the local element_map
+            # Resolution Logic: fill placeholders from the local element_map.
+            #
+            # A placeholder that cannot be resolved must never survive as a
+            # value. "FETCH:105:checked" was shipped verbatim into signals
+            # on 24.08. -- 'checked' was not among the four attributes below
+            # and the bare `except: pass` swallowed it. The engine caught it
+            # ("value is not a number, but the rule compares it with '>'"),
+            # but that is luck: a placeholder in a text signal would have
+            # gone into the Beweisakte as a measured string.
+            unresolved = []
             for entry in decision.signals:
                 val = str(entry.signal.value)
-                if val.startswith("FETCH:"):
-                    try:
-                        _, eid, attr = val.split(":")
-                        if eid in element_map:
-                            data = element_map[eid]
-                            if attr == "text": entry.signal.value = data['text']
-                            elif attr == "area": entry.signal.value = int(data['area'])
-                            elif attr == "font": entry.signal.value = float(data['fontSize'])
-                            elif attr == "contrast": entry.signal.value = float(data['contrast'])
-                    except: pass
+                if not val.startswith("FETCH:"):
+                    continue
+                parts = val.split(":")
+                if len(parts) != 3:
+                    unresolved.append((entry, f"Platzhalter {val} ist unlesbar"))
+                    continue
+                _, eid, attr = parts
+                data = element_map.get(eid)
+                if data is None:
+                    unresolved.append(
+                        (entry, f"Element {eid} war beim Messen nicht mehr da"))
+                    continue
+                try:
+                    if attr == "text":
+                        entry.signal.value = data["text"]
+                    elif attr == "area":
+                        entry.signal.value = int(data["area"])
+                    elif attr == "font":
+                        entry.signal.value = float(data["fontSize"])
+                    elif attr == "contrast":
+                        entry.signal.value = float(data["contrast"])
+                    elif attr == "checked":
+                        if data.get("checked") is None:
+                            raise ValueError("kein Auswahlfeld")
+                        entry.signal.value = bool(data["checked"])
+                    else:
+                        unresolved.append(
+                            (entry, f"Attribut '{attr}' wird nicht gemessen"))
+                except (KeyError, TypeError, ValueError) as error:
+                    unresolved.append(
+                        (entry, f"{attr} an Element {eid} nicht lesbar ({error})"))
+
+            # Out of signals, into signal_errors: not measured is not a value.
+            for entry, reason in unresolved:
+                all_errors.setdefault(entry.name, reason)
+                decision.signals = [e for e in decision.signals if e is not entry]
+                print(f"[!] {entry.name}: {reason}")
             
             print(f"[*] Agent Thought: {decision.thought_process}")
             
@@ -394,6 +439,17 @@ async def visual_explore(url: str, client: genai.Client, output_dir: str):
             try:
                 dom_values, dom_gaps = await collect.measure(current_page)
                 for name, value in dom_values.items():
+                    # path.supersedes decides, not the loop order. The
+                    # consent banner is answered at first contact and gone
+                    # afterwards, so measuring it again on a later page
+                    # says nothing about the site -- and this merge, which
+                    # assigned unconditionally, overwrote banner_detected
+                    # with the false read off Amazon's sign-in wall on
+                    # 24.08. DP-001 lost its applicability that way.
+                    held = all_signals.get(name)
+                    if held and not supersedes(name, decision.step_name,
+                                               held.get("step", "")):
+                        continue
                     all_signals[name] = {"value": value,
                                          "step": decision.step_name,
                                          "evidence": screenshot_name}
@@ -471,22 +527,24 @@ async def visual_explore(url: str, client: genai.Client, output_dir: str):
 
                     if decision.action_type == "type" and decision.input_text:
                         text = decision.input_text
-                        if "SESSION_EMAIL" in text:
-                            if not temp_email:
-                                temp_email = await get_temp_email()
-                                print(f"[*] Generated session email: {temp_email}")
-                            text = text.replace("SESSION_EMAIL", temp_email)
-                        if "FETCH_OTP" in text:
-                            print("[*] Polling OTP...")
-                            if not temp_email:
-                                temp_email = await get_temp_email()
-                                print(f"[*] Generated session email for OTP: {temp_email}")
-                            email_data = await wait_for_email(temp_email)
-                            if "error" not in email_data:
-                                match = re.search(r'\b\d{4,6}\b', email_data.get('textBody', ''))
-                                text = text.replace("FETCH_OTP", match.group(0) if match else "123456")
-                            else:
-                                text = text.replace("FETCH_OTP", "000000")
+                        # The walk stops at a login wall, it does not step
+                        # over it. We tell the consumer agency we use public
+                        # pages only, no login, no bypassing of access
+                        # controls, and we will be asked about it in the Q&A
+                        # (docs/ARBEITSTEILUNG_Technik.md 7). The prompt says
+                        # so too, but a prompt is a request and this is the
+                        # guarantee: no credential can leave this loop.
+                        if "SESSION_EMAIL" in text or "FETCH_OTP" in text:
+                            print("[!] Login or registration requested — "
+                                  "stopping. Public pages only.")
+                            decision.is_blocked = True
+                            all_errors.setdefault(
+                                "checkout_erreichbar",
+                                "Der Bestellabschluss war ohne Anmeldung nicht "
+                                "erreichbar. Der Lauf endet hier: es werden "
+                                "keine Konten angelegt und keine "
+                                "Zugangskontrollen umgangen.")
+                            break
                         await human_type(current_page, coords['x'], coords['y'], text)
                     elif decision.action_type == "double_click": await human_click(current_page, coords['x'], coords['y'], click_count=2)
                     elif decision.action_type == "right_click": await human_click(current_page, coords['x'], coords['y'], button="right")

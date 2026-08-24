@@ -19,6 +19,7 @@ Runnable without setup, no external services:
 .venv/bin/python tests/test_ai_guards.py      # what AI 2 and AI 4 may put in a document
 .venv/bin/python tests/test_ui.py             # the web app, and that nothing needs it
 .venv/bin/python tests/test_extractors.py     # DOM measurement against known pages
+.venv/bin/python tests/test_capture_agent.py  # what the agent may never do, whatever the model says
 ```
 
 `tests/test_verdicts.py` checks the hand-written fixture

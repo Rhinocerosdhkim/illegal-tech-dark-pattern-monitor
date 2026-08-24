@@ -36,7 +36,7 @@ AI. Cost is not the reason — five to eleven calls per run is about one cent
 
 | Variable | Default | |
 |---|---|---|
-| `DPM_MODEL` | `gemini-2.5-flash-lite` | cheapest vision tier; the two tasks need no reasoning |
+| `DPM_MODEL` | `gemini-3.5-flash-lite` | cheapest vision tier; the two tasks need no reasoning |
 | `DPM_MIN_CONFIDENCE` | `0.7` | below this a read signal becomes a `signal_error` |
 | `GOOGLE_CLOUD_LOCATION` | `europe-west4` | Vertex only |
 

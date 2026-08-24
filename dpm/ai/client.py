@@ -31,7 +31,11 @@ from dataclasses import dataclass
 # Cheapest vision-capable tier. The two tasks we use a model for -- "which
 # numbered box do I click" and "is there a countdown" -- need no reasoning
 # ability, so paying for a larger model buys nothing.
-DEFAULT_MODEL = "gemini-2.5-flash-lite"
+# 24.08.: a freshly issued key gets 404 on gemini-2.5-flash-lite --
+# "no longer available to new users". Anyone setting the project up now
+# would have hit that as their first error, with nothing pointing at the
+# model name. DPM_MODEL still overrides.
+DEFAULT_MODEL = "gemini-3.5-flash-lite"
 
 
 class ModelError(Exception):

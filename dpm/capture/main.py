@@ -5,13 +5,18 @@ import asyncio
 from datetime import datetime, timezone
 from google import genai
 from dpm.capture.agent import visual_explore
+from dpm.capture.driver import LOCALE, TIMEZONE, USER_AGENT, VIEWPORT
 
 async def main():
     if len(sys.argv) < 2:
-        print("Usage: python main.py <target_url>")
+        print("Usage: python -m dpm.capture.main <target_url> [branche]")
         sys.exit(1)
-        
+
     target_url = sys.argv[1]
+    # Without a branch there is no statistic by branch in the
+    # Marktuebersicht, and that is what the consumer agency asked for in
+    # the seminar. Unset is written as "unbekannt", never guessed.
+    industry = sys.argv[2] if len(sys.argv) > 2 else "unbekannt"
     
     if "GEMINI_API_KEY" not in os.environ:
         print("[!] Error: GEMINI_API_KEY environment variable is missing.")
@@ -23,8 +28,10 @@ async def main():
     safe_url_name = target_url.replace("https://", "").replace("http://", "").replace("www.", "").split("/")[0]
     run_id = f"{now.strftime('%Y-%m-%dT%H-%M-%S')}_{safe_url_name}"
     
-    # Create artifacts directory
-    artifacts_dir = os.path.join("artifacts", run_id)
+    # out/<run_id>/, the folder `python -m dpm rebuild` looks in. Under
+    # artifacts/ the run existed but no report was ever built from it: on
+    # Tuesday the handover would have found an empty out/.
+    artifacts_dir = os.path.join("out", run_id)
     os.makedirs(artifacts_dir, exist_ok=True)
     
     print(f"[*] Generating Evidence Dossier for {target_url}...")
@@ -57,10 +64,15 @@ async def main():
             "target": safe_url_name,
             "start_url": target_url,
             "timestamp": now.isoformat(),
-            "viewport": { "width": 1440, "height": 900 },
-            "locale": "en-US",
-            "timezone": "Europe/Berlin",
-            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            # Written from the same constants the browser was opened with,
+            # not typed out again -- these four lines are what makes a
+            # capture reproducible, and a copy drifts from the original.
+            "viewport": dict(VIEWPORT),
+            "locale": LOCALE,
+            "timezone": TIMEZONE,
+            "user_agent": USER_AGENT,
+            "capture_mode": "headless",
+            "industry": industry,
             "run_id": run_id,
             "is_blocked": is_blocked
         },

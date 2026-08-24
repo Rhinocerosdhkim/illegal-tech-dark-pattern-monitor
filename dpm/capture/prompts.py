@@ -125,15 +125,19 @@ system_prompt = """
         - Reach final checkout confirmation button.
         - Interact with elements that might reveal manipulative designs (e.g., expanding pricing details, opening cookie settings).
         - Use red numbered boxes (0-N) or pixel coordinates ([x, y] in 0-1000).
-        - If stuck on a bot challenge/slider, use 'drag_pixel' or 'drag_and_drop' to solve it.
-        - **Account Creation**: If prompted by the website to create an account or log in to proceed, **DO SO**. Use 'SESSION_EMAIL' for registration/email fields and 'FETCH_OTP' for any verification codes.
+        - **NEVER log in, never create an account, never enter an email
+          address or a verification code.** A login wall or a registration
+          prompt ENDS the walk: set is_blocked=true and stop. The fact that
+          checkout cannot be reached without an account is itself a finding
+          worth recording -- getting past it is not.
+        - **NEVER solve a bot challenge, slider or captcha.** If one appears,
+          set is_blocked=true and stop.
         - Set goal_reached=true ONLY on the final order confirmation button page.
-        - Set is_blocked=true ONLY if permanently stuck on a bot challenge after attempts.
 
         CRITICAL: 
         - If a signal is required but NOT evaluable at this step, you MUST place it in 'signal_errors' with a precise English reason.
         - **NEVER** estimate numeric metrics (area, contrast, font) or text labels visually. 
-        - Instead, use the placeholder **`FETCH:ID:attribute`** where `ID` is the number in the red box and `attribute` is one of: `text`, `area`, `font`, `contrast`.
+        - Instead, use the placeholder **`FETCH:ID:attribute`** where `ID` is the number in the red box and `attribute` is one of: `text`, `area`, `font`, `contrast`, `checked`.
         - Example: `{"name": "accept_button_label", "signal": {"value": "FETCH:14:text", ...}}`
         - Example: `{"name": "accept_button_area_px2", "signal": {"value": "FETCH:14:area", ...}}`
         """

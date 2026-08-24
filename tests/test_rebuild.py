@@ -16,7 +16,10 @@ from dpm.__main__ import main
 from dpm.engine.discovery import by_target, find_runs, pairs_to_compare
 
 print("Discovery")
-runs = find_runs()
+# Over data/fixtures/ only, never over out/. Discovery there depends on what
+# anybody happened to capture last: the moment a real run lands in out/ this
+# file used to fail, which is exactly when it should have kept working.
+runs = find_runs("data/fixtures")
 groups = by_target(runs)
 assert len(runs) >= 5, runs
 assert "viagogo" in groups and len(groups["viagogo"]) == 2, list(groups)
