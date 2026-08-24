@@ -10,10 +10,11 @@ from playwright.async_api import async_playwright, Page
 from playwright_stealth import Stealth 
 from google import genai
 from google.genai import types
-from schemas import UnifiedDecision
+from dpm.capture.schemas import UnifiedDecision
+from dpm.signals import collect
 from PIL import Image
 
-from server.cap.prompts import system_prompt
+from dpm.capture.prompts import system_prompt
 
 
 async def get_temp_email() -> str:
@@ -385,6 +386,23 @@ async def visual_explore(url: str, client: genai.Client, output_dir: str):
 
             if captured_signals:
                 print(f"[*] Signals Captured: {', '.join(captured_signals)}")
+
+            # Deterministic pass: extractors.js measures the same page from
+            # the DOM. Where both produced a signal, the measured value wins
+            # over the model's reading — it is the number a lawyer can
+            # recompute in the developer tools. Gaps never overwrite values.
+            try:
+                dom_values, dom_gaps = await collect.measure(current_page)
+                for name, value in dom_values.items():
+                    all_signals[name] = {"value": value,
+                                         "step": decision.step_name,
+                                         "evidence": screenshot_name}
+                    all_errors.pop(name, None)
+                for name, reason in dom_gaps.items():
+                    if name != "__extractors__" and name not in all_signals:
+                        all_errors[name] = reason
+            except Exception as error:
+                print(f"[!] DOM measurement failed: {error}")
             
             for entry in decision.signal_errors:
                 # Only record error if we don't have a valid signal captured in a previous step

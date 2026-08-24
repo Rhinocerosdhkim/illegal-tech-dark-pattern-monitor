@@ -4,7 +4,7 @@ import json
 import asyncio
 from datetime import datetime, timezone
 from google import genai
-from agent import visual_explore
+from dpm.capture.agent import visual_explore
 
 async def main():
     if len(sys.argv) < 2:
@@ -38,11 +38,15 @@ async def main():
         print("[!] Exploration stopped early due to bot detection.")
     
     # Inject the rejection-specific click depth calculated by the agent's logic
-    signals["reject_click_depth"] = {
-        "value": reject_depth,
-        "step": steps_log[0]["step"] if steps_log else "start",
-        "evidence": steps_log[0]["screenshot"] if steps_log else ""
-    }
+    # NOT published as reject_click_depth: the counter counts every funnel
+    # click, but the signal means "interaction steps until consent is fully
+    # refused" and DP-001 judges on it. A miscounted value here produced a
+    # confident false accusation (amazon, 23.08.). Until the reject path is
+    # actually walked, the honest answer is a gap.
+    errors.setdefault("reject_click_depth",
+                      "requires clicking through the reject path — the agent "
+                      f"made {reject_depth} funnel clicks, which is not the "
+                      "same measurement")
     
     # Final error pruning: If a signal was found at ANY step, remove it from errors
     final_errors = {k: v for k, v in errors.items() if k not in signals}
