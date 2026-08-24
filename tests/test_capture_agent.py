@@ -136,7 +136,12 @@ assert _sup("price_listed", "produktdetail", "startseite")
 print("  ok  banner signals keep the first contact, funnel signals move down")
 
 print("\nRuns land where rebuild will find them")
-assert 'os.path.join("out", run_id)' in MAIN, "output is not under out/"
+# Checked on the default, not on a literal: walk() takes output_root so
+# the web UI can start the same run into the same folder.
+import inspect
+from dpm.capture.main import walk
+assert inspect.signature(walk).parameters["output_root"].default == "out", \
+    "the default output is not out/"
 assert '"capture_mode"' in MAIN and '"industry"' in MAIN, \
     "meta is missing what the Zeitachse and the Marktuebersicht need"
 print("  ok  out/<run_id>/, with capture_mode and industry in meta")

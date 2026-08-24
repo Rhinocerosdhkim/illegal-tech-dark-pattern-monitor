@@ -7,21 +7,14 @@ from google import genai
 from dpm.capture.agent import visual_explore
 from dpm.capture.driver import LOCALE, TIMEZONE, USER_AGENT, VIEWPORT
 
-async def main():
-    if len(sys.argv) < 2:
-        print("Usage: python -m dpm.capture.main <target_url> [branche]")
-        sys.exit(1)
+async def walk(target_url, industry="unbekannt", output_root="out"):
+    """Walk one target and write out/<run_id>/capture.json.
 
-    target_url = sys.argv[1]
-    # Without a branch there is no statistic by branch in the
-    # Marktuebersicht, and that is what the consumer agency asked for in
-    # the seminar. Unset is written as "unbekannt", never guessed.
-    industry = sys.argv[2] if len(sys.argv) > 2 else "unbekannt"
-    
-    if "GEMINI_API_KEY" not in os.environ:
-        print("[!] Error: GEMINI_API_KEY environment variable is missing.")
-        sys.exit(1)
-        
+    Split out of main() so the web UI can start the same run the command
+    line starts. Everything the two shared used to be copied.
+
+    Returns the run folder.
+    """
     client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
     now = datetime.now(timezone.utc).astimezone().replace(microsecond=0)
     
@@ -31,7 +24,7 @@ async def main():
     # out/<run_id>/, the folder `python -m dpm rebuild` looks in. Under
     # artifacts/ the run existed but no report was ever built from it: on
     # Tuesday the handover would have found an empty out/.
-    artifacts_dir = os.path.join("out", run_id)
+    artifacts_dir = os.path.join(str(output_root), run_id)
     os.makedirs(artifacts_dir, exist_ok=True)
     
     print(f"[*] Generating Evidence Dossier for {target_url}...")
@@ -86,6 +79,24 @@ async def main():
         json.dump(capture_data, f, ensure_ascii=False, indent=2)
         
     print(f"[*] Evidence Dossier successfully locked and saved to {capture_path}.")
+    return artifacts_dir
+
+
+async def main():
+    if len(sys.argv) < 2:
+        print("Usage: python -m dpm.capture.main <target_url> [branche]")
+        sys.exit(1)
+
+    if "GEMINI_API_KEY" not in os.environ:
+        print("[!] Error: GEMINI_API_KEY environment variable is missing.")
+        sys.exit(1)
+
+    # Without a branch there is no statistic by branch in the
+    # Marktuebersicht, and that is what the consumer agency asked for in
+    # the seminar. Unset is written as "unbekannt", never guessed.
+    await walk(sys.argv[1],
+               sys.argv[2] if len(sys.argv) > 2 else "unbekannt")
+
 
 if __name__ == "__main__":
     asyncio.run(main())

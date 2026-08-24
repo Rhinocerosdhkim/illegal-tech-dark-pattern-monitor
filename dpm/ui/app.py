@@ -89,32 +89,55 @@ def create(output: Path = Path("out")) -> object:
 
         Doing the report here is the point: a run that stops at
         capture.json leaves the person with a file they cannot read.
+
+        Two capture paths, and which one runs depends on one thing only:
+        whether a model key is there. With a key the agent walks the
+        funnel -- search, product, basket -- which is where the patterns
+        the consumer agency named actually live. Without one the driver
+        takes the start page and measures every DOM signal on it. The
+        second is not a lesser demo, it is the one that still works when
+        the free tier runs out on presentation day.
         """
-        from dpm.capture.driver import capture
+        import json as _json
 
-        profile = load_target(lauf.url) or {"name": lauf.target}
-        if lauf.industry:
-            profile = {**profile, "industry": lauf.industry}
+        if model_unavailable():
+            from dpm.capture.driver import capture
 
-        model = None if model_unavailable() else Model.open()
-        if model is None:
-            lauf.note = ("Kein Modell verfügbar — nur die Startseite, "
-                         "alle Signale bleiben unklar")
+            lauf.note = ("Kein Modell verfügbar — Startseite statt Trichter. "
+                         "Die im DOM messbaren Signale werden trotzdem "
+                         "erhoben.")
+            profile = load_target(lauf.url) or {"name": lauf.target}
+            if lauf.industry:
+                profile = {**profile, "industry": lauf.industry}
+            result = await capture(lauf.url, profile, None, output_root=output)
+            result.write()
+            lauf.folder, lauf.run_id = result.path, result.meta["run_id"]
+            lauf.steps = [{"step": s.get("step"), "url": s.get("url"),
+                           "screenshot": s.get("screenshot")}
+                          for s in result.steps]
+        else:
+            from dpm.capture.main import walk
 
-        result = await capture(lauf.url, profile, model,
-                               output_root=output)
-        result.write()
-        lauf.folder, lauf.run_id = result.path, result.meta["run_id"]
-        lauf.steps = [{"step": s.get("step"), "url": s.get("url"),
-                       "screenshot": s.get("screenshot")}
-                      for s in result.steps]
+            folder = Path(await walk(lauf.url, lauf.industry or "unbekannt",
+                                     output_root=output))
+            lauf.folder = folder
+            lauf.run_id = folder.name
+            written = _json.loads((folder / "capture.json").read_text(
+                encoding="utf-8"))
+            lauf.steps = [{"step": s.get("step"), "url": s.get("url"),
+                           "screenshot": s.get("screenshot")}
+                          for s in written.get("steps", [])]
 
         # In a worker thread on purpose: the PDF is printed through the
         # synchronous Playwright API, which refuses to run inside a live
         # asyncio loop. Without the thread the Beweisakte would silently
         # arrive as HTML only.
         def report() -> None:
-            run = load_run(result.path)
+            # lauf.folder, not a variable from one of the two branches:
+            # the agent path has no `result` and the closure raised
+            # NameError there, which arrived as a failed run after the
+            # capture had already succeeded.
+            run = load_run(lauf.folder)
             rules = load_rules()
             build_case_file(run, [assess(rule, run.table) for rule in rules],
                             output=output, as_pdf=True)

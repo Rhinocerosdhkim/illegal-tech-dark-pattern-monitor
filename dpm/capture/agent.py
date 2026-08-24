@@ -9,7 +9,8 @@ from playwright.async_api import async_playwright, Page
 from playwright_stealth import Stealth 
 from google import genai
 from google.genai import types
-from dpm.capture.driver import LOCALE, TIMEZONE, USER_AGENT, VIEWPORT
+from dpm.capture.driver import (LOCALE, TIMEZONE, USER_AGENT, VIEWPORT,
+                                _normalise)
 from dpm.capture.path import supersedes
 from dpm.capture.schemas import UnifiedDecision
 from dpm.signals import collect
@@ -283,7 +284,14 @@ async def visual_explore(url: str, client: genai.Client, output_dir: str):
             screenshot_name = f"S-{step+1:02d}.png"
             screenshot_path = os.path.join(output_dir, screenshot_name)
             await current_page.screenshot(path=screenshot_path)
-            dom_hash = "sha256:" + hashlib.sha256((await current_page.content()).encode('utf-8')).hexdigest()
+            # Same normalisation as driver.py, so the two capture paths
+            # produce comparable hashes: nonces, inline scripts and
+            # comments are stripped first. On a page that rotates its own
+            # content (amazon.de) even that is not enough and the hash
+            # will differ between two loads -- it is then a fingerprint of
+            # this capture, not a change detector.
+            dom_hash = "sha256:" + hashlib.sha256(
+                _normalise(await current_page.content()).encode("utf-8")).hexdigest()
 
             element_map = await inject_som_markers(current_page)
             print(f"[*] Injected {len(element_map)} markers.")
@@ -565,7 +573,8 @@ async def visual_explore(url: str, client: genai.Client, output_dir: str):
         final_step_name = "checkout" if (decision and decision.goal_reached) else "abandoned"
         await current_page.screenshot(path=final_path, full_page=True)
         final_content = await current_page.content()
-        final_hash = "sha256:" + hashlib.sha256(final_content.encode('utf-8')).hexdigest()
+        final_hash = "sha256:" + hashlib.sha256(
+            _normalise(final_content).encode("utf-8")).hexdigest()
 
         steps_log.append({
             "step": final_step_name,
