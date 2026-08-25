@@ -137,6 +137,7 @@
     vorgegeben.
 
     Technische Festlegung (Teamentscheidung): 
+    
     Für den Countdown genügt ein reproduzierbarer Befund, dass die behauptete
     Begrenzung technisch nicht gegeben ist.
     Bei einem personalisierten Countdown ist dies z.B. dann der Fall, 
@@ -147,7 +148,8 @@
     Für Knappheitsangaben (angegebene Stückzahl) empfehlen wir als praktischen
     Schwellenwert mindestens 3 voneinander unabhängige Messungen, um legitime,
     kurzzeitige Bestandsänderungen oder Messfehler auszuschließen. 
-    Diese Zählgrenze ist eine technische Vorsichtsmaßnahme zur Minimierung von
+    
+    Diese Zählgrenzen sind eine technische Vorsichtsmaßnahme zur Minimierung von
     False Positives, nicht eine materielle Voraussetzung des rechtlichen Tatbestands.
 
   false_positive_risks:
@@ -208,9 +210,9 @@
     Dies legt nahe, dass die behauptete begrenzte Stückzahl nicht real besteht
     und vielmehr künstlicher Kaufdruck erzeugt wird.
     
-    Rechtsbewertung: Die unwahre Angabe einer begremzten Stückzahl ist in
-    ... UWG als stets unzulässige geschäftliche Handlung
-    genannt. Liegt eine solche unlautere Handlung vor, begründet dies in der Regel
+    Rechtsbewertung: Die unwahre Angabe einer begrenzten Stückzahl kann gem. § 5 Abs. 1 UWG
+    eine unzulässige geschäftliche Handlung sein.
+    Liegt eine solche unlautere Handlung vor, begründet dies in der Regel
     Unterlassungs‑ und Beseitigungsansprüche nach § 8 UWG. Detailbelege (Screenshots,
     DOM‑Hashes, Request/Response‑Header) sind diesem Bericht beigefügt.
 
