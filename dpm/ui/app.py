@@ -13,6 +13,7 @@ a capture and watching it run.
 from __future__ import annotations
 
 import asyncio
+import json
 import re
 import secrets
 from pathlib import Path
@@ -85,58 +86,78 @@ def create(output: Path = Path("out")) -> object:
         return sorted(entries, key=lambda e: e["timestamp"] or "", reverse=True)
 
     async def perform(lauf: Lauf) -> None:
-        """Capture, then immediately turn the result into a Beweisakte.
+        """Capture using the AI agent, then turn the result into a Beweisakte.
 
         Doing the report here is the point: a run that stops at
         capture.json leaves the person with a file they cannot read.
-
-        Two capture paths, and which one runs depends on one thing only:
-        whether a model key is there. With a key the agent walks the
-        funnel -- search, product, basket -- which is where the patterns
-        the consumer agency named actually live. Without one the driver
-        takes the start page and measures every DOM signal on it. The
-        second is not a lesser demo, it is the one that still works when
-        the free tier runs out on presentation day.
         """
-        import json as _json
+        from dpm.capture.agent import visual_explore
+        from google import genai
+        import os
 
-        if model_unavailable():
-            from dpm.capture.driver import capture
+        # Initialize Gemini client
+        if "GEMINI_API_KEY" not in os.environ:
+            lauf.note = "GEMINI_API_KEY nicht gesetzt — Capture kann nicht starten"
+            return
 
-            lauf.note = ("Kein Modell verfügbar — Startseite statt Trichter. "
-                         "Die im DOM messbaren Signale werden trotzdem "
-                         "erhoben.")
-            profile = load_target(lauf.url) or {"name": lauf.target}
+        client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+
+        try:
+            # Call the AI agent directly
+            steps_log, reject_depth, final_step_name, is_blocked, signals, errors, meta = \
+                await visual_explore(lauf.url, client, output_root=output)
+
+            # Inject reject_click_depth
+            signals["reject_click_depth"] = {
+                "value": reject_depth,
+                "step": steps_log[0]["step"] if steps_log else "start",
+                "evidence": steps_log[0]["screenshot"] if steps_log else ""
+            }
+
+            # Prune errors: if a signal was found, remove its error entry
+            final_errors = {k: v for k, v in errors.items() if k not in signals}
+
+            # Update meta with actual signals and errors
+            meta["signals"] = signals
+            meta["signal_errors"] = final_errors
+            meta["is_blocked"] = is_blocked
+
+            # Set industry from UI input if provided
             if lauf.industry:
-                profile = {**profile, "industry": lauf.industry}
-            result = await capture(lauf.url, profile, None, output_root=output)
-            result.write()
-            lauf.folder, lauf.run_id = result.path, result.meta["run_id"]
-            lauf.steps = [{"step": s.get("step"), "url": s.get("url"),
-                           "screenshot": s.get("screenshot")}
-                          for s in result.steps]
-        else:
-            from dpm.capture.main import walk
+                meta["industry"] = lauf.industry
 
-            folder = Path(await walk(lauf.url, lauf.industry or "unbekannt",
-                                     output_root=output))
-            lauf.folder = folder
-            lauf.run_id = folder.name
-            written = _json.loads((folder / "capture.json").read_text(
-                encoding="utf-8"))
+            # Write capture.json with all data
+            run_path = output / meta["run_id"]
+            capture_file = run_path / "capture.json"
+            capture_file.write_text(
+                json.dumps(
+                    {
+                        "meta": meta,
+                        "steps": steps_log,
+                        "signals": signals,
+                        "signal_errors": final_errors
+                    },
+                    ensure_ascii=False,
+                    indent=2
+                ),
+                encoding="utf-8"
+            )
+
+            lauf.folder = run_path
+            lauf.run_id = meta["run_id"]
             lauf.steps = [{"step": s.get("step"), "url": s.get("url"),
                            "screenshot": s.get("screenshot")}
-                          for s in written.get("steps", [])]
+                          for s in steps_log]
+
+        except Exception as e:
+            lauf.note = f"Capture fehlgeschlagen: {type(e).__name__}: {e}"
+            raise
 
         # In a worker thread on purpose: the PDF is printed through the
         # synchronous Playwright API, which refuses to run inside a live
         # asyncio loop. Without the thread the Beweisakte would silently
         # arrive as HTML only.
         def report() -> None:
-            # lauf.folder, not a variable from one of the two branches:
-            # the agent path has no `result` and the closure raised
-            # NameError there, which arrived as a failed run after the
-            # capture had already succeeded.
             run = load_run(lauf.folder)
             rules = load_rules()
             build_case_file(run, [assess(rule, run.table) for rule in rules],
