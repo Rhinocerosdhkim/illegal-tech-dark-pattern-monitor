@@ -92,20 +92,19 @@ def create(output: Path = Path("out")) -> object:
         capture.json leaves the person with a file they cannot read.
         """
         from dpm.capture.agent import visual_explore
-        from google import genai
-        import os
 
-        # Initialize Gemini client
-        if "GEMINI_API_KEY" not in os.environ:
-            lauf.note = "GEMINI_API_KEY nicht gesetzt — Capture kann nicht starten"
+        # Check if model is available
+        if model_unavailable():
+            lauf.note = "Kein Modell verfügbar — Capture kann nicht starten"
             return
 
-        client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+        # Initialize the model through the engine interface
+        model = Model.open()
 
         try:
-            # Call the AI agent directly
+            # Call the AI agent directly with the model object
             steps_log, reject_depth, final_step_name, is_blocked, signals, errors, meta = \
-                await visual_explore(lauf.url, client, output_root=output)
+                await visual_explore(lauf.url, model, output_root=output)
 
             # Inject reject_click_depth
             signals["reject_click_depth"] = {
