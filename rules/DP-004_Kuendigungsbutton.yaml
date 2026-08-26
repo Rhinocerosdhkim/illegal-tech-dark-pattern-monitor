@@ -129,12 +129,7 @@
 
   verdict_rules:
     eindeutig:
-      # Von drei eindeutig-Bedingungen bleibt eine (20.08.). Massgeblich ist
-      # T3: ein Befund darf sich nur auf etwas stuetzen, das wir GESEHEN
-      # haben. Die Erfassung besucht drei bis vier Seiten eines Ziels und
-      # sucht nach Stichworten - "nicht gefunden" ist Abwesenheit von Beweis,
-      # nicht Beweis der Abwesenheit. Dieselbe Begruendung, mit der
-      # "required_info_found == false" in DP-006 auf "verdaechtig" steht.
+    
       - condition: "has_confirmation_page == true and has_confirmation_button == false"
         reason: >
           Die Bestätigungsseite wurde erreicht und enthält keine
