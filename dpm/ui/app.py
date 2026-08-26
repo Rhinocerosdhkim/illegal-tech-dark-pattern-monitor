@@ -91,58 +91,44 @@ def create(output: Path = Path("out")) -> object:
         Doing the report here is the point: a run that stops at
         capture.json leaves the person with a file they cannot read.
         """
-        from dpm.capture.agent import visual_explore
+        from dpm.capture.agent import visual_explore, Capture, STRUCTURAL_GAPS
 
-        # Check if model is available
-        if model_unavailable():
-            lauf.note = "Kein Modell verfügbar — Capture kann nicht starten"
-            return
-
-        # Initialize the model through the engine interface
-        model = Model.open()
+        # Initialize the model if available; otherwise perform a start-page only capture.
+        model = None
+        reason = model_unavailable()
+        if not reason:
+            model = Model.open()
+        else:
+            lauf.note = f"Kein Modell verfügbar — {reason}"
 
         try:
-            # Call the AI agent directly with the model object
+            # Call the AI agent directly. If model is None, it captures the start page only.
             steps_log, reject_depth, final_step_name, is_blocked, signals, errors, meta = \
                 await visual_explore(lauf.url, model, output_root=output)
 
-            # Inject reject_click_depth
-            signals["reject_click_depth"] = {
-                "value": reject_depth,
-                "step": steps_log[0]["step"] if steps_log else "start",
-                "evidence": steps_log[0]["screenshot"] if steps_log else ""
-            }
+            # Inject the rejection-specific click depth
+            for name, reason in STRUCTURAL_GAPS.items():
+                if name not in signals:
+                    errors[name] = reason
+            errors["reject_click_depth"] = (
+                f"{STRUCTURAL_GAPS['reject_click_depth']} — der Agent hat "
+                f"{reject_depth} Trichterklicks gemacht, was nicht dieselbe "
+                f"Messung ist")
 
             # Prune errors: if a signal was found, remove its error entry
             final_errors = {k: v for k, v in errors.items() if k not in signals}
 
-            # Update meta with actual signals and errors
-            meta["signals"] = signals
-            meta["signal_errors"] = final_errors
-            meta["is_blocked"] = is_blocked
-
-            # Set industry from UI input if provided
+            # Update meta with industry if provided
             if lauf.industry:
                 meta["industry"] = lauf.industry
 
             # Write capture.json with all data
-            run_path = output / meta["run_id"]
-            capture_file = run_path / "capture.json"
-            capture_file.write_text(
-                json.dumps(
-                    {
-                        "meta": meta,
-                        "steps": steps_log,
-                        "signals": signals,
-                        "signal_errors": final_errors
-                    },
-                    ensure_ascii=False,
-                    indent=2
-                ),
-                encoding="utf-8"
-            )
+            run = Capture(path=output / meta["run_id"], meta=meta,
+                          steps=steps_log, signals=signals,
+                          errors=final_errors)
+            run.write()
 
-            lauf.folder = run_path
+            lauf.folder = run.path
             lauf.run_id = meta["run_id"]
             lauf.steps = [{"step": s.get("step"), "url": s.get("url"),
                            "screenshot": s.get("screenshot")}

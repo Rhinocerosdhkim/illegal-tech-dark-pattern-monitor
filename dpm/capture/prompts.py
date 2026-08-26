@@ -122,22 +122,22 @@ system_prompt = """
         - 'none': Take no action for this turn.
 
         STRATEGY:
-        - Reach final checkout confirmation button.
-        - Interact with elements that might reveal manipulative designs (e.g., expanding pricing details, opening cookie settings).
+        - **Investigative Audit**: Your primary goal is to find violations. Do NOT simply take the "easiest" path.
+        - **Cookie Banners**: If a banner offers "Settings", "Configure", or "More Info", you MUST click those first. Check for pre-selected checkboxes, hidden reject buttons, or visual manipulation inside the settings.
+        - **Hidden Details**: Interact with elements that might reveal manipulative designs (e.g., expanding pricing breakdowns, opening "Terms" tooltips, clicking "Details" on shipping).
+        - **Funnel Progression**: Reach the final checkout confirmation button, but only AFTER you have exhausted the current page for hidden dark patterns.
+        - **Account Creation**: If prompted by the website to create an account or log in to proceed, **DO SO** if credentials are provided. Use 'SESSION_EMAIL' for registration/email fields and 'SESSION_PASSWORD' for passwords.
         - Use red numbered boxes (0-N) or pixel coordinates ([x, y] in 0-1000).
-        - **NEVER log in, never create an account, never enter an email
-          address or a verification code.** A login wall or a registration
-          prompt ENDS the walk: set is_blocked=true and stop. The fact that
-          checkout cannot be reached without an account is itself a finding
-          worth recording -- getting past it is not.
-        - **NEVER solve a bot challenge, slider or captcha.** If one appears,
-          set is_blocked=true and stop.
+        - **No Looping**: If an action does not result in a page change, DO NOT repeat it. If you are stuck on a persistent banner or popup after 2 attempts, try to find a 'close' or 'X' button that might not have a red box, or use `click_pixel` on the most likely area to dismiss it. 
+        - **Adversarial Movement**: If a click fails, consider if the element is obscured or a "fake" button. Report this as a Dark Pattern and move on.
+        - If stuck on a bot challenge/slider, use 'drag_pixel' or 'drag_and_drop' to solve it.
         - Set goal_reached=true ONLY on the final order confirmation button page.
+        - Set is_blocked=true ONLY if permanently stuck on a bot challenge after attempts.
 
         CRITICAL: 
         - If a signal is required but NOT evaluable at this step, you MUST place it in 'signal_errors' with a precise English reason.
         - **NEVER** estimate numeric metrics (area, contrast, font) or text labels visually. 
-        - Instead, use the placeholder **`FETCH:ID:attribute`** where `ID` is the number in the red box and `attribute` is one of: `text`, `area`, `font`, `contrast`, `checked`.
+        - Instead, use the placeholder **`FETCH:ID:attribute`** where `ID` is the number in the red box and `attribute` is one of: `text`, `area`, `font`, `contrast`.
         - Example: `{"name": "accept_button_label", "signal": {"value": "FETCH:14:text", ...}}`
         - Example: `{"name": "accept_button_area_px2", "signal": {"value": "FETCH:14:area", ...}}`
         """

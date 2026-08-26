@@ -27,23 +27,14 @@ from __future__ import annotations
 import json
 import os
 from dataclasses import dataclass
+from typing import List, Optional, Any
 
-# Cheapest vision-capable tier. The two tasks we use a model for -- "which
-# numbered box do I click" and "is there a countdown" -- need no reasoning
-# ability, so paying for a larger model buys nothing.
-# 24.08.: a freshly issued key gets 404 on gemini-2.5-flash-lite --
-# "no longer available to new users". Anyone setting the project up now
-# would have hit that as their first error, with nothing pointing at the
-# model name. DPM_MODEL still overrides.
+# Cheapest vision-capable tier.
 DEFAULT_MODEL = "gemini-3.5-flash-lite"
 
 
 class ModelError(Exception):
-    """The model call failed or the answer was unusable.
-
-    Always caught by the caller and turned into a signal_error. It never
-    aborts a capture: a partial capture is still evidence.
-    """
+    """The model call failed or the answer was unusable."""
 
 
 def unavailable() -> str | None:
@@ -89,31 +80,35 @@ class Model:
                                         "europe-west4"))
             return cls(name=name, backend="vertex", _client=client)
 
-        client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+        key = os.environ.get("GEMINI_API_KEY")
+        if not key:
+            raise ModelError("GEMINI_API_KEY is missing from environment")
+
+        client = genai.Client(api_key=key)
         return cls(name=name, backend="ai-studio", _client=client)
 
     async def ask(self, prompt: str, schema: dict,
-                  screenshot: bytes | None = None) -> dict:
-        """One structured call. Returns the parsed answer as a dict.
-
-        Async on purpose. The capture layer drives Playwright over a
-        websocket; a synchronous model call inside the event loop stalls
-        that connection for the whole round trip and surfaces later as an
-        unexplained "Target closed".
-        """
+                  screenshot: bytes | None = None,
+                  history: List[Any] | None = None,
+                  system_instruction: str | None = None) -> dict:
+        """One structured call. Returns the parsed answer as a dict."""
         from google.genai import types
 
         parts = []
         if screenshot is not None:
             parts.append(types.Part.from_bytes(data=screenshot,
                                                mime_type="image/png"))
-        parts.append(prompt)
+        parts.append(types.Part.from_text(text=prompt))
+
+        contents = list(history) if history else []
+        contents.append(types.Content(role="user", parts=parts))
 
         try:
             response = await self._client.aio.models.generate_content(
                 model=self.name,
-                contents=parts,
+                contents=contents,
                 config=types.GenerateContentConfig(
+                    system_instruction=system_instruction,
                     response_mime_type="application/json",
                     response_schema=schema,
                     temperature=0.1))
@@ -122,8 +117,6 @@ class Model:
 
         text = getattr(response, "text", None)
         if not text:
-            # Empty happens on a safety block or when the answer hit the
-            # token limit. Both are "not measured", not "measured as absent".
             raise ModelError("the model returned no text")
 
         try:

@@ -6,6 +6,7 @@ playwright>=1.40
 # The evaluation layer runs without them.
 playwright-stealth>=1.0
 google-genai>=1.0
+tldextract>=5.1
 
 # Only for `python -m dpm ui`. Everything else -- capture,
 # assess, report, overview, timeline, rebuild -- runs without them.

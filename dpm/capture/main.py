@@ -3,12 +3,12 @@ import sys
 import json
 import asyncio
 from datetime import datetime, timezone
-from google import genai
-from dpm.capture.agent import visual_explore
-from dpm.capture.driver import (LOCALE, STRUCTURAL_GAPS, TIMEZONE,
-                                USER_AGENT, VIEWPORT)
+from pathlib import Path
+from dpm.ai.client import Model
+from dpm.capture.agent import (LOCALE, STRUCTURAL_GAPS, TIMEZONE,
+                                USER_AGENT, VIEWPORT, visual_explore, Capture)
 
-async def walk(target_url, industry="unbekannt", output_root="out"):
+async def walk(target_url, industry="unbekannt", output_root="out", username=None, password=None):
     """Walk one target and write out/<run_id>/capture.json.
 
     Split out of main() so the web UI can start the same run the command
@@ -16,38 +16,19 @@ async def walk(target_url, industry="unbekannt", output_root="out"):
 
     Returns the run folder.
     """
-    client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+    model = Model.open()
     now = datetime.now(timezone.utc).astimezone().replace(microsecond=0)
     
-    safe_url_name = target_url.replace("https://", "").replace("http://", "").replace("www.", "").split("/")[0]
-    run_id = f"{now.strftime('%Y-%m-%dT%H-%M-%S')}_{safe_url_name}"
-    
-    # out/<run_id>/, the folder `python -m dpm rebuild` looks in. Under
-    # artifacts/ the run existed but no report was ever built from it: on
-    # Tuesday the handover would have found an empty out/.
-    artifacts_dir = os.path.join(str(output_root), run_id)
-    os.makedirs(artifacts_dir, exist_ok=True)
-    
-    print(f"[*] Generating Evidence Dossier for {target_url}...")
-    print(f"[*] All artifacts will be saved to: {artifacts_dir}")
-    
     # Unified Step: Agent navigates AND audits simultaneously
-    # agent.py returns: steps_log, reject_click_depth, final_step_name, is_blocked, signals, errors
-    steps_log, reject_depth, final_step_name, is_blocked, signals, errors = await visual_explore(target_url, client, artifacts_dir)
+    # agent.py returns: steps_log, reject_depth, final_step_name, is_blocked, signals, errors, meta
+    steps_log, reject_depth, final_step_name, is_blocked, signals, errors, meta = \
+        await visual_explore(target_url, model, output_root=output_root,
+                             username=username, password=password)
     
     if is_blocked:
         print("[!] Exploration stopped early due to bot detection.")
     
     # Inject the rejection-specific click depth calculated by the agent's logic
-    # NOT published as reject_click_depth: the counter counts every funnel
-    # click, but the signal means "interaction steps until consent is fully
-    # refused" and DP-001 judges on it. A miscounted value here produced a
-    # confident false accusation (amazon, 23.08.). Until the reject path is
-    # actually walked, the honest answer is a gap.
-    # Structural reasons overwrite whatever the model wrote from the page
-    # it happened to be standing on. "Page is blank" is an observation
-    # about one step; that a cookie count is not in the DOM is a fact
-    # about the capture layer, and that is what belongs in the Beweisakte.
     for name, reason in STRUCTURAL_GAPS.items():
         if name not in signals:
             errors[name] = reason
@@ -58,52 +39,35 @@ async def walk(target_url, industry="unbekannt", output_root="out"):
     
     # Final error pruning: If a signal was found at ANY step, remove it from errors
     final_errors = {k: v for k, v in errors.items() if k not in signals}
+
+    if industry:
+        meta["industry"] = industry
     
-    # Construct the final JSON schema
-    capture_data = {
-        "meta": {
-            "target": safe_url_name,
-            "start_url": target_url,
-            "timestamp": now.isoformat(),
-            # Written from the same constants the browser was opened with,
-            # not typed out again -- these four lines are what makes a
-            # capture reproducible, and a copy drifts from the original.
-            "viewport": dict(VIEWPORT),
-            "locale": LOCALE,
-            "timezone": TIMEZONE,
-            "user_agent": USER_AGENT,
-            "capture_mode": "headless",
-            "industry": industry,
-            "run_id": run_id,
-            "is_blocked": is_blocked
-        },
-        "steps": steps_log,
-        "signals": signals,
-        "signal_errors": final_errors
-    }
-    
-    capture_path = os.path.join(artifacts_dir, "capture.json")
-    with open(capture_path, "w", encoding="utf-8") as f:
-        json.dump(capture_data, f, ensure_ascii=False, indent=2)
+    # Construct the final Capture object and write it
+    run = Capture(path=Path(output_root) / meta["run_id"], meta=meta,
+                  steps=steps_log, signals=signals, errors=final_errors)
+    capture_path = run.write()
         
     print(f"[*] Evidence Dossier successfully locked and saved to {capture_path}.")
-    return artifacts_dir
+    return run.path
 
 
 async def main():
     if len(sys.argv) < 2:
-        print("Usage: python -m dpm.capture.main <target_url> [branche]")
+        print("Usage: python -m dpm.capture.main <target_url> [branche] [username] [password]")
         sys.exit(1)
 
-    if "GEMINI_API_KEY" not in os.environ:
-        print("[!] Error: GEMINI_API_KEY environment variable is missing.")
-        sys.exit(1)
+    # Check availability through the engine check
+    from dpm.ai.client import unavailable
+    reason = unavailable()
+    if reason:
+        print(f"[!] Warning: {reason}")
+        print("[*] Proceeding with Surface Capture (start page only)...")
 
-    # Without a branch there is no statistic by branch in the
-    # Marktuebersicht, and that is what the consumer agency asked for in
-    # the seminar. Unset is written as "unbekannt", never guessed.
     await walk(sys.argv[1],
-               sys.argv[2] if len(sys.argv) > 2 else "unbekannt")
+               industry=sys.argv[2] if len(sys.argv) > 2 else "unbekannt",
+               username=sys.argv[3] if len(sys.argv) > 3 else None,
+               password=sys.argv[4] if len(sys.argv) > 4 else None)
 
 
 if __name__ == "__main__":
