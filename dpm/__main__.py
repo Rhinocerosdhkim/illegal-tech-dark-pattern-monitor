@@ -55,7 +55,7 @@ def _findings(arguments):
 
 def cmd_capture(arguments) -> int:
     from dpm.ai.client import Model, unavailable
-    from dpm.capture.driver import capture
+    from dpm.capture.agent import visual_explore, Capture, STRUCTURAL_GAPS
     from dpm.capture.targets import load as load_target, slug
 
     profile = load_target(arguments.target)
@@ -79,9 +79,32 @@ def cmd_capture(arguments) -> int:
         model = Model.open()
         print(f"\nModel     {model.name}  ({model.backend})")
 
-    run = asyncio.run(capture(url, profile, model,
-                              output_root=arguments.output,
-                              max_steps=arguments.steps))
+    steps_log, reject_depth, final_step_name, is_blocked, signals, errors, meta = \
+        asyncio.run(visual_explore(url, model, output_root=arguments.output,
+                                  max_steps=arguments.steps))
+
+    # Inject the rejection-specific click depth calculated by the agent's logic
+    # NOT published as reject_click_depth: the counter counts every funnel
+    # click, but the signal means "interaction steps until consent is fully
+    # refused" and DP-001 judges on it. A miscounted value here produced a
+    # confident false accusation (amazon, 23.08.). Until the reject path is
+    # actually walked, the honest answer is a gap.
+    for name, reason in STRUCTURAL_GAPS.items():
+        if name not in signals:
+            errors[name] = reason
+    errors["reject_click_depth"] = (
+        f"{STRUCTURAL_GAPS['reject_click_depth']} — der Agent hat "
+        f"{reject_depth} Trichterklicks gemacht, was nicht dieselbe "
+        f"Messung ist")
+
+    # Prune errors
+    final_errors = {k: v for k, v in errors.items() if k not in signals}
+
+    if profile.get("industry"):
+        meta["industry"] = profile["industry"]
+
+    run = Capture(path=Path(arguments.output) / meta["run_id"],
+                  meta=meta, steps=steps_log, signals=signals, errors=final_errors)
     file = run.write()
 
     print(f"\nTarget    {run.meta['target']}  ({run.meta['industry']})")

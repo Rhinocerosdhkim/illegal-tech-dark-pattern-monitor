@@ -75,7 +75,7 @@ def _field(mapping: dict, name: str, default=None):
 
 
 def load_run(path: str | Path, targets_dir: str | Path | None = None) -> Run:
-    path = Path(path)
+    path = Path(path).resolve()
     file = path / "capture.json" if path.is_dir() else path
     raw = json.loads(file.read_text(encoding="utf-8"))
 

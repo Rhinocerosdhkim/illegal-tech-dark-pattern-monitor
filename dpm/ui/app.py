@@ -13,6 +13,7 @@ a capture and watching it run.
 from __future__ import annotations
 
 import asyncio
+import json
 import re
 import secrets
 from pathlib import Path
@@ -85,36 +86,64 @@ def create(output: Path = Path("out")) -> object:
         return sorted(entries, key=lambda e: e["timestamp"] or "", reverse=True)
 
     async def perform(lauf: Lauf) -> None:
-        """Capture, then immediately turn the result into a Beweisakte.
+        """Capture using the AI agent, then turn the result into a Beweisakte.
 
         Doing the report here is the point: a run that stops at
         capture.json leaves the person with a file they cannot read.
         """
-        from dpm.capture.driver import capture
+        from dpm.capture.agent import visual_explore, Capture, STRUCTURAL_GAPS
 
-        profile = load_target(lauf.url) or {"name": lauf.target}
-        if lauf.industry:
-            profile = {**profile, "industry": lauf.industry}
+        # Initialize the model if available; otherwise perform a start-page only capture.
+        model = None
+        reason = model_unavailable()
+        if not reason:
+            model = Model.open()
+        else:
+            lauf.note = f"Kein Modell verfügbar — {reason}"
 
-        model = None if model_unavailable() else Model.open()
-        if model is None:
-            lauf.note = ("Kein Modell verfügbar — nur die Startseite, "
-                         "alle Signale bleiben unklar")
+        try:
+            # Call the AI agent directly. If model is None, it captures the start page only.
+            steps_log, reject_depth, final_step_name, is_blocked, signals, errors, meta = \
+                await visual_explore(lauf.url, model, output_root=output)
 
-        result = await capture(lauf.url, profile, model,
-                               output_root=output)
-        result.write()
-        lauf.folder, lauf.run_id = result.path, result.meta["run_id"]
-        lauf.steps = [{"step": s.get("step"), "url": s.get("url"),
-                       "screenshot": s.get("screenshot")}
-                      for s in result.steps]
+            # Inject the rejection-specific click depth
+            for name, reason in STRUCTURAL_GAPS.items():
+                if name not in signals:
+                    errors[name] = reason
+            errors["reject_click_depth"] = (
+                f"{STRUCTURAL_GAPS['reject_click_depth']} — der Agent hat "
+                f"{reject_depth} Trichterklicks gemacht, was nicht dieselbe "
+                f"Messung ist")
+
+            # Prune errors: if a signal was found, remove its error entry
+            final_errors = {k: v for k, v in errors.items() if k not in signals}
+
+            # Update meta with industry if provided
+            if lauf.industry:
+                meta["industry"] = lauf.industry
+
+            # Write capture.json with all data
+            run = Capture(path=output / meta["run_id"], meta=meta,
+                          steps=steps_log, signals=signals,
+                          errors=final_errors)
+            run.write()
+
+            lauf.folder = run.path
+            lauf.run_id = meta["run_id"]
+            lauf.steps = [{"step": s.get("step"), "url": s.get("url"),
+                           "screenshot": s.get("screenshot")}
+                          for s in steps_log]
+
+        except Exception as e:
+            lauf.note = f"Capture fehlgeschlagen: {type(e).__name__}: {e}"
+            raise
 
         # In a worker thread on purpose: the PDF is printed through the
         # synchronous Playwright API, which refuses to run inside a live
         # asyncio loop. Without the thread the Beweisakte would silently
         # arrive as HTML only.
         def report() -> None:
-            run = load_run(result.path)
+            run = load_run(lauf.folder)
             rules = load_rules()
             build_case_file(run, [assess(rule, run.table) for rule in rules],
                             output=output, as_pdf=True)

@@ -79,8 +79,34 @@
 
   const lower = (element) => text(element).toLowerCase();
 
+  // What a control is labelled with. <input type="submit"> has no
+  // innerText at all -- its label lives in value, and that is how
+  // amazon.de writes both consent buttons (sp-cc-accept "Akzeptieren",
+  // sp-cc-rejectall-link "Ablehnen"). Reading innerText only made both
+  // read as empty, so the reference case could not be measured at all.
+  const controlLabel = (element) =>
+    (text(element)
+     || element.value
+     || element.getAttribute("aria-label")
+     || element.getAttribute("title")
+     || "").replace(/\s+/g, " ").trim();
+
+  // Whole words, not substrings. "kaufen" used to match "Verkaufen bei
+  // Amazon" -- a footer link that sells ON Amazon -- and that string then
+  // travelled as order_button_label into DP-002, which grades the wording
+  // of the order button. Buying and selling are opposites; a substring
+  // match cannot tell them apart.
+  //
+  // The trailing boundary is only applied when the phrase ends in a word
+  // character, so "inkl. mwst." keeps matching.
+  const escape = (word) => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const asWord = (word) =>
+    new RegExp("(?:^|[^\\p{L}\\p{N}_])" + escape(word)
+               + (/[\p{L}\p{N}_]$/u.test(word) ? "(?![\\p{L}\\p{N}_])" : ""),
+               "u");
+
   const hasWord = (haystack, list) =>
-    list.some((word) => haystack.includes(word));
+    list.some((word) => asWord(word).test(haystack));
 
   /* ------------------------------------------------------- the page */
 
@@ -116,6 +142,21 @@
     const style = getComputedStyle(element);
     return style.visibility !== "hidden" && style.display !== "none"
       && Number(style.opacity) > 0.05;
+  };
+
+  // A control can be interactive while being invisible itself: amazon.de
+  // lays a fully transparent <input type="submit"> (opacity 0.01) over a
+  // styled button, and that input is what a click actually hits. Judging
+  // it by its own opacity dropped both consent buttons of our reference
+  // case, so the banner could not be measured at all.
+  //
+  // Deliberately NOT the same test as visible(): that one still decides
+  // hidden_by_opacity_count, where near-zero opacity is the finding.
+  const interactive = (element) => {
+    const box = element.getBoundingClientRect();
+    if (box.width <= 0 || box.height <= 0) return false;
+    const style = getComputedStyle(element);
+    return style.visibility !== "hidden" && style.display !== "none";
   };
 
   const clickable = (element) => {
@@ -240,8 +281,9 @@
   // taking the outermost would drag half the page in and make the button
   // search meaningless.
   const controlsOf = (element) => Array.from(element.querySelectorAll("*"))
-    .filter((node) => clickable(node) && visible(node))
-    .map((node) => ({ element: node, label: lower(node) }))
+    .filter((node) => clickable(node) && interactive(node))
+    .map((node) => ({ element: node,
+                      label: controlLabel(node).toLowerCase() }))
     .filter((entry) => entry.label.length > 0 && entry.label.length < 80);
 
   // A whole label that is nothing but a confirmation. Matched against the
@@ -297,7 +339,7 @@
       let best = null, bestLength = 0;
       for (const entry of controls) {
         for (const word of list) {
-          if (entry.label.includes(word) && word.length > bestLength) {
+          if (asWord(word).test(entry.label) && word.length > bestLength) {
             best = entry.element;
             bestLength = word.length;
           }
@@ -359,8 +401,8 @@
   /* ---------------------------------------------------- order button */
 
   const buttons = ALL
-    .filter((element) => clickable(element) && visible(element))
-    .map((element) => ({ element, label: text(element) }))
+    .filter((element) => clickable(element) && interactive(element))
+    .map((element) => ({ element, label: controlLabel(element) }))
     .filter((entry) => entry.label.length > 0 && entry.label.length < 80);
 
   const order = buttons.find(
@@ -413,7 +455,7 @@
 
   let requiredWord = null, requiredNode = null;
   for (const word of WORDS.required) {
-    const hit = leaves.find((element) => lower(element).includes(word));
+    const hit = leaves.find((element) => asWord(word).test(lower(element)));
     if (hit) { requiredWord = word; requiredNode = hit; break; }
   }
 

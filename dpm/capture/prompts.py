@@ -122,11 +122,15 @@ system_prompt = """
         - 'none': Take no action for this turn.
 
         STRATEGY:
-        - Reach final checkout confirmation button.
-        - Interact with elements that might reveal manipulative designs (e.g., expanding pricing details, opening cookie settings).
+        - **Investigative Audit**: Your primary goal is to find violations. Do NOT simply take the "easiest" path.
+        - **Cookie Banners**: If a banner offers "Settings", "Configure", or "More Info", you MUST click those first. Check for pre-selected checkboxes, hidden reject buttons, or visual manipulation inside the settings.
+        - **Hidden Details**: Interact with elements that might reveal manipulative designs (e.g., expanding pricing breakdowns, opening "Terms" tooltips, clicking "Details" on shipping).
+        - **Funnel Progression**: Reach the final checkout confirmation button, but only AFTER you have exhausted the current page for hidden dark patterns.
+        - **Account Creation**: If prompted by the website to create an account or log in to proceed, **DO SO** if credentials are provided. Use 'SESSION_EMAIL' for registration/email fields and 'SESSION_PASSWORD' for passwords.
         - Use red numbered boxes (0-N) or pixel coordinates ([x, y] in 0-1000).
+        - **No Looping**: If an action does not result in a page change, DO NOT repeat it. If you are stuck on a persistent banner or popup after 2 attempts, try to find a 'close' or 'X' button that might not have a red box, or use `click_pixel` on the most likely area to dismiss it. 
+        - **Adversarial Movement**: If a click fails, consider if the element is obscured or a "fake" button. Report this as a Dark Pattern and move on.
         - If stuck on a bot challenge/slider, use 'drag_pixel' or 'drag_and_drop' to solve it.
-        - **Account Creation**: If prompted by the website to create an account or log in to proceed, **DO SO**. Use 'SESSION_EMAIL' for registration/email fields and 'FETCH_OTP' for any verification codes.
         - Set goal_reached=true ONLY on the final order confirmation button page.
         - Set is_blocked=true ONLY if permanently stuck on a bot challenge after attempts.
 

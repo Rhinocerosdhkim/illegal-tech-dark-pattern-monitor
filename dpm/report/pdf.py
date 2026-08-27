@@ -55,10 +55,15 @@ def render(html: Path, target: Path | None = None, before: str | None = None,
     with sync_playwright() as play:
         browser = play.chromium.launch()
         page = browser.new_page()
-        page.goto(html.resolve().as_uri())
+        # Ensure images are loaded; networkidle can be brittle for file:// URIs, 
+        # so we combine it with a forced wait for rendering stability.
+        page.goto(html.resolve().as_uri(), wait_until="load")
+        page.wait_for_load_state("networkidle")
         if before:
             page.evaluate(before)
             page.wait_for_timeout(120)      # let the page finish reacting
+        else:
+            page.wait_for_timeout(800)      # wait for layout/images/fonts
         options = dict(A4)
         if running_footer:
             options |= {"display_header_footer": True,

@@ -20,6 +20,33 @@ finding. What needs a model is the navigation and the signals read off the
 screenshot (countdown, scarcity, viewer count); those land in
 `signal_errors`. A keyless run is a valid partial capture, not a failure.
 
+## Two ways in, one capture.json
+
+```bash
+python -m dpm.capture.main https://www.amazon.de/ Elektronik   # der Hauptweg
+python -m dpm capture viagogo                                  # ohne Schluessel
+```
+
+Both write `out/<run_id>/capture.json` in the same schema, and the
+evaluation layer cannot tell them apart. What differs is how far they get.
+
+| | walks | needs a key |
+|---|---|---|
+| `dpm.capture.main` → `agent.py` | the funnel: search, product, basket, until a login wall | yes |
+| `dpm capture` → `driver.py` | the start page | no |
+
+**The agent is the main path.** The patterns the consumer agency named —
+the scarcity note, the VAT line, the countdown — are not on the start
+page, and only the agent reaches them.
+
+**The driver is kept anyway, and not out of sentimentality.** It measures
+every DOM signal without a model at all: on amazon.de that is 27 signals
+and a complete consent-banner measurement. If the free tier's rate limit
+hits during the presentation, or a key is missing on somebody else's
+laptop, that is the difference between a smaller demo and no demo. The
+web UI picks automatically: a key runs the agent, no key runs the driver
+and says so on screen.
+
 ## Where the model comes from
 
 One environment variable decides the backend; nothing in the code changes.
@@ -36,7 +63,7 @@ AI. Cost is not the reason — five to eleven calls per run is about one cent
 
 | Variable | Default | |
 |---|---|---|
-| `DPM_MODEL` | `gemini-2.5-flash-lite` | cheapest vision tier; the two tasks need no reasoning |
+| `DPM_MODEL` | `gemini-3.5-flash-lite` | cheapest vision tier; the two tasks need no reasoning |
 | `DPM_MIN_CONFIDENCE` | `0.7` | below this a read signal becomes a `signal_error` |
 | `GOOGLE_CLOUD_LOCATION` | `europe-west4` | Vertex only |
 

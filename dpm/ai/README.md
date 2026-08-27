@@ -34,7 +34,7 @@ nobody asked us to visit.
 
 ## Where it runs
 
-Google **Gemini**, `gemini-2.5-flash-lite` by default. One environment
+Google **Gemini**, `gemini-3.5-flash-lite` by default. One environment
 variable decides the backend; no code changes.
 
 ```bash
@@ -44,7 +44,7 @@ DPM_VERTEX=1 GOOGLE_CLOUD_PROJECT=…                 # Vertex, billed to the cr
 
 | Variable | Default | |
 |---|---|---|
-| `DPM_MODEL` | `gemini-2.5-flash-lite` | cheapest vision tier; none of the four tasks needs reasoning |
+| `DPM_MODEL` | `gemini-3.5-flash-lite` | cheapest vision tier; none of the four tasks needs reasoning |
 | `DPM_MIN_CONFIDENCE` | `0.7` | AI ①: below this a read signal becomes a `signal_error` |
 | `GOOGLE_CLOUD_LOCATION` | `europe-west4` | Vertex only |
 

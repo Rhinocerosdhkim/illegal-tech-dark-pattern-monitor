@@ -59,8 +59,15 @@ class Lauf:
             return self.folder
         if not self.output.exists():
             return None
-        for candidate in sorted(self.output.glob(f"*_{self.target}"),
-                                reverse=True):
+        # Both producers end the folder name with a name for the target,
+        # but they spell it differently: the driver uses the profile slug
+        # ("amazon"), the agent the bare host ("amazon.de"). Matching on
+        # the slug alone found neither during an agent run, so the live
+        # screen counted zero captures until the run was over.
+        for candidate in sorted(self.output.glob("*_*"), reverse=True):
+            name = candidate.name.split("_", 1)[-1]
+            if self.target not in name and name not in self.target:
+                continue
             if (candidate.is_dir()
                     and candidate.stat().st_mtime >= self.started - 5):
                 self.folder = candidate
