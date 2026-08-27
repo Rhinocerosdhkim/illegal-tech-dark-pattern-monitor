@@ -1,0 +1,307 @@
+{
+  "meta": {
+    "target": "karthek",
+    "industry": "Ticketing",
+    "start_url": "https://karthek.com/demo_site_ddx.html",
+    "timestamp": "2026-08-27T07:35:33+02:00",
+    "capture_mode": "headless",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "locale": "de-DE",
+    "timezone": "Europe/Berlin",
+    "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "run_id": "2026-08-27T07-35-33_karthek"
+  },
+  "notes": [],
+  "steps": [
+    {
+      "step": "cookie_banner_preferences",
+      "url": "https://karthek.com/demo_site_ddx.html",
+      "screenshot": "S-01.png",
+      "dom_hash": "sha256:25b77851ad83fb669f711d911a638669b535b6c609341a0f0fa8d1dec7407874",
+      "chosen_by": "PHASE 1: OBSERVE\n- Consent banner is present at the bottom left with buttons: 'AKZEPTIEREN & OPTIMIEREN' (ID 8) and 'Meine Präferenzen verwalten' (ID "
+    },
+    {
+      "step": "cookie_settings_dismiss",
+      "url": "https://karthek.com/demo_site_ddx.html",
+      "screenshot": "S-02.png",
+      "dom_hash": "sha256:d09e1fef7854c7ea6465b57e33f8faa471a641ae51cdfc27358cc1c2c2da9726",
+      "chosen_by": "PHASE 1: OBSERVE\n- The user is presented with a 'Dateneinstellungen' (Privacy Settings) modal overlay.\n- The modal lists multiple categories: 'Notwend"
+    },
+    {
+      "step": "product_catalog_view",
+      "url": "https://karthek.com/demo_site_ddx.html",
+      "screenshot": "S-03.png",
+      "dom_hash": "sha256:53b03f743013b8638eed24e03e92d89b8ffa03067a76c7cdae833e060f8abc0a",
+      "chosen_by": "PHASE 1: OBSERVE\n- The consent banner has been successfully dismissed.\n- We are now on the main product catalog page ('Top-Kollektionen').\n- Three pro"
+    },
+    {
+      "step": "product_detail_view",
+      "url": "https://karthek.com/demo_site_ddx.html",
+      "screenshot": "S-04.png",
+      "dom_hash": "sha256:267afb8f74bb83e4f88a2c9c14e456101e4f26200cfc4b435fed055c72151a63",
+      "chosen_by": "PHASE 1: OBSERVE\n- We are on the product detail page for 'Aura Noise-Cancelling Kopfhörer'.\n- Price listed is 199,00 €.\n- There is a preselected paid "
+    },
+    {
+      "step": "cart_checkout",
+      "url": "https://karthek.com/demo_site_ddx.html",
+      "screenshot": "S-05.png",
+      "dom_hash": "sha256:8500623e101bd360fd861d5a2c299d6dc6604fe74f59dc437d8b554bbbfc189f",
+      "chosen_by": "PHASE 1: OBSERVE\n- We are now on the cart page ('Warenkorb').\n- Listed items: 'Aura Noise-Cancelling Kopfhörer' (199,00 €), 'Lumina Care+ (Vorausgewäh"
+    },
+    {
+      "step": "express_checkout_login",
+      "url": "https://karthek.com/demo_site_ddx.html",
+      "screenshot": "S-06.png",
+      "dom_hash": "sha256:34b98780b8301f58ad352a2eda006ea9e9ab55c10abea0891a68dbdda32080ab",
+      "chosen_by": "PHASE 1: OBSERVE\n- We are on the Express-Kauf (Express Checkout) page requiring login/registration to proceed ('Erstellen Sie Ihre Lumina ID, um Ihre "
+    },
+    {
+      "step": "express_checkout_password",
+      "url": "https://karthek.com/demo_site_ddx.html",
+      "screenshot": "S-07.png",
+      "dom_hash": "sha256:eb4dc8de187eac8e1ac1bf8b0a96e091bc15984080c5929c669e52cfe3cf31f0",
+      "chosen_by": "PHASE 1: OBSERVE\n- We are on the Express-Kauf login/registration step.\n- Email field (ID 0) has been filled with SESSION_EMAIL in the previous action."
+    },
+    {
+      "step": "express_checkout_submit",
+      "url": "https://karthek.com/demo_site_ddx.html",
+      "screenshot": "S-08.png",
+      "dom_hash": "sha256:cf203c0e5e35d126808096968b78510e2b357aa460d34fc4cc7902b0704e4cff",
+      "chosen_by": "PHASE 1: OBSERVE\n- We are on the Express-Kauf login/registration step with both email (ID 0) and password (ID 1) filled in.\n- The button 'Weiter zur L"
+    },
+    {
+      "step": "payment_method",
+      "url": "https://karthek.com/demo_site_ddx.html",
+      "screenshot": "S-09.png",
+      "dom_hash": "sha256:c3c2ff2157817e900ece19b5997c664af72a6c32bc786acf744fa190f6d06164",
+      "chosen_by": "PHASE 1: OBSERVE\n- We are on the 'Zahlungsart' (Payment Method) page.\n- Payment provider dropdown is ID 0, currently set to 'Lumina Finance (Monatlich"
+    },
+    {
+      "step": "final_order_confirmation",
+      "url": "https://karthek.com/demo_site_ddx.html",
+      "screenshot": "S-10.png",
+      "dom_hash": "sha256:33604682cea535f73d2fa6165a8b22796d48522916dd0c5ddcf769fe3e18b7a2",
+      "chosen_by": "PHASE 1: OBSERVE\n- We are on the final order confirmation page ('Pr&uuml;fen & Best&auml;tigen').\n- The summary lists: Aura Noise-Cancelling Kopfh&oum"
+    },
+    {
+      "step": "checkout",
+      "url": "https://karthek.com/demo_site_ddx.html",
+      "screenshot": "final_audit.png",
+      "dom_hash": "sha256:c2e3a9f4d59484c31e4136944b7e44b2d1c3e5a59666485d04baaed465435b60"
+    }
+  ],
+  "signals": {
+    "third_party_cookies_before_consent": {
+      "value": 0,
+      "step": "initial_scan",
+      "evidence": "S-01.png"
+    },
+    "banner_detected": {
+      "value": true,
+      "step": "cookie_settings_dismiss",
+      "evidence": "S-02.png"
+    },
+    "accept_button_area_px2": {
+      "value": 18984,
+      "step": "cookie_banner_preferences",
+      "evidence": "S-01.png"
+    },
+    "accept_contrast_ratio": {
+      "value": 2.54,
+      "step": "cookie_banner_preferences",
+      "evidence": "S-01.png"
+    },
+    "reject_button_present": {
+      "value": false,
+      "step": "cookie_banner_preferences",
+      "evidence": "S-01.png"
+    },
+    "more_info_present": {
+      "value": true,
+      "step": "cookie_banner_preferences",
+      "evidence": "S-01.png"
+    },
+    "countdown_element_present": {
+      "value": true,
+      "step": "cookie_banner_preferences",
+      "evidence": "S-01.png"
+    },
+    "scarcity_text_present": {
+      "value": true,
+      "step": "cookie_banner_preferences",
+      "evidence": "S-01.png"
+    },
+    "scarcity_value": {
+      "value": 3,
+      "step": "cookie_banner_preferences",
+      "evidence": "S-01.png"
+    },
+    "preselected_checkbox_count": {
+      "value": 3,
+      "step": "cookie_settings_dismiss",
+      "evidence": "S-02.png"
+    },
+    "order_button_found": {
+      "value": true,
+      "step": "final_order_confirmation",
+      "evidence": "S-10.png"
+    },
+    "has_kuendigungsbutton": {
+      "value": false,
+      "step": "final_order_confirmation",
+      "evidence": "S-10.png"
+    },
+    "required_info_found": {
+      "value": true,
+      "step": "final_order_confirmation",
+      "evidence": "S-10.png"
+    },
+    "required_info_type": {
+      "value": "impressum",
+      "step": "final_order_confirmation",
+      "evidence": "S-10.png"
+    },
+    "scroll_depth_of_required_info_pct": {
+      "value": 94,
+      "step": "final_order_confirmation",
+      "evidence": "S-10.png"
+    },
+    "font_size_min_px": {
+      "value": 9,
+      "step": "final_order_confirmation",
+      "evidence": "S-10.png"
+    },
+    "text_contrast_min": {
+      "value": 1.1,
+      "step": "final_order_confirmation",
+      "evidence": "S-10.png"
+    },
+    "hidden_by_opacity_count": {
+      "value": 0,
+      "step": "final_order_confirmation",
+      "evidence": "S-10.png"
+    },
+    "has_price_display": {
+      "value": true,
+      "step": "final_order_confirmation",
+      "evidence": "S-10.png"
+    },
+    "is_b2c_offer": {
+      "value": true,
+      "step": "final_order_confirmation",
+      "evidence": "S-10.png"
+    },
+    "has_checkout_flow": {
+      "value": true,
+      "step": "final_order_confirmation",
+      "evidence": "S-10.png"
+    },
+    "gratis_claim_present": {
+      "value": false,
+      "step": "final_order_confirmation",
+      "evidence": "S-10.png"
+    },
+    "is_financial_services": {
+      "value": false,
+      "step": "final_order_confirmation",
+      "evidence": "S-10.png"
+    },
+    "has_recurring_contract_keywords": {
+      "value": false,
+      "step": "final_order_confirmation",
+      "evidence": "S-10.png"
+    },
+    "page_language": {
+      "value": "de",
+      "step": "final_order_confirmation",
+      "evidence": "S-10.png"
+    },
+    "vat_disclosure_present": {
+      "value": false,
+      "step": "final_order_confirmation",
+      "evidence": "S-10.png"
+    },
+    "recurring_price_notation_present": {
+      "value": false,
+      "step": "final_order_confirmation",
+      "evidence": "S-10.png"
+    },
+    "min_contract_term_stated": {
+      "value": false,
+      "step": "final_order_confirmation",
+      "evidence": "S-10.png"
+    },
+    "auto_renewal_text_present": {
+      "value": false,
+      "step": "final_order_confirmation",
+      "evidence": "S-10.png"
+    },
+    "cancellation_terms_present": {
+      "value": false,
+      "step": "final_order_confirmation",
+      "evidence": "S-10.png"
+    },
+    "more_info_leads_to_reject": {
+      "value": false,
+      "step": "cookie_settings_dismiss",
+      "evidence": "S-02.png"
+    },
+    "price_listed": {
+      "value": 199.0,
+      "step": "product_detail_view",
+      "evidence": "S-04.png"
+    },
+    "price_step": {
+      "value": "warenkorb",
+      "step": "cart_checkout",
+      "evidence": "S-05.png"
+    },
+    "preselected_paid_addon_count": {
+      "value": 1,
+      "step": "payment_method",
+      "evidence": "S-09.png"
+    },
+    "price_at_checkout": {
+      "value": 244.93,
+      "step": "cart_checkout",
+      "evidence": "S-05.png"
+    },
+    "price_delta": {
+      "value": 45.93,
+      "step": "cart_checkout",
+      "evidence": "S-05.png"
+    },
+    "price_delta_ratio": {
+      "value": 1.23,
+      "step": "cart_checkout",
+      "evidence": "S-05.png"
+    },
+    "order_button_label": {
+      "value": "Jetzt zahlungspflichtig bestellen",
+      "step": "final_order_confirmation",
+      "evidence": "S-10.png"
+    },
+    "recurring_price_period": {
+      "value": "monatlich",
+      "step": "payment_method",
+      "evidence": "S-09.png"
+    }
+  },
+  "signal_errors": {
+    "kuendigungsbutton_label": "keine Kuendigungsschaltflaeche auf dieser Seite",
+    "kuendigungsbutton_font_size_px": "keine Kuendigungsschaltflaeche auf dieser Seite",
+    "kuendigungsbutton_contrast_ratio": "keine Kuendigungsschaltflaeche auf dieser Seite",
+    "kuendigungsbutton_hidden_in_menu": "keine Kuendigungsschaltflaeche auf dieser Seite",
+    "vat_disclosure_scroll_pct": "kein Umsatzsteuerhinweis gefunden",
+    "reject_button_area_px2": "Reject button is not present on the first layer.",
+    "reject_contrast_ratio": "Reject button is not present on the first layer.",
+    "reject_click_depth": "erfordert das Ablaufen des Ablehnwegs — ein Vorgang, keine Messung; noch nicht umgesetzt — der Agent hat 0 Trichterklicks gemacht, was nicht dieselbe Messung ist",
+    "banner_reappears_on_reject": "erfordert das Ablaufen des Ablehnwegs — ein Vorgang, keine Messung; noch nicht umgesetzt",
+    "banner_reappears_count_24h": "erfordert Erfassungen ueber 24 Stunden; noch nicht umgesetzt",
+    "countdown_unchanged_scans": "erfordert eine zweite Erfassung desselben Ziels; noch nicht umgesetzt",
+    "scarcity_value_unchanged_scans": "erfordert eine zweite Erfassung desselben Ziels; noch nicht umgesetzt"
+  }
+}
