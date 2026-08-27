@@ -1,26 +1,4 @@
-"""The one place a language model is called from.
-
-Two backends, one call site. Which one is used depends on the environment
-only, never on the calling code:
-
-    DPM_VERTEX=1 + GOOGLE_CLOUD_PROJECT   Vertex AI. Billed through Google
-                                          Cloud, so the hackathon credits
-                                          apply here.
-    GEMINI_API_KEY                        Gemini API in AI Studio. Free tier,
-                                          roughly 10-15 requests per minute.
-
-Why that distinction is in the code at all: the 300 USD Google Cloud credit
-explicitly excludes "Gemini API in AI Studio" and covers Vertex AI. Models,
-SDK and every call below are identical between the two, so the choice stays
-one environment variable and nobody has to touch the capture code on the
-morning of the presentation.
-
-No response_schema is built from a class here. The schema is a plain dict
-(see ai/schemas.py) and the answer is checked by hand, for the same reason
-the condition parser does not use eval(): a wrong value has to produce a
-readable message, not a coercion nobody notices. A measurement we could not
-read belongs in signal_errors, never in signals.
-"""
+"""The one place a language model is called from."""
 
 from __future__ import annotations
 

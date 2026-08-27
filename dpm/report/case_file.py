@@ -97,7 +97,7 @@ def build(run: Run, findings: list, output: str | Path = "out",
     It is empty by default and the document is complete without it: what
     carries a finding is the rulebook's own text, not a model's.
     """
-    folder = Path(output) / run.run_id
+    folder = Path(output).resolve() / run.run_id
     folder.mkdir(parents=True, exist_ok=True)
 
     reportable = [f for f in findings if f.reportable]
